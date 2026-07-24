@@ -7,6 +7,7 @@ use App\Http\Controllers\DaftarMahasiswaController;
 use App\Http\Controllers\DaftarPerusahaanController;
 use App\Http\Controllers\DashboardAnalitik;
 use App\Http\Controllers\DashboardMahasiswaAkunController;
+use App\Http\Controllers\DownloadTemplateController;
 use App\Http\Controllers\ListingProgramController;
 use App\Http\Controllers\LogbookController;
 use App\Http\Controllers\MahasiswaBimbinganController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\SeminarController;
 use App\Http\Controllers\SemuaLaporanController;
 use App\Http\Controllers\StatusPengajuanController;
 use App\Http\Controllers\TerverifikasiController;
+use App\Http\Controllers\UploadDokumenController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {
@@ -95,6 +97,11 @@ Route::get('/daftar-lowongan/seleksi', [SeleksiController::class, 'index'])->nam
     //PENGAJUAN MAGANG
 Route::get('/daftar-lowongan/pengajuan-magang', [PengajuanMagangController::class, 'index'])->name('dashboard-daftar-lowongan-pengajuan-magang');   
 
+
+//DOWNLOAD TEMPLATE
+Route::get('/download-template', [DownloadTemplateController::class, 'index'])->name('dashboard-pelaporan-download-template');
+//UPLOAD DOKUMEN
+Route::get('/upload-dokumen', [UploadDokumenController::class, 'index'])->name('dashboard-pelaporan-upload-dokumen');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

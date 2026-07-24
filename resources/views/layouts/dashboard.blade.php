@@ -160,19 +160,36 @@
                 </ul>
             </details>
 
-            <!-- 4. Pelaporan Magang Group -->
-            <details class="group">
-                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+   <!-- 4. Pelaporan Magang Group -->
+            @php
+                $isPelaporanActive = request()->routeIs(
+                    'dashboard-pelaporan-download-template',
+                    'dashboard-pelaporan-upload-dokumen'
+                );
+            @endphp
+            <details class="group" {{ $isPelaporanActive ? 'open' : '' }}>
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isPelaporanActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
                     <i class="fas fa-file-alt w-5"></i>
                     <span class="ml-2 flex-1">Pelaporan Magang</span>
                     <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
                 </summary>
                 <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
-                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Download Template</a></li>
-                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Upload Dokumen</a></li>
+                    <li>
+                        <a href="{{ route('dashboard-pelaporan-download-template') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-pelaporan-download-template') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Download Template
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard-pelaporan-upload-dokumen') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-pelaporan-upload-dokumen') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Upload Dokumen
+                        </a>
+                    </li>
                 </ul>
             </details>
 
+            
             <!-- SECTION: DOSEN / ADMIN / HR -->
             <hr class="my-4 border-gray-200">
             <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Manajemen & HR</p>
