@@ -1,0 +1,200 @@
+@extends('layouts.dashboard')
+
+@section('content')
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative">
+            
+            <div class="max-w-5xl mx-auto w-full flex-1">
+                
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Status Pengajuan Magang</h2>
+                        <p class="text-sm text-gray-500 mt-1">Pantau perkembangan seleksi dan verifikasi pengajuan magang Anda.</p>
+                    </div>
+                    <!-- Filter Status -->
+                    <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary focus:border-vokasi-primary block p-2 outline-none">
+                        <option>Semua Status</option>
+                        <option>Sedang Diproses</option>
+                        <option>Diterima</option>
+                        <option>Ditolak</option>
+                    </select>
+                </div>
+
+                <div class="space-y-6">
+                    
+                    <!-- KARTU 1: STATUS SEDANG DIPROSES (Pengajuan Mandiri) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:border-vokasi-primary transition-colors">
+                        <div class="p-5 lg:p-6">
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-12 h-12 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-500 shrink-0">
+                                        <i class="fas fa-building text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-bold text-lg text-gray-800">Instansi Pemerintah Pusat</h3>
+                                            <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200">Mandiri</span>
+                                        </div>
+                                        <p class="text-vokasi-primary font-medium text-sm">Staf Evaluasi dan Pelaporan</p>
+                                        <p class="text-xs text-gray-500 mt-1"><i class="far fa-clock mr-1"></i> Diajukan: 20 Juli 2026</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-block bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1.5 rounded-full border border-yellow-200">
+                                        <i class="fas fa-spinner fa-spin mr-1"></i> Menunggu Verifikasi Prodi
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Progress Timeline -->
+                            <div class="relative pt-2">
+                                <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                                    <div class="w-full border-t-2 border-gray-100"></div>
+                                </div>
+                                <div class="relative flex justify-between">
+                                    <!-- Step 1: Completed -->
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-vokasi-primary text-white flex items-center justify-center ring-4 ring-white z-10">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </div>
+                                        <span class="text-xs font-bold text-gray-800 mt-2">Diajukan</span>
+                                    </div>
+                                    <!-- Step 2: Current -->
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-yellow-400 text-white flex items-center justify-center ring-4 ring-white z-10 animate-pulse">
+                                            <i class="fas fa-search text-sm"></i>
+                                        </div>
+                                        <span class="text-xs font-bold text-yellow-600 mt-2">Verifikasi Admin</span>
+                                    </div>
+                                    <!-- Step 3: Pending -->
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center ring-4 ring-white z-10">
+                                            <i class="fas fa-envelope-open-text text-sm"></i>
+                                        </div>
+                                        <span class="text-xs font-medium text-gray-400 mt-2">Surat Pengantar</span>
+                                    </div>
+                                    <!-- Step 4: Pending -->
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center ring-4 ring-white z-10">
+                                            <i class="fas fa-flag-checkered text-sm"></i>
+                                        </div>
+                                        <span class="text-xs font-medium text-gray-400 mt-2">Keputusan Akhir</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Berkas sedang ditinjau kelayakannya oleh admin prodi.</span>
+                            <button class="text-sm font-semibold text-red-500 hover:text-red-700 transition-colors">
+                                Batalkan Pengajuan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KARTU 2: STATUS DITERIMA (Reguler) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-green-200 overflow-hidden">
+                        <div class="p-5 lg:p-6 bg-gradient-to-r from-white to-green-50/30">
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-12 h-12 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-600 shrink-0">
+                                        <i class="fas fa-robot text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-bold text-lg text-gray-800">PT. SmartPlay Inovasi</h3>
+                                            <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded border border-gray-200">Reguler</span>
+                                        </div>
+                                        <p class="text-vokasi-primary font-medium text-sm">STEM Product Designer</p>
+                                        <p class="text-xs text-gray-500 mt-1"><i class="far fa-clock mr-1"></i> Diajukan: 10 Juni 2026</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full border border-green-200 shadow-sm">
+                                        <i class="fas fa-check-circle mr-1"></i> Diterima
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Progress Timeline -->
+                            <div class="relative pt-2">
+                                <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                                    <!-- Colored line for completed steps -->
+                                    <div class="w-full border-t-2 border-green-400"></div>
+                                </div>
+                                <div class="relative flex justify-between">
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-green-500 text-white flex items-center justify-center ring-4 ring-white z-10 shadow-sm">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-green-500 text-white flex items-center justify-center ring-4 ring-white z-10 shadow-sm">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-green-500 text-white flex items-center justify-center ring-4 ring-white z-10 shadow-sm">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <div class="h-8 w-8 rounded-full bg-green-500 text-white flex items-center justify-center ring-4 ring-white z-10 shadow-sm">
+                                            <i class="fas fa-check-double text-sm"></i>
+                                        </div>
+                                        <span class="text-xs font-bold text-green-700 mt-2">Finalisasi Selesai</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-green-50 p-4 border-t border-green-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <span class="text-sm text-green-800 font-medium">Selamat! Program magang ini sedang aktif berjalan.</span>
+                            <button class="bg-white border border-green-300 text-green-700 hover:bg-green-600 hover:text-white text-sm font-bold py-1.5 px-4 rounded-lg transition-colors shadow-sm">
+                                Buka Dashboard Magang
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KARTU 3: STATUS DITOLAK (Reguler) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
+                        <div class="p-5 lg:p-6">
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 shrink-0">
+                                        <i class="fas fa-chart-line text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-bold text-lg text-gray-800 line-through decoration-red-300">PT. Maju Teknologi Nusantara</h3>
+                                            <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded border border-gray-200">Reguler</span>
+                                        </div>
+                                        <p class="text-gray-500 font-medium text-sm">Data Analyst Intern</p>
+                                        <p class="text-xs text-gray-400 mt-1"><i class="far fa-clock mr-1"></i> Diajukan: 1 Mei 2026</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-block bg-red-50 text-red-600 text-xs font-bold px-3 py-1.5 rounded-full border border-red-100">
+                                        <i class="fas fa-times-circle mr-1"></i> Tidak Lolos Seleksi
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Catatan Penolakan -->
+                            <div class="mt-4 bg-red-50/50 rounded-lg p-3 border border-red-100 flex items-start">
+                                <i class="fas fa-info-circle text-red-400 mt-0.5 mr-2"></i>
+                                <p class="text-xs text-red-800">
+                                    <strong>Catatan dari Perusahaan:</strong> Terima kasih atas ketertarikan Anda. Saat ini kuota untuk posisi Data Analyst telah terpenuhi. Silakan mencoba lagi di periode berikutnya.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
+                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
+            </footer>
+
+        </main>
+
+@endsection
