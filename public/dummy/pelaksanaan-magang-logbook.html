@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGMAVO - Logbook Magang (Tabel)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vokasi-primary': '#37A7AC',
+                        'vokasi-dark': '#29868a',
+                        'vokasi-light': '#62c2c6',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="bg-white w-72 h-full border-r border-gray-200 flex flex-col hidden md:flex flex-shrink-0 z-20 transition-all duration-300">
+        <div class="h-16 flex items-center justify-center border-b border-vokasi-dark bg-vokasi-primary text-white shadow-sm">
+            <h1 class="text-2xl font-bold tracking-wider">SIGMAVO<span class="text-sm font-normal ml-2">UNHAS</span></h1>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
+            <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4 mb-2">Menu Mahasiswa</p>
+            
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span class="ml-2 flex-1">Dashboard Mahasiswa</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Akun</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Riwayat Magang</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Program Magang</a></li>
+                </ul>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-paper-plane w-5"></i>
+                    <span class="ml-2 flex-1">Pengajuan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Daftar Lowongan</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Ajukan Mandiri</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Status Pengajuan</a></li>
+                </ul>
+            </details>
+
+            <details class="group" open>
+                <summary class="flex items-center px-3 py-2 text-gray-700 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-running w-5"></i>
+                    <span class="ml-2 flex-1">Pelaksanaan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Pembekalan Magang</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Absensi</a></li>
+                    <!-- ACTIVE MENU HIGHLIGHT -->
+                    <li><a href="#" class="block px-3 py-2 text-sm font-bold text-vokasi-dark bg-[#e6f4f5] border-l-2 border-vokasi-primary rounded-r-md transition-colors">Logbook</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Seminar</a></li>
+                </ul>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-file-alt w-5"></i>
+                    <span class="ml-2 flex-1">Pelaporan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Download Template</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Upload Dokumen</a></li>
+                </ul>
+            </details>
+
+            <hr class="my-4 border-gray-200">
+            <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg cursor-pointer transition-colors">
+                <i class="fas fa-sign-out-alt w-5"></i>
+                <span class="ml-2 flex-1">Keluar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+        
+        <!-- TOPBAR -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm">
+            <div class="flex items-center">
+                <button class="md:hidden text-gray-500 hover:text-vokasi-primary focus:outline-none p-2 rounded-md transition-colors">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <nav class="hidden md:flex ml-4 text-sm font-medium text-gray-500 space-x-2">
+                    <a href="#" class="hover:text-vokasi-primary">Pelaksanaan Magang</a>
+                    <span>/</span>
+                    <span class="text-gray-800">Logbook Harian</span>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-500 hover:text-vokasi-primary transition-colors relative" title="Notifikasi">
+                    <i class="fas fa-bell text-lg"></i>
+                </button>
+                <div class="flex items-center space-x-2 cursor-pointer border-l pl-4 border-gray-200">
+                    <img src="https://ui-avatars.com/api/?name=Fadehl+Thristansyah&background=37A7AC&color=fff" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200 shadow-sm">
+                    <div class="hidden md:block text-sm text-right">
+                        <p class="font-bold text-gray-700 leading-tight">Fadehl Thristansyah</p>
+                        <p class="text-xs text-gray-500">Mahasiswa</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative">
+            
+            <div class="max-w-7xl mx-auto w-full flex-1 space-y-6">
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Logbook Harian</h2>
+                        <p class="text-sm text-gray-500 mt-1">Isi catatan harian. Format tabel ini siap diexport untuk laporan akhir.</p>
+                    </div>
+                </div>
+
+                <!-- FORM PENGISIAN LOGBOOK (Full Width, Grid Layout) -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-vokasi-primary/5 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-pen-alt text-vokasi-primary mr-2"></i> Form Pengisian Logbook
+                        </h3>
+                        <span class="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-1 rounded-full border border-blue-200">
+                            Hari Ini: Rabu, 22 Juli 2026
+                        </span>
+                    </div>
+                    
+                    <form action="#" method="POST" class="p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            <!-- Kolom Uraian (Takes 2 columns) -->
+                            <div class="lg:col-span-2 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Uraian Kegiatan / Pekerjaan <span class="text-red-500">*</span></label>
+                                    <textarea rows="4" placeholder="Jelaskan aktivitas, tugas, alat/software yang digunakan, dan hasil pekerjaan hari ini..." class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors resize-none" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Kolom Upload & Submit -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Dokumentasi (Foto) <span class="text-gray-400 font-normal text-xs ml-1">*Maks 2MB</span></label>
+                                    <div class="flex items-center justify-center w-full">
+                                        <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <i class="fas fa-cloud-upload-alt text-gray-400 text-xl mb-1"></i>
+                                                <p class="mb-1 text-xs text-gray-500"><span class="font-semibold text-vokasi-primary">Klik upload</span> atau drag & drop</p>
+                                            </div>
+                                            <input type="file" class="hidden" accept="image/*" />
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="pt-1">
+                                    <button type="submit" class="w-full bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold py-2.5 rounded-lg transition-colors shadow-sm flex items-center justify-center">
+                                        <i class="fas fa-save mr-2"></i> Simpan Logbook
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TABEL RIWAYAT LOGBOOK -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    
+                    <!-- Table Header & Toolbar -->
+                    <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gray-50/50">
+                        <div class="flex items-center">
+                            <i class="fas fa-table text-vokasi-primary mr-2 text-lg"></i>
+                            <h3 class="font-bold text-gray-800">Tabel Riwayat Kegiatan</h3>
+                        </div>
+                        
+                        <!-- Actions (Export & Filter) -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Filter Bulan -->
+                            <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary focus:border-vokasi-primary outline-none px-3 py-2 shadow-sm">
+                                <option>Juli 2026</option>
+                                <option>Juni 2026</option>
+                                <option>Semua Bulan</option>
+                            </select>
+
+                            <!-- Export Excel -->
+                            <button class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 px-3 rounded-lg transition-colors shadow-sm flex items-center">
+                                <i class="fas fa-file-excel mr-1.5"></i> Excel
+                            </button>
+                            
+                            <!-- Export PDF -->
+                            <button class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-3 rounded-lg transition-colors shadow-sm flex items-center">
+                                <i class="fas fa-file-pdf mr-1.5"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Wrapper untuk Responsive Table -->
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[1000px]">
+                            <thead>
+                                <tr class="bg-gray-100/50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <th class="p-4 w-12 text-center">No</th>
+                                    <th class="p-4 w-32">Tanggal</th>
+                                    <th class="p-4 min-w-[300px]">Uraian Kegiatan</th>
+                                    <th class="p-4 w-28 text-center">Foto</th>
+                                    <th class="p-4 w-40">Status Asistensi</th>
+                                    <th class="p-4 w-56">Catatan Dosen</th>
+                                    <th class="p-4 w-24 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-gray-100">
+                                
+                                <!-- Baris 1: Pending -->
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 text-center text-gray-500 font-medium">1</td>
+                                    <td class="p-4 whitespace-nowrap">
+                                        <p class="font-bold text-gray-800">21 Jul 2026</p>
+                                        <p class="text-xs text-gray-500">Selasa</p>
+                                    </td>
+                                    <td class="p-4 text-gray-700 leading-relaxed text-justify">
+                                        Melakukan riset mengenai tren mainan edukasi berbasis sensorik. Mengikuti rapat divisi bersama Supervisor Lapangan untuk membahas konsep awal produk SmartBlocks. Membuat sketsa kasar dari hasil diskusi.
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <div class="w-12 h-12 rounded bg-gray-200 border border-gray-300 mx-auto flex items-center justify-center text-gray-400 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-200 whitespace-nowrap">
+                                            <i class="fas fa-spinner fa-spin mr-1"></i> Pending
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-gray-500 italic text-xs">
+                                        Belum ada catatan
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5 rounded transition-colors" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors" title="Hapus">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Baris 2: Approved -->
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="p-4 text-center text-gray-500 font-medium">2</td>
+                                    <td class="p-4 whitespace-nowrap">
+                                        <p class="font-bold text-gray-800">20 Jul 2026</p>
+                                        <p class="text-xs text-gray-500">Senin</p>
+                                    </td>
+                                    <td class="p-4 text-gray-700 leading-relaxed text-justify">
+                                        Hari pertama magang. Mengikuti orientasi pengenalan lingkungan kantor (office tour), setup perangkat kerja, dan instalasi software yang akan digunakan selama program magang (AutoCAD & SolidWorks).
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <div class="w-12 h-12 rounded bg-gray-200 border border-gray-300 mx-auto flex items-center justify-center text-gray-400 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 whitespace-nowrap">
+                                            <i class="fas fa-check-double mr-1"></i> Approved
+                                        </span>
+                                    </td>
+                                    <td class="p-4">
+                                        <p class="text-xs text-green-700 bg-green-50 p-2 rounded border border-green-100">
+                                            Semangat hari pertama! Pastikan target minggu ini sesuai dengan timeline.
+                                        </p>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <span class="text-gray-400 text-xs" title="Tidak dapat diedit karena sudah diapprove"><i class="fas fa-lock"></i></span>
+                                    </td>
+                                </tr>
+
+                                <!-- Baris 3: Perlu Revisi -->
+                                <tr class="bg-red-50/20 hover:bg-red-50/40 transition-colors">
+                                    <td class="p-4 text-center text-gray-500 font-medium">3</td>
+                                    <td class="p-4 whitespace-nowrap">
+                                        <p class="font-bold text-gray-800">17 Jul 2026</p>
+                                        <p class="text-xs text-gray-500">Jumat</p>
+                                    </td>
+                                    <td class="p-4 text-gray-700 leading-relaxed text-justify">
+                                        Hari ini santai saja, belajar hal baru tentang material kayu untuk mainan.
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <span class="text-gray-400 text-xs italic">-</span>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 whitespace-nowrap">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i> Perlu Revisi
+                                        </span>
+                                    </td>
+                                    <td class="p-4">
+                                        <p class="text-xs text-red-700 bg-red-50 p-2 rounded border border-red-100 font-medium">
+                                            Uraian terlalu singkat. Tolong jelaskan spesifik materi apa yang dipelajari.
+                                        </p>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <button class="text-white bg-red-500 hover:bg-red-600 px-3 py-1 text-xs font-bold rounded transition-colors shadow-sm">
+                                            Revisi
+                                        </button>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination (Opsional) -->
+                    <div class="p-4 border-t border-gray-100 flex items-center justify-between bg-white text-sm">
+                        <span class="text-gray-500">Menampilkan 1 hingga 3 dari 3 entri</span>
+                        <div class="flex space-x-1">
+                            <button class="px-2 py-1 border border-gray-200 rounded text-gray-400 bg-gray-50 cursor-not-allowed">Sebelummya</button>
+                            <button class="px-3 py-1 border border-vokasi-primary rounded text-white bg-vokasi-primary font-medium">1</button>
+                            <button class="px-2 py-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 transition-colors">Selanjutnya</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
+                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
+            </footer>
+
+        </main>
+    </div>
+
+</body>
+</html>

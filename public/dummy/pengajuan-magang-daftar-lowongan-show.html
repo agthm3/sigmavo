@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGMAVO - Detail Lowongan Magang</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vokasi-primary': '#37A7AC',
+                        'vokasi-dark': '#29868a',
+                        'vokasi-light': '#62c2c6',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 4px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="bg-white w-72 h-full border-r border-gray-200 flex flex-col hidden md:flex flex-shrink-0 z-20 transition-all duration-300">
+        <div class="h-16 flex items-center justify-center border-b border-vokasi-dark bg-vokasi-primary text-white shadow-sm">
+            <h1 class="text-2xl font-bold tracking-wider">SIGMAVO<span class="text-sm font-normal ml-2">UNHAS</span></h1>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
+            <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4 mb-2">Menu Mahasiswa</p>
+            
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span class="ml-2 flex-1">Dashboard Mahasiswa</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Akun</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Riwayat Magang</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Program Magang</a></li>
+                </ul>
+            </details>
+
+            <details class="group" open>
+                <summary class="flex items-center px-3 py-2 text-gray-700 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-paper-plane w-5"></i>
+                    <span class="ml-2 flex-1">Pengajuan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <!-- ACTIVE MENU HIGHLIGHT -->
+                    <li><a href="#" class="block px-3 py-2 text-sm font-bold text-vokasi-dark bg-[#e6f4f5] border-l-2 border-vokasi-primary rounded-r-md transition-colors">Daftar Lowongan</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Ajukan Mandiri</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Status Pengajuan</a></li>
+                </ul>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-running w-5"></i>
+                    <span class="ml-2 flex-1">Pelaksanaan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Pembekalan Magang</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Absensi</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Logbook</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Seminar</a></li>
+                </ul>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-file-alt w-5"></i>
+                    <span class="ml-2 flex-1">Pelaporan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Download Template</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Upload Dokumen</a></li>
+                </ul>
+            </details>
+
+            <hr class="my-4 border-gray-200">
+            <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg cursor-pointer transition-colors">
+                <i class="fas fa-sign-out-alt w-5"></i>
+                <span class="ml-2 flex-1">Keluar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+        
+        <!-- TOPBAR -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm">
+            <div class="flex items-center">
+                <button class="md:hidden text-gray-500 hover:text-vokasi-primary focus:outline-none p-2 rounded-md transition-colors">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <!-- Breadcrumb -->
+                <nav class="hidden md:flex ml-4 text-sm font-medium text-gray-500 space-x-2">
+                    <a href="#" class="hover:text-vokasi-primary">Pengajuan Magang</a>
+                    <span>/</span>
+                    <a href="#" class="hover:text-vokasi-primary">Daftar Lowongan</a>
+                    <span>/</span>
+                    <span class="text-gray-800">Detail</span>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-500 hover:text-vokasi-primary transition-colors relative" title="Notifikasi">
+                    <i class="fas fa-bell text-lg"></i>
+                </button>
+                <div class="flex items-center space-x-2 cursor-pointer border-l pl-4 border-gray-200">
+                    <img src="https://ui-avatars.com/api/?name=Fadehl+Thristansyah&background=37A7AC&color=fff" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200 shadow-sm">
+                    <div class="hidden md:block text-sm text-right">
+                        <p class="font-bold text-gray-700 leading-tight">Fadehl Thristansyah</p>
+                        <p class="text-xs text-gray-500">Mahasiswa</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative">
+            
+            <div class="max-w-6xl mx-auto w-full flex-1">
+                
+                <!-- Tombol Kembali -->
+                <a href="#" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-vokasi-primary transition-colors mb-4">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Daftar Lowongan
+                </a>
+
+                <!-- HEADER SECTION -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8 mb-6 relative overflow-hidden">
+                    <!-- Aksen Dekoratif -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-bl-full -z-0 opacity-50"></div>
+                    
+                    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        
+                        <div class="flex items-start gap-5">
+                            <div class="w-20 h-20 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-sm">
+                                <i class="fas fa-shapes text-4xl"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-1">STEM Product Designer</h1>
+                                <p class="text-lg text-vokasi-primary font-medium mb-3">PT. SmartPlay Inovasi</p>
+                                <div class="flex flex-wrap gap-2 md:gap-4 text-sm text-gray-500">
+                                    <span class="flex items-center"><i class="fas fa-map-marker-alt mr-1.5 text-gray-400"></i> Tamalanrea, Makassar</span>
+                                    <span class="flex items-center"><i class="fas fa-briefcase mr-1.5 text-gray-400"></i> Hybrid (WFO & WFH)</span>
+                                    <span class="flex items-center"><i class="fas fa-clock mr-1.5 text-gray-400"></i> Full-time Intern</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3 min-w-max">
+                            <button class="bg-white border-2 border-gray-200 hover:border-vokasi-primary hover:text-vokasi-primary text-gray-600 font-bold py-2.5 px-6 rounded-lg transition-colors flex items-center justify-center">
+                                <i class="far fa-bookmark mr-2"></i> Simpan
+                            </button>
+                            <button class="bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold py-2.5 px-8 rounded-lg transition-colors shadow-sm flex items-center justify-center">
+                                Ajukan Magang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAIN DETAIL SECTION (2 COLUMNS) -->
+                <div class="flex flex-col lg:flex-row gap-6 mb-8">
+                    
+                    <!-- Kiri: Deskripsi Pekerjaan -->
+                    <div class="lg:w-2/3 space-y-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4 border-b border-gray-100 pb-3">Deskripsi Pekerjaan</h3>
+                            <div class="prose prose-sm text-gray-600 max-w-none">
+                                <p class="mb-4">
+                                    PT. SmartPlay Inovasi sedang mencari individu yang kreatif dan antusias terhadap dunia edukasi anak-anak. Sebagai STEM Product Designer Intern, Anda akan terlibat langsung dalam pengembangan purwarupa (prototype) mainan edukasi berbasis Science, Technology, Engineering, dan Mathematics (STEM).
+                                </p>
+                                
+                                <h4 class="font-bold text-gray-800 mt-6 mb-2">Tanggung Jawab Utama:</h4>
+                                <ul class="list-disc pl-5 space-y-2 mb-4">
+                                    <li>Meriset tren mainan edukasi terkini dan kebutuhan pembelajaran anak.</li>
+                                    <li>Membuat desain konsep, sketsa, dan perancangan awal produk mainan STEM.</li>
+                                    <li>Terlibat dalam proses prototyping menggunakan bahan-bahan fisik maupun 3D modeling.</li>
+                                    <li>Melakukan uji coba produk bersama tim untuk memastikan keamanan dan nilai edukasinya.</li>
+                                    <li>Membantu menyusun panduan perakitan (manual guide) dan materi visual produk.</li>
+                                </ul>
+
+                                <h4 class="font-bold text-gray-800 mt-6 mb-2">Persyaratan / Kualifikasi:</h4>
+                                <ul class="list-disc pl-5 space-y-2 mb-4">
+                                    <li>Mahasiswa D4/S1 minimal semester 5.</li>
+                                    <li>Memiliki ketertarikan kuat pada dunia desain produk, edukasi anak, atau rekayasa (engineering).</li>
+                                    <li>Mampu menggunakan software desain (contoh: AutoCAD, SolidWorks, atau sekadar mahir membuat sketsa konseptual).</li>
+                                    <li>Kreatif, imajinatif, dan mampu berpikir *out of the box*.</li>
+                                    <li>Kemampuan bekerja dalam tim dan komunikasi yang baik.</li>
+                                </ul>
+
+                                <h4 class="font-bold text-gray-800 mt-6 mb-2">Benefit / Keuntungan:</h4>
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li>Uang saku (Paid Internship).</li>
+                                    <li>Sertifikat magang resmi dari perusahaan.</li>
+                                    <li>Mentoring langsung dari Head of Product & Engineering.</li>
+                                    <li>Kesempatan hasil desain diproduksi secara massal.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kanan: Info Program & Perusahaan -->
+                    <div class="lg:w-1/3 space-y-6">
+                        
+                        <!-- Detail Program Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-3">Ringkasan Program</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Durasi Magang</p>
+                                    <p class="font-semibold text-gray-800">6 Bulan (1 Jul - 31 Des 2026)</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Batas Pendaftaran</p>
+                                    <p class="font-semibold text-red-600">15 Juni 2026</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Kuota Penerimaan</p>
+                                    <p class="font-semibold text-gray-800">2 Orang <span class="text-xs font-normal text-gray-500 ml-1">(1 Tersisa)</span></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Konversi SKS / Jam</p>
+                                    <p class="font-semibold text-gray-800">900 Jam Pelajaran (Setara 20 SKS)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profil Perusahaan Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-3">Tentang Perusahaan</h3>
+                            <div class="text-center mb-4">
+                                <div class="w-16 h-16 mx-auto rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center p-2 mb-3">
+                                    <i class="fas fa-robot text-3xl text-vokasi-primary"></i>
+                                </div>
+                                <h4 class="font-bold text-gray-800">PT. SmartPlay Inovasi</h4>
+                                <p class="text-sm text-gray-500">Startup Edu-Tech & Manufaktur</p>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4 leading-relaxed text-center">
+                                SmartPlay adalah startup yang berdedikasi merancang dan memproduksi mainan edukasi yang memicu keingintahuan anak pada bidang sains dan teknologi sejak dini.
+                            </p>
+                            <a href="#" class="block w-full py-2 text-center text-sm font-semibold text-vokasi-primary bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                                Kunjungi Website Profil
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="mt-auto py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
+                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
+            </footer>
+
+        </main>
+    </div>
+
+</body>
+</html>

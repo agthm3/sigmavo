@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Meta SEO -->
+    <title>Magang Industri 900 Jam | Fakultas Vokasi Universitas Hasanuddin</title>
+    <meta name="description" content="Portal resmi Sistem Pengelolaan Magang Industri 900 Jam Terstruktur Fakultas Vokasi Universitas Hasanuddin. Layanan terpadu mahasiswa, dosen, dan mitra industri DUDI.">
+    <meta name="keywords" content="Magang Vokasi Unhas, Magang Industri 900 Jam, Fakultas Vokasi Universitas Hasanuddin, Kemitraan DUDI Unhas">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9fa',
+                            100: '#e0f3f4',
+                            500: '#37A7AC', /* Primary Color */
+                            600: '#2d8b8f',
+                            700: '#246f72',
+                            800: '#1c5457',
+                            900: '#143b3d',
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- TOPBAR INFORMASI -->
+    <div class="bg-slate-900 text-slate-300 text-xs py-2 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <span>📍 Kampus Unhas Tamalanrea / Gowa</span>
+                <span class="hidden md:inline">✉️ vokasi@unhas.ac.id</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="#panduan" class="hover:text-brand-500 transition">Dokumen Panduan</a>
+                <span>|</span>
+                <a href="#faq" class="hover:text-brand-500 transition">Bantuan / FAQ</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logo & Text -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-brand-500/20">
+                        V
+                    </div>
+                    <div>
+                        <span class="block text-xs uppercase tracking-wider text-slate-500 font-bold">Fakultas Vokasi</span>
+                        <span class="block text-base font-bold text-slate-900 leading-tight">Universitas Hasanuddin</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Nav -->
+                <div class="hidden lg:flex items-center space-x-7 text-sm font-medium text-slate-600">
+                    <a href="#tentang" class="hover:text-brand-500 transition">Tentang Program</a>
+                    <a href="#pimpinan" class="hover:text-brand-500 transition">Pimpinan</a>
+                    <a href="#alur" class="hover:text-brand-500 transition">Alur Pelaksanaan</a>
+                    <a href="#layanan" class="hover:text-brand-500 transition">Akses Portal</a>
+                    <a href="#mitra" class="hover:text-brand-500 transition">Mitra DUDI</a>
+                    <a href="#layanan" class="px-5 py-2.5 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition shadow-sm hover:shadow-md">
+                        Masuk Sistem
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-24 bg-gradient-to-b from-brand-50/60 via-slate-50 to-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Left Column -->
+                <div class="lg:col-span-7 animate-fade-in-up">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-100/80 border border-brand-500/20 text-brand-700 text-xs font-semibold uppercase tracking-wider mb-6">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                        Kurikulum Vokasi Terintegrasi
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
+                        Pengelolaan Magang Industri <br/>
+                        <span class="text-brand-500">900 Jam Terstruktur</span>
+                    </h1>
+
+                    <p class="text-slate-600 text-base sm:text-lg leading-relaxed mb-8">
+                        Portal layanan resmi Fakultas Vokasi Universitas Hasanuddin untuk pengawasan, pelaporan, dan evaluasi magang mahasiswa secara berkesinambungan bersama Mitra Dunia Usaha dan Dunia Industri (DUDI).
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row items-center gap-4">
+                        <a href="#layanan" class="w-full sm:w-auto px-7 py-3.5 bg-brand-500 text-white font-semibold rounded-xl hover:bg-brand-600 transition duration-300 shadow-lg shadow-brand-500/25 text-center">
+                            Akses Portal Layanan
+                        </a>
+                        <a href="#pimpinan" class="w-full sm:w-auto px-7 py-3.5 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 hover:bg-slate-100 transition duration-300 text-center">
+                            Profil Pimpinan & Struktur
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Column (Key Facts Box) -->
+                <div class="lg:col-span-5">
+                    <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/50 space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Ringkasan Struktur Program</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-brand-50 text-brand-500 font-bold flex items-center justify-center shrink-0">900</div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-900">Jam Kerja Efektif</h4>
+                                    <p class="text-xs text-slate-600">Setara dengan 1 semester penuh praktik kerja lapangan langsung di industri.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-brand-50 text-brand-500 font-bold flex items-center justify-center shrink-0">20+</div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-900">Bobot Rekognisi SKS</h4>
+                                    <p class="text-xs text-slate-600">Dikonversikan secara sistematis ke dalam mata kuliah capaian pembelajaran.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-brand-50 text-brand-500 font-bold flex items-center justify-center shrink-0">2x</div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-900">Sistem Pendampingan</h4>
+                                    <p class="text-xs text-slate-600">Supervisi ganda dari Pembimbing Lapangan Industri & Dosen Pembimbing Unhas.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: PIMPINAN FAKULTAS -->
+    <section id="pimpinan" class="py-16 lg:py-24 bg-white border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Pimpinan Fakultas</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-1">Fakultas Vokasi Universitas Hasanuddin</h2>
+                <p class="text-slate-600 text-sm mt-2">Komitmen pimpinan dalam menghadirkan pendidikan vokasi berbasis kebutuhan industri modern.</p>
+            </div>
+
+            <!-- Grid Foto Pimpinan -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                
+                <!-- Dekan -->
+                <div class="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden text-center hover:shadow-lg transition">
+                    <div class="h-64 bg-slate-200 overflow-hidden relative">
+                        <img src="https://via.placeholder.com/400x500?text=Foto+Dekan" alt="Foto Dekan" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-slate-900 text-base">Prof. Dr. Ir. [Nama Dekan], M.T.</h3>
+                        <p class="text-brand-500 text-xs font-semibold mt-1">Dekan Fakultas Vokasi</p>
+                    </div>
+                </div>
+
+                <!-- WD 1 -->
+                <div class="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden text-center hover:shadow-lg transition">
+                    <div class="h-64 bg-slate-200 overflow-hidden relative">
+                        <img src="https://via.placeholder.com/400x500?text=Foto+WD+1" alt="Foto Wakil Dekan 1" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-slate-900 text-base">Dr. [Nama WD 1], S.T., M.T.</h3>
+                        <p class="text-brand-500 text-xs font-semibold mt-1">Wakil Dekan Bidang Akademik & Kemahasiswaan</p>
+                    </div>
+                </div>
+
+                <!-- WD 2 -->
+                <div class="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden text-center hover:shadow-lg transition">
+                    <div class="h-64 bg-slate-200 overflow-hidden relative">
+                        <img src="https://via.placeholder.com/400x500?text=Foto+WD+2" alt="Foto Wakil Dekan 2" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-slate-900 text-base">Dr. [Nama WD 2], S.E., M.Si.</h3>
+                        <p class="text-brand-500 text-xs font-semibold mt-1">Wakil Dekan Bidang Perencanaan, Sumber Daya & Finansial</p>
+                    </div>
+                </div>
+
+                <!-- WD 3 -->
+                <div class="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden text-center hover:shadow-lg transition">
+                    <div class="h-64 bg-slate-200 overflow-hidden relative">
+                        <img src="https://via.placeholder.com/400x500?text=Foto+WD+3" alt="Foto Wakil Dekan 3" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-slate-900 text-base">Dr. [Nama WD 3], S.T., M.Sc.</h3>
+                        <p class="text-brand-500 text-xs font-semibold mt-1">Wakil Dekan Bidang Kemitraan, Riset & Inovasi</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: ALUR PROGRAM MAGANG 900 JAM -->
+    <section id="alur" class="py-16 lg:py-24 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Tahapan Pelaksanaan</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-1">Alur Magang 900 Jam Terstruktur</h2>
+                <p class="text-slate-600 text-sm mt-2">Proses sistematis dari pendaftaran awal hingga evaluasi penilaian capaian kompetensi.</p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-6">
+                
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 relative">
+                    <div class="text-3xl font-black text-brand-500/20 mb-2">01</div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2">Pendaftaran & Seleksi</h3>
+                    <p class="text-slate-600 text-xs leading-relaxed">Mahasiswa memilih posisi magang sesuai program studi dan mengikuti proses verifikasi berkas serta tes seleksi mitra.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 relative">
+                    <div class="text-3xl font-black text-brand-500/20 mb-2">02</div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2">Pembekalan & Pembimbingan</h3>
+                    <p class="text-slate-600 text-xs leading-relaxed">Pemberian materi K3, etika profesi, serta penetapan Dosen Pembimbing Akademik dan Supervisor Industri.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 relative">
+                    <div class="text-3xl font-black text-brand-500/20 mb-2">03</div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2">Pelaksanaan & Logbook</h3>
+                    <p class="text-slate-600 text-xs leading-relaxed">Pelaksanaan kerja 900 jam di lokasi mitra dengan pengisian logbook mingguan terverifikasi secara presisi.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-200/80 relative">
+                    <div class="text-3xl font-black text-brand-500/20 mb-2">04</div>
+                    <h3 class="font-bold text-slate-900 text-base mb-2">Evaluasi & Konversi SKS</h3>
+                    <p class="text-slate-600 text-xs leading-relaxed">Ujian seminar magang, penilaian kinerja oleh supervisor industri, dan konversi capaian nilai SKS.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION: AKSES PORTAL -->
+    <section id="layanan" class="py-16 lg:py-24 bg-white border-t border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-brand-500 text-xs font-bold uppercase tracking-wider">Integrasi Layanan</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-1">Akses Portal Pengelolaan Magang</h2>
+                <p class="text-slate-600 text-sm mt-2">Silakan masuk menggunakan akun resmi sesuai dengan otoritas pengguna.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                
+                <!-- Card 1: Mitra -->
+                <div class="p-8 bg-slate-50 rounded-2xl border border-slate-200 hover:border-brand-500 transition-all duration-300">
+                    <div class="w-12 h-12 bg-brand-100 text-brand-500 rounded-xl flex items-center justify-center mb-6 font-bold text-xl">
+                        🏢
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Mitra DUDI</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                        Portal khusus perusahaan mitra untuk verifikasi absensi, penilaian kinerja mahasiswa, dan pengusulan kuota magang baru.
+                    </p>
+                    <a href="#" class="inline-block px-5 py-2.5 bg-brand-500 text-white font-semibold text-sm rounded-lg hover:bg-brand-600 transition">
+                        Masuk Portal Mitra
+                    </a>
+                </div>
+
+                <!-- Card 2: Mahasiswa -->
+                <div class="p-8 bg-slate-50 rounded-2xl border border-slate-200 hover:border-brand-500 transition-all duration-300">
+                    <div class="w-12 h-12 bg-brand-100 text-brand-500 rounded-xl flex items-center justify-center mb-6 font-bold text-xl">
+                        🎓
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Mahasiswa</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                        Layanan pendaftaran lowongan, pengisian harian *e-logbook*, unggah laporan berkala, dan cetak sertifikat magang.
+                    </p>
+                    <a href="#" class="inline-block px-5 py-2.5 bg-brand-500 text-white font-semibold text-sm rounded-lg hover:bg-brand-600 transition">
+                        Login SSO Mahasiswa
+                    </a>
+                </div>
+
+                <!-- Card 3: Dosen -->
+                <div class="p-8 bg-slate-50 rounded-2xl border border-slate-200 hover:border-brand-500 transition-all duration-300">
+                    <div class="w-12 h-12 bg-brand-100 text-brand-500 rounded-xl flex items-center justify-center mb-6 font-bold text-xl">
+                        👨‍🏫
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">Dosen & Pengelola</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                        Monitoring berkala, verifikasi laporan magang, pelaksanaan seminar evaluasi, dan input rekapitulasi nilai akhir.
+                    </p>
+                    <a href="#" class="inline-block px-5 py-2.5 bg-brand-500 text-white font-semibold text-sm rounded-lg hover:bg-brand-600 transition">
+                        Login Dosen / Admin
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER UTAMA DENGAN CREDIT LAGINDODING & SAVAGES -->
+    <footer id="mitra" class="bg-slate-950 text-white pt-16 pb-8 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center border-b border-slate-800 pb-12">
+                <div>
+                    <h2 class="text-2xl font-bold mb-3">Inisiasi Kerja Sama Industri</h2>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Fakultas Vokasi Universitas Hasanuddin mengundang instansi pemerintah, BUMN, dan perusahaan swasta untuk berkolaborasi dalam skema Magang Industri 900 Jam.
+                    </p>
+                    <a href="mailto:vokasi@unhas.ac.id" class="inline-block px-6 py-3 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition text-sm">
+                        Hubungi Subbag Kemitraan
+                    </a>
+                </div>
+                <div class="bg-slate-900/80 p-6 rounded-xl border border-slate-800 space-y-3 text-xs text-slate-300">
+                    <div class="font-bold text-white text-sm mb-2">Sekretariat Pengelola Magang</div>
+                    <p>Gedung Dekanat Fakultas Vokasi, Universitas Hasanuddin</p>
+                    <p>Jl. Perintis Kemerdekaan Km.10, Tamalanrea, Makassar</p>
+                    <p>Email: vokasi@unhas.ac.id | Telp: (0411) xxx-xxx</p>
+                </div>
+            </div>
+
+            <!-- Credit & Copyright Bar -->
+            <div class="pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-4">
+                <p>&copy; 2026 Fakultas Vokasi Universitas Hasanuddin. Hak Cipta Dilindungi.</p>
+                
+                <!-- Credit khusus Lagindoding & Savages -->
+                <p class="flex items-center gap-1.5 font-medium text-slate-400">
+                    <span>Designed & Developed with full of ❤️ by</span>
+                    <span class="text-brand-500 font-bold">Lagingoding</span>
+                    <span>&</span>
+                    <span class="text-amber-400 font-bold">Savages</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

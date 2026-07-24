@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGMAVO - Perlu Verifikasi (Dosen)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vokasi-primary': '#37A7AC',
+                        'vokasi-dark': '#29868a',
+                        'vokasi-light': '#62c2c6',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 4px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="bg-white w-72 h-full border-r border-gray-200 flex flex-col hidden md:flex flex-shrink-0 z-20 transition-all duration-300">
+        <div class="h-16 flex items-center justify-center border-b border-vokasi-dark bg-vokasi-primary text-white shadow-sm">
+            <h1 class="text-2xl font-bold tracking-wider">SIGMAVO<span class="text-sm font-normal ml-2">UNHAS</span></h1>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
+            
+            <!-- SECTION: MAHASISWA (Collapsed) -->
+            <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4 mb-2">Menu Mahasiswa</p>
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span class="ml-2 flex-1">Dashboard Mahasiswa</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+            <!-- (Menu Mahasiswa lainnya disembunyikan untuk fokus pada Dosen) -->
+
+            <!-- SECTION: DOSEN / ADMIN / HR -->
+            <hr class="my-4 border-gray-200">
+            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Manajemen & HR</p>
+
+            <!-- OPEN ATTRIBUTE ADDED HERE -->
+            <details class="group" open>
+                <summary class="flex items-center px-3 py-2 text-gray-700 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-chalkboard-teacher w-5"></i>
+                    <span class="ml-2 flex-1">Dashboard Dosen</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Mahasiswa Bimbingan</a></li>
+                    <!-- ACTIVE MENU HIGHLIGHT -->
+                    <li><a href="#" class="block px-3 py-2 text-sm font-bold text-vokasi-dark bg-[#e6f4f5] border-l-2 border-vokasi-primary rounded-r-md transition-colors flex justify-between items-center">
+                        Perlu Verifikasi <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">4</span>
+                    </a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Terverifikasi</a></li>
+                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Daftar Mahasiswa</a></li>
+                </ul>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-check-double w-5"></i>
+                    <span class="ml-2 flex-1">Verifikasi (Prodi)</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-star w-5"></i>
+                    <span class="ml-2 flex-1">Penilaian</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <hr class="my-4 border-gray-200">
+            <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg cursor-pointer transition-colors">
+                <i class="fas fa-sign-out-alt w-5"></i>
+                <span class="ml-2 flex-1">Keluar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+        
+        <!-- TOPBAR -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm">
+            <div class="flex items-center">
+                <button class="md:hidden text-gray-500 hover:text-vokasi-primary focus:outline-none p-2 rounded-md transition-colors">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <nav class="hidden md:flex ml-4 text-sm font-medium text-gray-500 space-x-2">
+                    <a href="#" class="hover:text-vokasi-primary">Dashboard Dosen</a>
+                    <span>/</span>
+                    <span class="text-gray-800">Perlu Verifikasi</span>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-500 hover:text-vokasi-primary transition-colors relative" title="Notifikasi">
+                    <i class="fas fa-bell text-lg"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">4</span>
+                </button>
+                <div class="flex items-center space-x-2 cursor-pointer border-l pl-4 border-gray-200">
+                    <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=37A7AC&color=fff" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200 shadow-sm">
+                    <div class="hidden md:block text-sm text-right">
+                        <p class="font-bold text-gray-700 leading-tight">Dr. Ir. Budi Santoso, M.T.</p>
+                        <p class="text-xs text-vokasi-primary font-semibold">Dosen Pendamping</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative">
+            
+            <div class="max-w-5xl mx-auto w-full flex-1">
+                
+                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Antrean Verifikasi</h2>
+                        <p class="text-sm text-gray-500 mt-1">Tinjau logbook, absensi flag, dan pengajuan izin dari mahasiswa bimbingan Anda.</p>
+                    </div>
+                </div>
+
+                <!-- QUICK FILTER TABS -->
+                <div class="flex overflow-x-auto gap-2 mb-6 custom-scrollbar pb-2">
+                    <button class="bg-vokasi-primary text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm">
+                        Semua (4)
+                    </button>
+                    <button class="bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors">
+                        Logbook Harian (2)
+                    </button>
+                    <button class="bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center">
+                        Izin / Sakit (1)
+                    </button>
+                    <button class="bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center">
+                        Flag Absensi (1)
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    
+                    <!-- ITEM 1: LOGBOOK HARIAN -->
+                    <div class="bg-white rounded-xl shadow-sm border border-yellow-200 overflow-hidden">
+                        <div class="bg-yellow-50/50 border-b border-yellow-100 p-4 flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-blue-100 text-blue-700 p-1.5 rounded-lg"><i class="fas fa-book text-sm"></i></span>
+                                <h3 class="font-bold text-gray-800">Pengajuan Logbook Harian</h3>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Diajukan: Kemarin, 17:15 WITA</span>
+                        </div>
+                        <div class="p-5 flex flex-col md:flex-row gap-6">
+                            <!-- Info Mahasiswa & Konten -->
+                            <div class="flex-1 space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://ui-avatars.com/api/?name=Fadehl+Thristansyah&background=f3f4f6&color=37A7AC" alt="Mahasiswa" class="w-10 h-10 rounded-full border border-gray-200">
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-sm">Fadehl Thristansyah <span class="text-gray-400 font-normal ml-1">H071231012</span></p>
+                                        <p class="text-xs text-gray-500">PT. SmartPlay Inovasi - Selasa, 21 Jul 2026</p>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed text-justify">
+                                    <p>Melakukan riset mengenai tren mainan edukasi berbasis sensorik. Mengikuti rapat divisi bersama Supervisor Lapangan untuk membahas konsep awal produk SmartBlocks. Membuat sketsa kasar dari hasil diskusi.</p>
+                                    <!-- Attachment if any -->
+                                    <div class="mt-3 flex items-center gap-2">
+                                        <span class="text-xs font-semibold text-gray-500"><i class="fas fa-paperclip"></i> Lampiran Foto:</span>
+                                        <a href="#" class="text-vokasi-primary hover:underline text-xs font-medium"><i class="fas fa-image mr-1"></i>sketsa_smartblock.jpg</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Area -->
+                            <div class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                                <textarea rows="2" placeholder="Tulis catatan (opsional jika setuju, wajib jika revisi)..." class="w-full text-xs p-2 border border-gray-300 rounded focus:outline-none focus:border-vokasi-primary resize-none"></textarea>
+                                <button class="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 rounded transition-colors shadow-sm">
+                                    <i class="fas fa-check mr-1"></i> Approve (-8 Jam)
+                                </button>
+                                <button class="w-full bg-white hover:bg-red-50 text-red-500 border border-red-200 text-sm font-bold py-2 rounded transition-colors shadow-sm">
+                                    <i class="fas fa-undo mr-1"></i> Minta Revisi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ITEM 2: SURAT IZIN / SAKIT -->
+                    <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden relative">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
+                        <div class="bg-orange-50/30 border-b border-orange-100 p-4 pl-6 flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-orange-100 text-orange-700 p-1.5 rounded-lg"><i class="fas fa-notes-medical text-sm"></i></span>
+                                <h3 class="font-bold text-gray-800">Pengajuan Izin Sakit</h3>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Diajukan: Hari Ini, 07:30 WITA</span>
+                        </div>
+                        <div class="p-5 pl-6 flex flex-col md:flex-row gap-6">
+                            <div class="flex-1 space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=f3f4f6&color=6b7280" alt="Mahasiswa" class="w-10 h-10 rounded-full border border-gray-200">
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-sm">Siti Nurhaliza <span class="text-gray-400 font-normal ml-1">H071231088</span></p>
+                                        <p class="text-xs text-gray-500">PT. Agro Nusantara - Tanggal Izin: 22 Jul 2026</p>
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 border border-orange-100 rounded-lg p-4 text-sm text-gray-700">
+                                    <p class="mb-2"><strong>Alasan:</strong> Demam Berdarah (Tifus)</p>
+                                    <p class="text-xs text-gray-600 mb-3">Sesuai pemeriksaan dokter, mahasiswa perlu istirahat total selama 3 hari.</p>
+                                    <a href="#" class="inline-flex items-center text-xs font-bold bg-white text-orange-600 border border-orange-200 px-3 py-1.5 rounded hover:bg-orange-50 transition-colors">
+                                        <i class="fas fa-file-medical-alt mr-2"></i> Lihat Surat Keterangan Dokter (PDF)
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                                <p class="text-[10px] text-gray-500 mb-1 leading-tight">Persetujuan ini <strong class="text-red-500">TIDAK</strong> memotong kuota 8 jam mahasiswa.</p>
+                                <button class="w-full bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-bold py-2 rounded transition-colors shadow-sm">
+                                    <i class="fas fa-check-circle mr-1"></i> Approve Izin
+                                </button>
+                                <button class="w-full bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 text-sm font-bold py-2 rounded transition-colors shadow-sm">
+                                    Tolak Alasan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ITEM 3: FLAG ABSENSI LUPA PULANG -->
+                    <div class="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden relative">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+                        <div class="bg-red-50/30 border-b border-red-100 p-4 pl-6 flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-red-100 text-red-700 p-1.5 rounded-lg"><i class="fas fa-flag text-sm"></i></span>
+                                <h3 class="font-bold text-gray-800">Flag: Lupa Absen Pulang</h3>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Sistem Generate: 17 Jul 2026</span>
+                        </div>
+                        <div class="p-5 pl-6 flex flex-col md:flex-row gap-6">
+                            <div class="flex-1 space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="https://ui-avatars.com/api/?name=Andi+Reza&background=f3f4f6&color=6b7280" alt="Mahasiswa" class="w-10 h-10 rounded-full border border-gray-200">
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-sm">Andi Reza Syahputra <span class="text-gray-400 font-normal ml-1">H071231045</span></p>
+                                        <p class="text-xs text-gray-500">BRIDA Kota Makassar - Jumat, 17 Jul 2026</p>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex gap-4 items-center">
+                                    <div class="text-center px-4 border-r border-gray-200">
+                                        <p class="text-[10px] font-bold text-gray-500 uppercase">Absen Pagi</p>
+                                        <p class="font-mono font-bold text-green-600">08:02</p>
+                                    </div>
+                                    <div class="text-center px-4">
+                                        <p class="text-[10px] font-bold text-gray-500 uppercase">Absen Pulang</p>
+                                        <p class="font-mono font-bold text-red-500">-- : --</p>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-xs text-gray-700 leading-tight">
+                                            <strong>Klarifikasi Mahasiswa:</strong> "Maaf Pak, handphone saya kehabisan baterai saat jam pulang. Logbook harian sudah saya kerjakan. Mohon kebijakannya."
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                                <button class="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 rounded transition-colors shadow-sm">
+                                    <i class="fas fa-check-double mr-1"></i> Sahkan & Potong Jam
+                                </button>
+                                <button class="w-full bg-white hover:bg-red-50 text-red-500 border border-red-200 text-sm font-bold py-2 rounded transition-colors shadow-sm">
+                                    <i class="fas fa-times mr-1"></i> Tolak Absensi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
+                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
+            </footer>
+
+        </main>
+    </div>
+
+</body>
+</html>

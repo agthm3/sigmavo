@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGMAVO - Dashboard Analitik</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'vokasi-primary': '#37A7AC',
+                        'vokasi-dark': '#29868a',
+                        'vokasi-light': '#62c2c6',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background-color: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="bg-white w-72 h-full border-r border-gray-200 flex flex-col hidden md:flex flex-shrink-0 z-20 transition-all duration-300">
+        <div class="h-16 flex items-center justify-center border-b border-vokasi-dark bg-vokasi-primary text-white shadow-sm">
+            <h1 class="text-2xl font-bold tracking-wider">SIGMAVO<span class="text-sm font-normal ml-2">UNHAS</span></h1>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
+            
+            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mt-2 mb-2">Eksekutif & Laporan</p>
+
+            <!-- ACTIVE MENU HIGHLIGHT -->
+            <a href="#" class="flex items-center px-3 py-2.5 font-bold text-vokasi-dark bg-[#e6f4f5] border-l-4 border-vokasi-primary rounded-r-lg transition-colors">
+                <i class="fas fa-chart-line w-5"></i>
+                <span class="ml-2 flex-1">Dashboard Analitik</span>
+            </a>
+
+            <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Menu Mahasiswa</p>
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-home w-5"></i>
+                    <span class="ml-2 flex-1">Dashboard Mahasiswa</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2">Manajemen & HR</p>
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-chalkboard-teacher w-5"></i>
+                    <span class="ml-2 flex-1">Dashboard Dosen</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-check-double w-5"></i>
+                    <span class="ml-2 flex-1">Verifikasi (Prodi)</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-briefcase w-5"></i>
+                    <span class="ml-2 flex-1">Daftar Lowongan</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <details class="group">
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+                    <i class="fas fa-users-cog w-5"></i>
+                    <span class="ml-2 flex-1">Manajemen Akun</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+            </details>
+
+            <hr class="my-4 border-gray-200">
+            <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg cursor-pointer transition-colors">
+                <i class="fas fa-sign-out-alt w-5"></i>
+                <span class="ml-2 flex-1">Keluar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+        
+        <!-- TOPBAR -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm">
+            <div class="flex items-center">
+                <button class="md:hidden text-gray-500 hover:text-vokasi-primary focus:outline-none p-2 rounded-md transition-colors">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <nav class="hidden md:flex ml-4 text-sm font-medium text-gray-500 space-x-2">
+                    <a href="#" class="hover:text-vokasi-primary">Eksekutif</a>
+                    <span>/</span>
+                    <span class="text-gray-800">Dashboard Analitik</span>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-500 hover:text-vokasi-primary transition-colors relative" title="Notifikasi">
+                    <i class="fas fa-bell text-lg"></i>
+                </button>
+                <div class="flex items-center space-x-2 cursor-pointer border-l pl-4 border-gray-200">
+                    <img src="https://ui-avatars.com/api/?name=Dekan+Vokasi&background=37A7AC&color=fff" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200 shadow-sm">
+                    <div class="hidden md:block text-sm text-right">
+                        <p class="font-bold text-gray-700 leading-tight">Prof. Dr. Ir. Dekan Vokasi</p>
+                        <p class="text-xs text-vokasi-primary font-semibold">Pimpinan Fakultas</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative space-y-6">
+            
+            <div class="max-w-7xl mx-auto w-full flex-1 space-y-6">
+                
+                <!-- Page Header & Global Filter -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Ringkasan Analitik Magang</h2>
+                        <p class="text-sm text-gray-500 mt-1">Metrik performa, statistik kehadiran, dan efektivitas kemitraan magang mahasiswa.</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-medium">
+                            <option>Tahun Akademik: 2026/2027</option>
+                            <option>Tahun Akademik: 2025/2026</option>
+                        </select>
+                        <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-medium">
+                            <option>Semua Program Studi</option>
+                            <option>D4 Teknologi Produksi Pertanian</option>
+                            <option>D4 Terapi Gigi</option>
+                            <option>D4 Agribisnis</option>
+                        </select>
+                        <button class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center">
+                            <i class="fas fa-download mr-2"></i> Export Executive Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 MAIN KPI METRIC CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- KPI 1 -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mahasiswa Aktif Magang</p>
+                                <h3 class="text-3xl font-extrabold text-gray-800 mt-2">452</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shadow-sm">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs font-semibold text-green-600">
+                            <i class="fas fa-arrow-up mr-1"></i> +12% <span class="text-gray-400 font-normal ml-1">dari semester lalu</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2 -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tingkat Kehadiran Harian</p>
+                                <h3 class="text-3xl font-extrabold text-gray-800 mt-2">96.4%</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl shadow-sm">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs font-semibold text-green-600">
+                            <i class="fas fa-arrow-up mr-1"></i> +2.1% <span class="text-gray-400 font-normal ml-1">kepatuhan geofencing</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3 -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Terakumulasi</p>
+                                <h3 class="text-3xl font-extrabold text-vokasi-primary mt-2">184.2K <span class="text-sm text-gray-500 font-normal">Jam</span></h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-teal-50 text-vokasi-primary flex items-center justify-center text-xl shadow-sm">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs font-semibold text-vokasi-primary">
+                            <i class="fas fa-bullseye mr-1"></i> Target 900 Jam/Siswa
+                        </div>
+                    </div>
+
+                    <!-- KPI 4 -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mitra Industri Aktif</p>
+                                <h3 class="text-3xl font-extrabold text-gray-800 mt-2">87 <span class="text-sm text-gray-500 font-normal">PT</span></h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shadow-sm">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs font-semibold text-purple-600">
+                            <i class="fas fa-check-circle mr-1"></i> 64 Resmi MoU
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Line Chart: Kehadiran & Aktivitas Logbook Mingguan (2 Columns) -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-base">Tren Kehadiran & Pengisian Logbook</h3>
+                                <p class="text-xs text-gray-500">Statistik mingguan partisipasi mahasiswa di lokasi magang.</p>
+                            </div>
+                            <span class="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded">8 Minggu Terakhir</span>
+                        </div>
+                        <div class="h-72 relative">
+                            <canvas id="chartKehadiran"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Donut Chart: Distribusi Status Capaian Jam (1 Column) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col justify-between">
+                        <div class="pb-2 border-b border-gray-100">
+                            <h3 class="font-bold text-gray-800 text-base">Status Progres 900 Jam</h3>
+                            <p class="text-xs text-gray-500">Persentase ketepatan waktu penyelesaian target jam.</p>
+                        </div>
+                        <div class="h-56 my-auto relative flex items-center justify-center">
+                            <canvas id="chartStatusJam"></canvas>
+                        </div>
+                        <div class="pt-3 border-t border-gray-100 grid grid-cols-3 text-center text-xs">
+                            <div>
+                                <p class="text-gray-400 font-medium">On Track</p>
+                                <p class="font-bold text-green-600">72%</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 font-medium">Lagging</p>
+                                <p class="font-bold text-yellow-600">20%</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 font-medium">Selesai</p>
+                                <p class="font-bold text-vokasi-primary">8%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CHARTS ROW 2 & TOP PARTNERS -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Bar Chart: Persebaran Mahasiswa per Program Studi (2 Columns) -->
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-base">Sebaran Mahasiswa per Program Studi</h3>
+                                <p class="text-xs text-gray-500">Jumlah mahasiswa yang sedang aktif magang per prodi Vokasi.</p>
+                            </div>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="chartProdi"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Perusahaan Mitra (1 Column) -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                            <h3 class="font-bold text-gray-800 text-base">Top Mitra Industri</h3>
+                            <a href="#" class="text-xs font-bold text-vokasi-primary hover:underline">Lihat Semua</a>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <!-- Mitra 1 -->
+                            <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-xs">
+                                        SP
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-xs">PT. SmartPlay Inovasi</p>
+                                        <p class="text-[10px] text-gray-400">Edu-Tech & Manufaktur</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-extrabold text-sm text-vokasi-primary">34 Siswa</p>
+                                    <p class="text-[10px] text-green-600 font-semibold">Rating 4.9 ★</p>
+                                </div>
+                            </div>
+
+                            <!-- Mitra 2 -->
+                            <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 font-bold flex items-center justify-center text-xs">
+                                        BR
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-xs">BRIDA Kota Makassar</p>
+                                        <p class="text-[10px] text-gray-400">Pemerintahan / Riset</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-extrabold text-sm text-vokasi-primary">28 Siswa</p>
+                                    <p class="text-[10px] text-green-600 font-semibold">Rating 4.8 ★</p>
+                                </div>
+                            </div>
+
+                            <!-- Mitra 3 -->
+                            <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-green-100 text-green-700 font-bold flex items-center justify-center text-xs">
+                                        AN
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-xs">PT. Agro Nusantara</p>
+                                        <p class="text-[10px] text-gray-400">Pertanian / Agrikultur</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-extrabold text-sm text-vokasi-primary">22 Siswa</p>
+                                    <p class="text-[10px] text-green-600 font-semibold">Rating 4.7 ★</p>
+                                </div>
+                            </div>
+
+                            <!-- Mitra 4 -->
+                            <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
+                                        TL
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800 text-xs">PT. Telkom Indonesia</p>
+                                        <p class="text-[10px] text-gray-400">Telekomunikasi</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-extrabold text-sm text-vokasi-primary">19 Siswa</p>
+                                    <p class="text-[10px] text-green-600 font-semibold">Rating 4.9 ★</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
+                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT INITIALIZATION CHART.JS -->
+    <script>
+        // 1. Line Chart Kehadiran
+        const ctxKehadiran = document.getElementById('chartKehadiran').getContext('2d');
+        new Chart(ctxKehadiran, {
+            type: 'line',
+            data: {
+                labels: ['Mgg 1', 'Mgg 2', 'Mgg 3', 'Mgg 4', 'Mgg 5', 'Mgg 6', 'Mgg 7', 'Mgg 8'],
+                datasets: [
+                    {
+                        label: 'Kehadiran (%)',
+                        data: [92, 94, 95, 93, 97, 96, 98, 96.4],
+                        borderColor: '#37A7AC',
+                        backgroundColor: 'rgba(55, 167, 172, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3
+                    },
+                    {
+                        label: 'Logbook Diisi (%)',
+                        data: [88, 90, 91, 89, 94, 95, 96, 95],
+                        borderColor: '#29868a',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                    y: { min: 80, max: 100 }
+                }
+            }
+        });
+
+        // 2. Donut Chart Progres Jam
+        const ctxStatusJam = document.getElementById('chartStatusJam').getContext('2d');
+        new Chart(ctxStatusJam, {
+            type: 'doughnut',
+            data: {
+                labels: ['On Track (Progres Sesuai)', 'Lagging (Tertinggal)', 'Selesai 900 Jam'],
+                datasets: [{
+                    data: [72, 20, 8],
+                    backgroundColor: ['#22c55e', '#eab308', '#37A7AC'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '70%'
+            }
+        });
+
+        // 3. Bar Chart Sebaran Prodi
+        const ctxProdi = document.getElementById('chartProdi').getContext('2d');
+        new Chart(ctxProdi, {
+            type: 'bar',
+            data: {
+                labels: ['D4 Tek. Produksi Tanaman', 'D4 Terapi Gigi', 'D4 Agribisnis', 'D4 Teknologi Pakan', 'D4 Budidaya Laut'],
+                datasets: [{
+                    label: 'Jumlah Mahasiswa',
+                    data: [120, 95, 110, 72, 55],
+                    backgroundColor: '#37A7AC',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
