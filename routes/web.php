@@ -42,19 +42,21 @@ Route::get('/dashboard-mahasiswa/akun', [DashboardMahasiswaAkunController::class
     //RIWAYAT MAGANG
 Route::get('/dashboard-mahasiswa/riwayat-magang', [RiwayatMagangController::class, 'index'])->name('dashboard-mahasiswa-riwayat-magang');
 
-    //PROGRAM MAGANG
+// DASHBOARD MAHASISWA
+    // PROGRAM MAGANG
 Route::get('/dashboard-mahasiswa/program-magang', [ProgramMagangController::class, 'index'])->name('dashboard-mahasiswa-program-magang');
+Route::post('/dashboard-mahasiswa/program-magang/izin', [ProgramMagangController::class, 'ajukanIzin'])->name('dashboard-mahasiswa-program-magang-izin');
 
-
-//PENGAJUAN MAGANG
-    //DAFTAR LOWONGAN
+// PENGAJUAN MAGANG
+    // DAFTAR LOWONGAN
 Route::get('/pengajuan-magang/daftar-lowongan', [DaftarLowonganController::class, 'index'])->name('dashboard-mahasiswa-daftar-lowongan');
+Route::post('/pengajuan-magang/daftar-lowongan/{id}/lamar', [DaftarLowonganController::class, 'lamar'])->name('dashboard-mahasiswa-daftar-lowongan-lamar');
     //AJUKAN MANDIRI
 Route::get('/pengajuan-magang/ajukan-mandiri', [AjukanMandiriController::class, 'index'])->name('dashboard-mahasiswa-ajukan-mandiri');
-
-    //STATUS PENGAJUAN
+// PENGAJUAN MAGANG
+    // STATUS PENGAJUAN
 Route::get('/pengajuan-magang/status-pengajuan', [StatusPengajuanController::class, 'index'])->name('dashboard-mahasiswa-status-pengajuan');
-
+Route::delete('/pengajuan-magang/status-pengajuan/{id}/cancel', [StatusPengajuanController::class, 'cancel'])->name('dashboard-mahasiswa-status-pengajuan-cancel');
 
 //PELAKSANAAN MAGANG
     //PEMBEKALAN MAGANG
@@ -107,9 +109,9 @@ Route::patch('/daftar-lowongan/listing-program/{id}/toggle', [ListingProgramCont
     // SELEKSI
 Route::get('/daftar-lowongan/seleksi', [SeleksiController::class, 'index'])->name('dashboard-daftar-lowongan-seleksi');
 Route::put('/daftar-lowongan/seleksi/{id}', [SeleksiController::class, 'updateStatus'])->name('dashboard-daftar-lowongan-seleksi-update');
-    //PENGAJUAN MAGANG
-Route::get('/daftar-lowongan/pengajuan-magang', [PengajuanMagangController::class, 'index'])->name('dashboard-daftar-lowongan-pengajuan-magang');   
-
+// PENGAJUAN MAGANG
+Route::get('/daftar-lowongan/pengajuan-magang', [PengajuanMagangController::class, 'index'])->name('dashboard-daftar-lowongan-pengajuan-magang');
+Route::put('/daftar-lowongan/pengajuan-magang/{id}/terbit-surat', [PengajuanMagangController::class, 'terbitSurat'])->name('dashboard-daftar-lowongan-pengajuan-magang-terbit');
 
 //DOWNLOAD TEMPLATE
 Route::get('/download-template', [DownloadTemplateController::class, 'index'])->name('dashboard-pelaporan-download-template');

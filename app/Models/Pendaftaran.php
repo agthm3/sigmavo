@@ -14,25 +14,35 @@ class Pendaftaran extends Model
         'user_id',
         'lowongan_id',
         'dosen_id',
+        'jalur_magang',
+        'nama_instansi_mandiri',
+        'divisi_mandiri',
         'status_seleksi',
+        'nomor_surat',
+        'perihal_surat',
+        'tgl_mulai_magang',
+        'tgl_selesai_magang',
+        'status_surat',
         'file_cv',
         'file_transkrip',
         'catatan_seleksi',
     ];
 
-    // Mahasiswa Pelamar
+    protected $casts = [
+        'tgl_mulai_magang' => 'date',
+        'tgl_selesai_magang' => 'date',
+    ];
+
     public function mahasiswa(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Lowongan
     public function lowongan(): BelongsTo
     {
         return $this->belongsTo(Lowongan::class, 'lowongan_id');
     }
 
-    // Dosen Pendamping
     public function dosen(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dosen_id');
