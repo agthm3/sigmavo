@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Alpine.js (Tambahkan Baris Ini) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIGMAVO - Dashboard</title>
@@ -284,19 +289,41 @@
                 </ul>
             </details>
 
-            <!-- 8. Manajemen Akun Group -->
-            <details class="group">
-                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors">
+<!-- 8. Manajemen Akun Group -->
+            @php
+                $isManajemenAkunActive = request()->routeIs(
+                    'dashboard-manajemen-aktivasi-user',
+                    'dashboard-manajemen-jenis-role',
+                    'dashboard-manajemen-pengaturan'
+                );
+            @endphp
+            <details class="group" {{ $isManajemenAkunActive ? 'open' : '' }}>
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isManajemenAkunActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
                     <i class="fas fa-users-cog w-5"></i>
                     <span class="ml-2 flex-1">Manajemen Akun</span>
                     <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
                 </summary>
                 <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
-                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Aktivasi User</a></li>
-                    <li><a href="#" class="block px-3 py-2 text-sm text-gray-600 hover:text-vokasi-primary rounded-md transition-colors">Jenis User (Role)</a></li>
+                    <li>
+                        <a href="{{ route('dashboard-manajemen-aktivasi-user') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-manajemen-aktivasi-user') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Aktivasi User
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard-manajemen-jenis-role') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-manajemen-jenis-role') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Jenis User (Role)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard-manajemen-pengaturan') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-manajemen-pengaturan') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Pengaturan
+                        </a>
+                    </li>
                 </ul>
             </details>
-
             <!-- 9. Daftar Lowongan (HR) Group -->
             @php
                 $isDaftarLowonganHRActive = request()->routeIs(

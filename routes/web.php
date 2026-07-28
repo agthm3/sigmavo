@@ -2,17 +2,20 @@
 
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AjukanMandiriController;
+use App\Http\Controllers\AktivasiUserController;
 use App\Http\Controllers\DaftarLowonganController;
 use App\Http\Controllers\DaftarMahasiswaController;
 use App\Http\Controllers\DaftarPerusahaanController;
 use App\Http\Controllers\DashboardAnalitik;
 use App\Http\Controllers\DashboardMahasiswaAkunController;
 use App\Http\Controllers\DownloadTemplateController;
+use App\Http\Controllers\JenisRoleController;
 use App\Http\Controllers\ListingProgramController;
 use App\Http\Controllers\LogbookController;
 use App\Http\Controllers\MahasiswaBimbinganController;
 use App\Http\Controllers\PembekalanMagangController;
 use App\Http\Controllers\PengajuanMagangController;
+use App\Http\Controllers\PengaturanGlobalController;
 use App\Http\Controllers\PenilaianListingMahasiswaController;
 use App\Http\Controllers\PerluVerifikasiController;
 use App\Http\Controllers\ProfileController;
@@ -87,13 +90,23 @@ Route::get('/verifikasi/daftar-mahasiswa-semua-laporan', [SemuaLaporanController
 Route::get('/penilaian/listing-mahasiswa', [PenilaianListingMahasiswaController::class, 'index'])->name('dashboard-penilaian-listing-mahasiswa');
 
 
-//DAFTAR LOWONGAN
-    //DAFTAR PERUSAHAAN
+// DAFTAR LOWONGAN
+    // DAFTAR PERUSAHAAN
 Route::get('/daftar-lowongan/daftar-perusahaan', [DaftarPerusahaanController::class, 'index'])->name('dashboard-daftar-lowongan-daftar-perusahaan');
-    //LISTING PROGRAM
+Route::post('/daftar-lowongan/daftar-perusahaan', [DaftarPerusahaanController::class, 'store'])->name('dashboard-daftar-lowongan-daftar-perusahaan-store');
+Route::put('/daftar-lowongan/daftar-perusahaan/{id}', [DaftarPerusahaanController::class, 'update'])->name('dashboard-daftar-lowongan-daftar-perusahaan-update');
+Route::delete('/daftar-lowongan/daftar-perusahaan/{id}', [DaftarPerusahaanController::class, 'destroy'])->name('dashboard-daftar-lowongan-daftar-perusahaan-destroy');
+// DAFTAR LOWONGAN
+    // LISTING PROGRAM
 Route::get('/daftar-lowongan/listing-program', [ListingProgramController::class, 'index'])->name('dashboard-daftar-lowongan-listing-program');
-    //SELEKSI
+Route::post('/daftar-lowongan/listing-program', [ListingProgramController::class, 'store'])->name('dashboard-daftar-lowongan-listing-program-store');
+Route::put('/daftar-lowongan/listing-program/{id}', [ListingProgramController::class, 'update'])->name('dashboard-daftar-lowongan-listing-program-update');
+Route::delete('/daftar-lowongan/listing-program/{id}', [ListingProgramController::class, 'destroy'])->name('dashboard-daftar-lowongan-listing-program-destroy');
+Route::patch('/daftar-lowongan/listing-program/{id}/toggle', [ListingProgramController::class, 'togglePublish'])->name('dashboard-daftar-lowongan-listing-program-toggle');
+// DAFTAR LOWONGAN
+    // SELEKSI
 Route::get('/daftar-lowongan/seleksi', [SeleksiController::class, 'index'])->name('dashboard-daftar-lowongan-seleksi');
+Route::put('/daftar-lowongan/seleksi/{id}', [SeleksiController::class, 'updateStatus'])->name('dashboard-daftar-lowongan-seleksi-update');
     //PENGAJUAN MAGANG
 Route::get('/daftar-lowongan/pengajuan-magang', [PengajuanMagangController::class, 'index'])->name('dashboard-daftar-lowongan-pengajuan-magang');   
 
@@ -102,6 +115,45 @@ Route::get('/daftar-lowongan/pengajuan-magang', [PengajuanMagangController::clas
 Route::get('/download-template', [DownloadTemplateController::class, 'index'])->name('dashboard-pelaporan-download-template');
 //UPLOAD DOKUMEN
 Route::get('/upload-dokumen', [UploadDokumenController::class, 'index'])->name('dashboard-pelaporan-upload-dokumen');
+
+
+// MANAJEMEN AKUN
+Route::get('/manajemen-akun/aktivasi-user', [AktivasiUserController::class, 'index'])
+        ->name('dashboard-manajemen-aktivasi-user');
+Route::post('/manajemen-akun/aktivasi-user', [AktivasiUserController::class, 'store'])
+        ->name('dashboard-manajemen-aktivasi-store');
+
+Route::patch('/manajemen-akun/aktivasi-user/{id}/toggle', [AktivasiUserController::class, 'toggleStatus'])
+        ->name('dashboard-manajemen-aktivasi-toggle');
+
+// MANAJEMEN AKUN (Jenis User / Role)
+    Route::get('/manajemen-akun/jenis-role', [JenisRoleController::class, 'index'])
+        ->name('dashboard-manajemen-jenis-role');
+
+    Route::post('/manajemen-akun/jenis-role', [JenisRoleController::class, 'store'])
+        ->name('dashboard-manajemen-jenis-role-store');
+
+    Route::put('/manajemen-akun/jenis-role/{id}/permissions', [JenisRoleController::class, 'updatePermissions'])
+        ->name('dashboard-manajemen-jenis-role-permissions');
+
+    Route::delete('/manajemen-akun/jenis-role/{id}', [JenisRoleController::class, 'destroy'])
+        ->name('dashboard-manajemen-jenis-role-destroy');
+        
+// MANAJEMEN AKUN (Pengaturan Global)
+    Route::get('/manajemen-akun/pengaturan', [PengaturanGlobalController::class, 'index'])
+        ->name('dashboard-manajemen-pengaturan');
+
+    Route::put('/manajemen-akun/pengaturan/settings', [PengaturanGlobalController::class, 'updateSettings'])
+        ->name('dashboard-manajemen-pengaturan-settings-update');
+
+    Route::post('/manajemen-akun/pengaturan/prodi', [PengaturanGlobalController::class, 'storeProdi'])
+        ->name('dashboard-manajemen-pengaturan-prodi-store');
+
+    Route::put('/manajemen-akun/pengaturan/prodi/{id}', [PengaturanGlobalController::class, 'updateProdi'])
+        ->name('dashboard-manajemen-pengaturan-prodi-update');
+
+    Route::delete('/manajemen-akun/pengaturan/prodi/{id}', [PengaturanGlobalController::class, 'destroyProdi'])
+        ->name('dashboard-manajemen-pengaturan-prodi-destroy');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

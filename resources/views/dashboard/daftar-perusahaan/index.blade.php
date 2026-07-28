@@ -1,37 +1,11 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
-        
-        <!-- TOPBAR -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 shadow-sm">
-            <div class="flex items-center">
-                <button class="md:hidden text-gray-500 hover:text-vokasi-primary focus:outline-none p-2 rounded-md transition-colors">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-                <nav class="hidden md:flex ml-4 text-sm font-medium text-gray-500 space-x-2">
-                    <a href="#" class="hover:text-vokasi-primary">Daftar Lowongan</a>
-                    <span>/</span>
-                    <span class="text-gray-800">Daftar Perusahaan</span>
-                </nav>
-            </div>
-            <div class="flex items-center space-x-4">
-                <button class="text-gray-500 hover:text-vokasi-primary transition-colors relative" title="Notifikasi">
-                    <i class="fas fa-bell text-lg"></i>
-                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">3</span>
-                </button>
-                <div class="flex items-center space-x-2 cursor-pointer border-l pl-4 border-gray-200">
-                    <img src="https://ui-avatars.com/api/?name=Admin+Prodi&background=37A7AC&color=fff" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200 shadow-sm">
-                    <div class="hidden md:block text-sm text-right">
-                        <p class="font-bold text-gray-700 leading-tight">Admin Prodi</p>
-                        <p class="text-xs text-vokasi-primary font-semibold">Vokasi UNHAS</p>
-                    </div>
-                </div>
-            </div>
-        </header>
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50" 
+         x-data="{ openModal: false, isEdit: false, editData: {}, activeUrl: '' }">
 
         <!-- CONTENT -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative">
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
             
             <div class="max-w-7xl mx-auto w-full flex-1 space-y-6">
                 
@@ -42,12 +16,34 @@
                         <p class="text-sm text-gray-500 mt-1">Kelola data instansi/perusahaan mitra penyedia lowongan magang Vokasi UNHAS.</p>
                     </div>
                     <div class="flex gap-2">
-                        <!-- TRIGGER MODAL -->
-                        <button onclick="toggleCompanyModal(true)" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center">
+                        <!-- TRIGGER MODAL TAMBAH -->
+                        <button @click="isEdit = false; editData = {}; openModal = true" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center">
                             <i class="fas fa-building-circle-check mr-2"></i> Tambah Perusahaan Baru
                         </button>
                     </div>
                 </div>
+
+                <!-- NOTIFIKASI SUKSES / ERROR -->
+                @if(session('success'))
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+                </div>
+                @endif
+
+                @if($errors->any())
+                <div class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm">
+                    <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Gagal menyimpan data:</p>
+                    <ul class="list-disc list-inside space-y-1 text-xs">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
 
                 <!-- SUMMARY CARDS -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -57,7 +53,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase">Total Mitra</p>
-                            <p class="text-xl font-bold text-gray-800 leading-none mt-1">87 Perusahaan</p>
+                            <p class="text-xl font-bold text-gray-800 leading-none mt-1">{{ $totalMitra }} Perusahaan</p>
                         </div>
                     </div>
 
@@ -67,7 +63,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase">Lowongan Aktif</p>
-                            <p class="text-xl font-bold text-green-600 leading-none mt-1">42 Program</p>
+                            <p class="text-xl font-bold text-green-600 leading-none mt-1">-- Program</p>
                         </div>
                     </div>
 
@@ -77,7 +73,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase">Mitra MoU / MoA</p>
-                            <p class="text-xl font-bold text-purple-600 leading-none mt-1">64 Resmi</p>
+                            <p class="text-xl font-bold text-purple-600 leading-none mt-1">{{ $totalMoU }} Resmi</p>
                         </div>
                     </div>
 
@@ -87,7 +83,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase">Supervisor Terdaftar</p>
-                            <p class="text-xl font-bold text-orange-600 leading-none mt-1">98 Akun</p>
+                            <p class="text-xl font-bold text-orange-600 leading-none mt-1">-- Akun</p>
                         </div>
                     </div>
                 </div>
@@ -95,30 +91,30 @@
                 <!-- TABLE SECTION -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     
-                    <!-- Table Toolbar -->
-                    <div class="p-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between lg:items-center gap-4 bg-gray-50/50">
+                    <!-- Table Toolbar / Filter -->
+                    <form action="{{ route('dashboard-daftar-lowongan-daftar-perusahaan') }}" method="GET" class="p-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between lg:items-center gap-4 bg-gray-50/50">
                         <div class="relative w-full lg:w-96">
                             <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
-                            <input type="text" placeholder="Cari nama perusahaan, sektor, atau kota..." class="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary">
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama perusahaan, sektor, atau alamat..." class="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary">
                         </div>
                         
                         <div class="flex flex-wrap items-center gap-2">
-                            <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
-                                <option>Semua Sektor Industri</option>
-                                <option>Teknologi Informasi</option>
-                                <option>Pertanian / Agrikultur</option>
-                                <option>Pemerintahan</option>
-                                <option>Kesehatan</option>
+                            <select name="sektor" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
+                                <option value="semua" {{ request('sektor') == 'semua' ? 'selected' : '' }}>Semua Sektor Industri</option>
+                                <option value="Teknologi Informasi" {{ request('sektor') == 'Teknologi Informasi' ? 'selected' : '' }}>Teknologi Informasi</option>
+                                <option value="Pertanian" {{ request('sektor') == 'Pertanian' ? 'selected' : '' }}>Pertanian / Agrikultur</option>
+                                <option value="Pemerintahan" {{ request('sektor') == 'Pemerintahan' ? 'selected' : '' }}>Pemerintahan</option>
+                                <option value="Kesehatan" {{ request('sektor') == 'Kesehatan' ? 'selected' : '' }}>Kesehatan</option>
                             </select>
 
-                            <select class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
-                                <option>Semua Lokasi</option>
-                                <option>Makassar</option>
-                                <option>Gowa / Maros</option>
-                                <option>Luar Sulawesi Selatan</option>
+                            <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
+                                <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status Kerjasama</option>
+                                <option value="MoU Resmi" {{ request('status') == 'MoU Resmi' ? 'selected' : '' }}>MoU Resmi</option>
+                                <option value="Mitra Reguler" {{ request('status') == 'Mitra Reguler' ? 'selected' : '' }}>Mitra Reguler</option>
+                                <option value="Mandiri Partner" {{ request('status') == 'Mandiri Partner' ? 'selected' : '' }}>Mandiri Partner</option>
                             </select>
                         </div>
-                    </div>
+                    </form>
 
                     <!-- Responsive Table -->
                     <div class="overflow-x-auto custom-scrollbar">
@@ -129,161 +125,84 @@
                                     <th class="p-4 w-64">Nama Perusahaan</th>
                                     <th class="p-4 w-40">Sektor Industri</th>
                                     <th class="p-4 min-w-[200px]">Kota / Alamat & Koordinat</th>
-                                    <th class="p-4 w-32 text-center">Program Aktif</th>
+                                    <th class="p-4 w-32 text-center">Email HRD</th>
                                     <th class="p-4 w-32 text-center">Status Kerjasama</th>
                                     <th class="p-4 w-36 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-gray-100">
                                 
-                                <!-- Baris 1 -->
+                                @forelse($perusahaans as $index => $item)
                                 <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="p-4 text-center text-gray-500 font-medium">1</td>
+                                    <td class="p-4 text-center text-gray-500 font-medium">{{ $perusahaans->firstItem() + $index }}</td>
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 font-bold">
-                                                SP
+                                            <div class="w-10 h-10 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-vokasi-primary shrink-0 font-bold">
+                                                {{ $item->inisial }}
                                             </div>
                                             <div>
-                                                <p class="font-bold text-gray-800">PT. SmartPlay Inovasi</p>
-                                                <p class="text-xs text-gray-500">smartplay.co.id</p>
+                                                <p class="font-bold text-gray-800">{{ $item->nama_perusahaan }}</p>
+                                                <p class="text-xs text-gray-500">{{ $item->website ?? '-' }}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="p-4">
                                         <span class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded">
-                                            Edu-Tech / Manufaktur
+                                            {{ $item->sektor_industri }}
                                         </span>
                                     </td>
                                     <td class="p-4">
-                                        <p class="font-medium text-gray-800">Makassar, Sulsel</p>
-                                        <p class="text-[10px] text-gray-400 font-mono"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> -5.1322, 119.4255</p>
+                                        <p class="font-medium text-gray-800 line-clamp-1">{{ $item->alamat }}</p>
+                                        <p class="text-[10px] text-gray-400 font-mono">
+                                            <i class="fas fa-map-marker-alt text-red-500 mr-1"></i> 
+                                            {{ $item->latitude ?? '-' }}, {{ $item->longitude ?? '-' }}
+                                        </p>
+                                    </td>
+                                    <td class="p-4 text-center text-xs font-semibold text-gray-600">
+                                        {{ $item->email_hrd }}
                                     </td>
                                     <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                                            2 Program
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full border border-purple-200">
-                                            MoU Resmi
+                                        <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-bold rounded-full border
+                                            {{ $item->status_kerjasama == 'MoU Resmi' ? 'bg-purple-100 text-purple-700 border-purple-200' : '' }}
+                                            {{ $item->status_kerjasama == 'Mitra Reguler' ? 'bg-teal-100 text-vokasi-dark border-teal-200' : '' }}
+                                            {{ $item->status_kerjasama == 'Mandiri Partner' ? 'bg-amber-100 text-amber-700 border-amber-200' : '' }}">
+                                            {{ $item->status_kerjasama }}
                                         </span>
                                     </td>
                                     <td class="p-4 text-center">
                                         <div class="flex items-center justify-center gap-1.5">
-                                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-1.5 px-2.5 rounded transition-colors" title="Edit Data">
+                                            <!-- EDIT BUTTON -->
+                                            <button @click="isEdit = true; editData = {{ json_encode($item) }}; activeUrl = '{{ route('dashboard-daftar-lowongan-daftar-perusahaan-update', $item->id) }}'; openModal = true" 
+                                                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-1.5 px-2.5 rounded transition-colors" title="Edit Data">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-2.5 rounded transition-colors shadow-sm" title="Lihat Lowongan">
-                                                Lowongan
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
 
-                                <!-- Baris 2 -->
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="p-4 text-center text-gray-500 font-medium">2</td>
-                                    <td class="p-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-red-500 shrink-0 font-bold">
-                                                BR
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-gray-800">BRIDA Kota Makassar</p>
-                                                <p class="text-xs text-gray-500">brida.makassarkota.go.id</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded">
-                                            Pemerintahan / Riset
-                                        </span>
-                                    </td>
-                                    <td class="p-4">
-                                        <p class="font-medium text-gray-800">Makassar, Sulsel</p>
-                                        <p class="text-[10px] text-gray-400 font-mono"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> -5.1480, 119.4120</p>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                                            1 Program
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full border border-purple-200">
-                                            MoU Resmi
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <div class="flex items-center justify-center gap-1.5">
-                                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-1.5 px-2.5 rounded transition-colors" title="Edit Data">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-2.5 rounded transition-colors shadow-sm" title="Lihat Lowongan">
-                                                Lowongan
-                                            </button>
+                                            <!-- DELETE BUTTON -->
+                                            <form action="{{ route('dashboard-daftar-lowongan-daftar-perusahaan-destroy', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus perusahaan ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-1.5 px-2.5 rounded transition-colors border border-red-200" title="Hapus Data">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
-
-                                <!-- Baris 3 -->
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="p-4 text-center text-gray-500 font-medium">3</td>
-                                    <td class="p-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center text-green-600 shrink-0 font-bold">
-                                                AN
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-gray-800">PT. Agro Nusantara</p>
-                                                <p class="text-xs text-gray-500">agronusantara.co.id</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded">
-                                            Pertanian / Agrikultur
-                                        </span>
-                                    </td>
-                                    <td class="p-4">
-                                        <p class="font-medium text-gray-800">Maros, Sulsel</p>
-                                        <p class="text-[10px] text-gray-400 font-mono"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> -5.0122, 119.5780</p>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
-                                            0 Program
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">
-                                            Mandiri Partner
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <div class="flex items-center justify-center gap-1.5">
-                                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-1.5 px-2.5 rounded transition-colors" title="Edit Data">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-2.5 rounded transition-colors shadow-sm" title="Lihat Lowongan">
-                                                Lowongan
-                                            </button>
-                                        </div>
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-gray-400">
+                                        <i class="fas fa-building text-3xl mb-2 block"></i> Belum ada data perusahaan mitra.
                                     </td>
                                 </tr>
+                                @endforelse
 
                             </tbody>
                         </table>
                     </div>
                     
                     <!-- Pagination Controls -->
-                    <div class="p-4 border-t border-gray-100 flex items-center justify-between bg-white text-sm">
-                        <span class="text-gray-500">Menampilkan 1 hingga 3 dari 87 perusahaan</span>
-                        <div class="flex space-x-1">
-                            <button class="px-3 py-1 border border-gray-200 rounded-lg text-gray-400 bg-gray-50 cursor-not-allowed">Sebelummya</button>
-                            <button class="px-3 py-1 border border-vokasi-primary rounded-lg text-white bg-vokasi-primary font-medium">1</button>
-                            <button class="px-3 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">2</button>
-                            <button class="px-3 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">Selanjutnya</button>
-                        </div>
+                    <div class="p-4 border-t border-gray-100 bg-white">
+                        {{ $perusahaans->links() }}
                     </div>
 
                 </div>
@@ -296,113 +215,109 @@
             </footer>
 
         </main>
-    </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL POPUP: TAMBAH PERUSAHAAN MITRA -->
-    <!-- ========================================== -->
-    <div id="modalTambahPerusahaan" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity duration-300">
-        <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-2xl overflow-hidden transform transition-all scale-95 duration-300">
+        <!-- ========================================== -->
+        <!-- MODAL POPUP: TAMBAH / EDIT PERUSAHAAN MITRA -->
+        <!-- ========================================== -->
+        <div x-show="openModal" 
+             x-cloak 
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             
-            <!-- Modal Header -->
-            <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-building-circle-check text-lg"></i>
-                    <h3 class="font-bold text-lg">Tambah Perusahaan Mitra Baru</h3>
+            <div @click.away="openModal = false" class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-2xl overflow-hidden">
+                
+                <!-- Modal Header -->
+                <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-building-circle-check text-lg"></i>
+                        <h3 class="font-bold text-lg" x-text="isEdit ? 'Edit Data Perusahaan Mitra' : 'Tambah Perusahaan Mitra Baru'"></h3>
+                    </div>
+                    <button @click="openModal = false" class="text-white/80 hover:text-white hover:bg-black/10 p-1.5 rounded-lg transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
                 </div>
-                <button onclick="toggleCompanyModal(false)" class="text-white/80 hover:text-white hover:bg-black/10 p-1.5 rounded-lg transition-colors">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
+
+                <!-- Modal Body / Form -->
+                <form :action="isEdit ? activeUrl : '{{ route('dashboard-daftar-lowongan-daftar-perusahaan-store') }}'" method="POST" class="p-6 space-y-4">
+                    @csrf
+                    <template x-if="isEdit">
+                        <input type="hidden" name="_method" value="PUT">
+                    </template>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- Nama Perusahaan -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Instansi / Perusahaan <span class="text-red-500">*</span></label>
+                            <input type="text" name="nama_perusahaan" :value="isEdit ? editData.nama_perusahaan : ''" placeholder="Contoh: PT. Inovasi Teknologi Nusantara" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
+                        </div>
+
+                        <!-- Sektor Industri -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sektor / Bidang Industri <span class="text-red-500">*</span></label>
+                            <select name="sektor_industri" :value="isEdit ? editData.sektor_industri : ''" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
+                                <option value="" disabled selected>Pilih Bidang</option>
+                                <option value="Teknologi Informasi">Teknologi Informasi / Software</option>
+                                <option value="Pertanian">Pertanian / Agrikultur</option>
+                                <option value="Pemerintahan">Instansi Pemerintah</option>
+                                <option value="Kesehatan">Kesehatan / Rumah Sakit</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Kerjasama -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status Kerjasama</label>
+                            <select name="status_kerjasama" :value="isEdit ? editData.status_kerjasama : 'Mitra Reguler'" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
+                                <option value="MoU Resmi">MoU / MoA Resmi UNHAS</option>
+                                <option value="Mitra Reguler">Mitra Reguler Prodi</option>
+                                <option value="Mandiri Partner">Pengajuan Mandiri Mahasiswa</option>
+                            </select>
+                        </div>
+
+                        <!-- Website -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Website Perusahaan</label>
+                            <input type="url" name="website" :value="isEdit ? editData.website : ''" placeholder="https://www.company.com" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
+                        </div>
+
+                        <!-- Email Kontak / HR -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Resmi / HRD <span class="text-red-500">*</span></label>
+                            <input type="email" name="email_hrd" :value="isEdit ? editData.email_hrd : ''" placeholder="hrd@company.com" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
+                        </div>
+
+                        <!-- Alamat Lengkap -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap Perusahaan <span class="text-red-500">*</span></label>
+                            <textarea name="alamat" x-text="isEdit ? editData.alamat : ''" rows="2" placeholder="Jl. Perintis Kemerdekaan KM..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors resize-none" required></textarea>
+                        </div>
+
+                        <!-- Titik Koordinat Geofencing -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Latitude (GPS)</label>
+                            <input type="text" name="latitude" :value="isEdit ? editData.latitude : ''" placeholder="-5.1322..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Longitude (GPS)</label>
+                            <input type="text" name="longitude" :value="isEdit ? editData.longitude : ''" placeholder="119.4255..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
+                        </div>
+
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-6">
+                        <button type="button" @click="openModal = false" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 font-medium text-sm transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-vokasi-primary hover:bg-vokasi-dark text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center">
+                            <i class="fas fa-save mr-2"></i> <span x-text="isEdit ? 'Perbarui Data' : 'Simpan Perusahaan'"></span>
+                        </button>
+                    </div>
+                </form>
+
             </div>
-
-            <!-- Modal Body / Form -->
-            <form action="#" method="POST" class="p-6 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    <!-- Nama Perusahaan -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Instansi / Perusahaan <span class="text-red-500">*</span></label>
-                        <input type="text" placeholder="Contoh: PT. Inovasi Teknologi Nusantara" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
-                    </div>
-
-                    <!-- Sektor Industri -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Sektor / Bidang Industri <span class="text-red-500">*</span></label>
-                        <select class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
-                            <option value="" disabled selected>Pilih Bidang</option>
-                            <option value="Teknologi Informasi">Teknologi Informasi / Software</option>
-                            <option value="Pertanian">Pertanian / Agrikultur</option>
-                            <option value="Pemerintahan">Instansi Pemerintah</option>
-                            <option value="Kesehatan">Kesehatan / Rumah Sakit</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
-                    </div>
-
-                    <!-- Status Kerjasama -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Kerjasama</label>
-                        <select class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
-                            <option value="MoU Resmi">MoU / MoA Resmi UNHAS</option>
-                            <option value="Mitra Reguler">Mitra Reguler Prodi</option>
-                            <option value="Mandiri Partner">Pengajuan Mandiri Mahasiswa</option>
-                        </select>
-                    </div>
-
-                    <!-- Website -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Website Perusahaan</label>
-                        <input type="url" placeholder="https://www.company.com" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
-                    </div>
-
-                    <!-- Email Kontak / HR -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Resmi / HRD <span class="text-red-500">*</span></label>
-                        <input type="email" placeholder="hrd@company.com" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
-                    </div>
-
-                    <!-- Alamat Lengkap -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap Perusahaan <span class="text-red-500">*</span></label>
-                        <textarea rows="2" placeholder="Jl. Perintis Kemerdekaan KM..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors resize-none" required></textarea>
-                    </div>
-
-                    <!-- Titik Koordinat Geofencing -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Latitude (GPS) <span class="text-red-500">*</span></label>
-                        <input type="text" placeholder="-5.1322..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Longitude (GPS) <span class="text-red-500">*</span></label>
-                        <input type="text" placeholder="119.4255..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
-                    </div>
-
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-6">
-                    <button type="button" onclick="toggleCompanyModal(false)" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 font-medium text-sm transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" class="px-6 py-2 bg-vokasi-primary hover:bg-vokasi-dark text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center">
-                        <i class="fas fa-save mr-2"></i> Simpan Perusahaan
-                    </button>
-                </div>
-            </form>
-
         </div>
+
     </div>
-
-    <!-- JAVASCRIPT UNTUK MODAL TOGGLE -->
-    <script>
-        function toggleCompanyModal(show) {
-            const modal = document.getElementById('modalTambahPerusahaan');
-            if (show) {
-                modal.classList.remove('hidden');
-            } else {
-                modal.classList.add('hidden');
-            }
-        }
-    </script>
-
 @endsection
