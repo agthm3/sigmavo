@@ -18,4 +18,17 @@ class Prodi extends Model
     {
         return $this->hasMany(DosenProfile::class);
     }
+    public function mataKuliahs()
+    {
+        return $this->hasMany(MataKuliah::class);
+    }
+
+    /**
+     * Relasi ke data profil mahasiswa pada prodi ini
+     */
+    public function mahasiswaProfiles(): HasMany
+    {
+        return $this->hasMany(MahasiswaProfile::class, 'prodi_id');
+    }
+
 }

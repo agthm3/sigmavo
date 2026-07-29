@@ -78,17 +78,14 @@
         <!-- Menu Navigation Sidebar -->
         <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
             
-            <!-- DASHBOARD ANALITIK (UNTUK SEMUA ROLE) -->
+            <!-- DASHBOARD ANALITIK -->
             <a href="{{ route('dashboard-analitik') }}" 
                class="flex items-center px-3 py-2 text-sm rounded-lg font-medium transition-colors {{ request()->routeIs('dashboard-analitik') ? 'text-vokasi-dark bg-[#e6f4f5] font-bold border-l-4 border-vokasi-primary' : 'text-gray-700 hover:bg-gray-100 hover:text-vokasi-primary' }}">
                 <i class="fas fa-chart-pie w-5"></i>
                 <span class="ml-2 flex-1">Dashboard Analitik</span>
             </a>
 
-            <!-- ======================================================== -->
-            <!-- SECTION: MAHASISWA ONLY                                 -->
-            <!-- ======================================================== -->
-            @hasanyrole('mahasiswa')
+            <!-- SECTION: MAHASISWA -->
             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mt-4 mb-2">Menu Mahasiswa</p>
             
             <!-- 1. Dashboard Mahasiswa Group -->
@@ -218,14 +215,10 @@
                     </li>
                 </ul>
             </details>
-            @endhasanyrole
 
-            <!-- ======================================================== -->
-            <!-- SECTION: DOSEN ONLY                                      -->
-            <!-- ======================================================== -->
-            @hasanyrole('dosen|dosen_pembimbing')
+            <!-- SECTION: DOSEN / ADMIN / HR -->
             <hr class="my-4 border-gray-200">
-            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Bimbingan & Verifikasi</p>
+            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Manajemen & HR</p>
 
             <!-- 5. Dashboard Dosen Group -->
             @php
@@ -264,15 +257,6 @@
                     </li>
                 </ul>
             </details>
-            @endhasanyrole
-
-            <!-- ======================================================== -->
-            <!-- SECTION: DOSEN, ADMIN PRODI, ADMIN & SUPERADMIN           -->
-            <!-- ======================================================== -->
-            @hasanyrole('dosen|admin_prodi|admin|superadmin')
-            @unlessrole('mahasiswa')
-            <hr class="my-4 border-gray-200">
-            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Pemeriksaan & Penilaian</p>
 
             <!-- 6. Verifikasi Group -->
             @php
@@ -325,15 +309,6 @@
                     </li>
                 </ul>
             </details>
-            @endunlessrole
-            @endhasanyrole
-
-            <!-- ======================================================== -->
-            <!-- SECTION: ADMIN PRODI, ADMIN & SUPERADMIN ONLY             -->
-            <!-- ======================================================== -->
-            @hasanyrole('admin_prodi|admin|superadmin')
-            <hr class="my-4 border-gray-200">
-            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Sistem & Kemitraan</p>
 
             <!-- 8. Manajemen Akun Group -->
             @php
@@ -404,7 +379,6 @@
                     </li>
                 </ul>
             </details>
-            @endhasanyrole
 
         </nav>
     </aside>

@@ -36,8 +36,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [DashboardAnalitik::class, 'index'])->name('dashboard-analitik');
 
 // DASHBOARD MAHASISWA
-    //AKUN
-Route::get('/dashboard-mahasiswa/akun', [DashboardMahasiswaAkunController::class, 'index'])->name('dashboard-mahasiswa-akun');
+// DASHBOARD MAHASISWA - AKUN & PROFIL
+Route::get('/dashboard/mahasiswa/akun', [DashboardMahasiswaAkunController::class, 'index'])->name('dashboard-mahasiswa-akun');
+Route::post('/dashboard/mahasiswa/akun/update-profile', [DashboardMahasiswaAkunController::class, 'updateProfile'])->name('dashboard-mahasiswa-akun-update-profile');
+Route::post('/dashboard/mahasiswa/akun/update-password', [DashboardMahasiswaAkunController::class, 'updatePassword'])->name('dashboard-mahasiswa-akun-update-password');
 
     //RIWAYAT MAGANG
 Route::get('/dashboard-mahasiswa/riwayat-magang', [RiwayatMagangController::class, 'index'])->name('dashboard-mahasiswa-riwayat-magang');
@@ -59,14 +61,30 @@ Route::get('/pengajuan-magang/status-pengajuan', [StatusPengajuanController::cla
 Route::delete('/pengajuan-magang/status-pengajuan/{id}/cancel', [StatusPengajuanController::class, 'cancel'])->name('dashboard-mahasiswa-status-pengajuan-cancel');
 
 //PELAKSANAAN MAGANG
-    //PEMBEKALAN MAGANG
+    // PEMBEKALAN MAGANG
 Route::get('/pelaksanaan-magang/pembekalan-magang', [PembekalanMagangController::class, 'index'])->name('dashboard-mahasiswa-pembekalan-magang');
-    //ABSENSI
+Route::post('/pelaksanaan-magang/pembekalan-magang', [PembekalanMagangController::class, 'store'])->name('dashboard-mahasiswa-pembekalan-magang-store');
+Route::post('/pelaksanaan-magang/pembekalan-magang/{id}/presensi', [PembekalanMagangController::class, 'presensi'])->name('dashboard-mahasiswa-pembekalan-magang-presensi');
+Route::patch('/pelaksanaan-magang/pembekalan-magang/{pembekalanId}/manual/{userId}', [PembekalanMagangController::class, 'togglePresensiManual'])->name('dashboard-mahasiswa-pembekalan-magang-manual');
+Route::post('/pelaksanaan-magang/pembekalan-magang/{id}/materi', [PembekalanMagangController::class, 'storeMateri'])->name('dashboard-mahasiswa-pembekalan-magang-materi-store');
+// PELAKSANAAN MAGANG
+    // ABSENSI
 Route::get('/pelaksanaan-magang/absensi', [AbsensiController::class, 'index'])->name('dashboard-mahasiswa-absensi');
-    //LOGBOOK
+Route::post('/pelaksanaan-magang/absensi', [AbsensiController::class, 'storeAbsensi'])->name('dashboard-mahasiswa-absensi-store');
+Route::post('/pelaksanaan-magang/absensi/izin', [AbsensiController::class, 'storeIzin'])->name('dashboard-mahasiswa-absensi-izin-store');
+// PELAKSANAAN MAGANG
+    // LOGBOOK
 Route::get('/pelaksanaan-magang/logbook', [LogbookController::class, 'index'])->name('dashboard-mahasiswa-logbook');
-    //SEMINAR
-Route::get('/pelaksanaan-magang/seminar', [SeminarController::class, 'index'])->name('dashboard-mahasiswa-seminar');
+Route::post('/pelaksanaan-magang/logbook', [LogbookController::class, 'store'])->name('dashboard-mahasiswa-logbook-store');
+Route::put('/pelaksanaan-magang/logbook/{id}', [LogbookController::class, 'update'])->name('dashboard-mahasiswa-logbook-update');
+Route::delete('/pelaksanaan-magang/logbook/{id}', [LogbookController::class, 'destroy'])->name('dashboard-mahasiswa-logbook-destroy');
+// PELAKSANAAN MAGANG
+    // SEMINAR HASIL
+Route::get('/pelaksanaan-magang/seminar-hasil', [SeminarController::class, 'index'])->name('dashboard-mahasiswa-seminar');
+Route::post('/pelaksanaan-magang/seminar-hasil', [SeminarController::class, 'storeOrUpdate'])->name('dashboard-mahasiswa-seminar-store');
+Route::post('/pelaksanaan-magang/seminar-hasil/admin-set/{userId}', [SeminarController::class, 'setJadwalAdmin'])->name('dashboard-admin-seminar-set');
+Route::delete('/pelaksanaan-magang/seminar-hasil/ppt', [SeminarController::class, 'destroyPpt'])->name('dashboard-mahasiswa-seminar-destroy-ppt');
+
 
 //DASHBOARD DOSEN
     //PERLU VERIFIKASI
@@ -81,8 +99,12 @@ Route::get('/dashboard-dosen/daftar-mahasiswa', [DaftarMahasiswaController::clas
 //VERIFIKASI
     //DAFTAR MAHASISWA TERVERFIKASI
 Route::get('/verifikasi/daftar-mahasiswa-terverifikasi', [TerverifikasiController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-terverifikasi');
-    //DAFTAR MAHASISWA PERLU VERIFIKASI
-Route::get('/verifikasi/daftar-mahasiswa-perlu-verifikasi', [PerluVerifikasiController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi');
+/// VERIFIKASI & DASHBOARD DOSEN
+Route::get('/verifikasi/perlu-verifikasi', [PerluVerifikasiController::class, 'index'])->name('dashboard-dosen-perlu-verifikasi');
+Route::get('/verifikasi/daftar-mahasiswa/perlu-verifikasi', [PerluVerifikasiController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi');
+
+Route::post('/verifikasi/logbook/{id}', [PerluVerifikasiController::class, 'verifyLogbook'])->name('dashboard-verifikasi-logbook-action');
+Route::post('/verifikasi/absensi/{id}', [PerluVerifikasiController::class, 'verifyAbsensi'])->name('dashboard-verifikasi-absensi-action');
     //DAFTAR MAHASISWA  SEMUA LAPORAN
 Route::get('/verifikasi/daftar-mahasiswa-semua-laporan', [SemuaLaporanController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-semua-laporan');
 
@@ -156,6 +178,10 @@ Route::patch('/manajemen-akun/aktivasi-user/{id}/toggle', [AktivasiUserControlle
 
     Route::delete('/manajemen-akun/pengaturan/prodi/{id}', [PengaturanGlobalController::class, 'destroyProdi'])
         ->name('dashboard-manajemen-pengaturan-prodi-destroy');
+// PENGATURAN GLOBAL
+Route::post('/manajemen-akun/pengaturan/matkul', [PengaturanGlobalController::class, 'storeMataKuliah'])->name('dashboard-manajemen-pengaturan-matkul-store');
+Route::put('/manajemen-akun/pengaturan/matkul/{id}', [PengaturanGlobalController::class, 'updateMataKuliah'])->name('dashboard-manajemen-pengaturan-matkul-update');
+Route::delete('/manajemen-akun/pengaturan/matkul/{id}', [PengaturanGlobalController::class, 'destroyMataKuliah'])->name('dashboard-manajemen-pengaturan-matkul-destroy');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

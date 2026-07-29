@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Absensi;
 use App\Models\Pendaftaran;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -23,8 +24,11 @@ class ProgramMagangController extends Controller
         // Ambil standar jam magang dari Pengaturan Global (default 900 jam)
         $targetJam = (int) Setting::getByKey('min_jam_magang', 900);
 
-        // Contoh akumulasi jam terisi (nantinya dihitung dinamis dari logbook/absensi)
-        $jamTerisi = $activeMagang ? 120 : 0; 
+        // HITUNG REAL-TIME DARI ABSENSI YANG SUDAH DI-APPROVE DOSEN/ADMIN
+        $jamTerisi = Absensi::where('user_id', $userId)
+            ->where('status_verifikasi', 'approved')
+            ->sum('jam_diperoleh');
+
         $sisaJam = max(0, $targetJam - $jamTerisi);
         $percentage = $targetJam > 0 ? min(100, round(($jamTerisi / $targetJam) * 100, 1)) : 0;
 
@@ -42,6 +46,8 @@ class ProgramMagangController extends Controller
      */
     public function ajukanIzin(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
             'jenis_izin'  => 'required|in:sakit,izin',
             'tgl_mulai'   => 'required|date',
@@ -49,6 +55,22 @@ class ProgramMagangController extends Controller
             'alasan'      => 'required|string',
         ]);
 
-        return redirect()->back()->with('success', 'Permohonan izin/sakit berhasil dikirim ke Dosen Pendamping dan Supervisor.');
+        // Simpan ke tabel absensis untuk perizinan
+        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+            ->where('status_seleksi', 'diterima')
+            ->latest()
+            ->first();
+
+        Absensi::create([
+            'user_id'           => $user->id,
+            'pendaftaran_id'    => $pendaftaran?->id,
+            'tanggal'           => $request->tgl_mulai,
+            'tipe_kehadiran'    => $request->jenis_izin,
+            'alasan_izin'       => $request->alasan,
+            'status_verifikasi' => 'pending',
+            'jam_diperoleh'     => 0,
+        ]);
+
+        return redirect()->back()->with('success', 'Permohonan izin/sakit berhasil dikirim ke Dosen Pendamping.');
     }
 }

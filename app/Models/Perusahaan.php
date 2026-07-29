@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Perusahaan extends Model
 {
@@ -19,6 +20,14 @@ class Perusahaan extends Model
         'latitude',
         'longitude',
     ];
+
+    /**
+     * Relasi ke pendaftaran magang mahasiswa di perusahaan ini
+     */
+    public function pendaftarans(): HasMany
+    {
+        return $this->hasMany(Pendaftaran::class, 'perusahaan_id');
+    }
 
     // Helper singkatan logo (Contoh: PT. SmartPlay Inovasi -> SP)
     public function getInisialAttribute(): string

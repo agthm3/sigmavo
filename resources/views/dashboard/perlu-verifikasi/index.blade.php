@@ -1,171 +1,170 @@
 @extends('layouts.dashboard')
 
 @section('content')
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative">
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
+      x-data="{ activeTab: 'semua' }">
+    
+    <div class="max-w-5xl mx-auto w-full flex-1">
+        
+        <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Antrean Verifikasi</h2>
+                <p class="text-sm text-gray-500 mt-1">Tinjau logbook harian, pengajuan izin/sakit, dan flag absensi dari mahasiswa bimbingan Anda.</p>
+            </div>
+            <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                <i class="fas fa-tasks mr-1.5"></i> {{ count($pendingLogbooks) + count($pendingAbsensis) }} Antrean Menunggu
+            </span>
+        </div>
+
+        <!-- NOTIFIKASI SUKSES / ERROR -->
+        @if(session('success'))
+        <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+        </div>
+        @endif
+
+        <!-- QUICK FILTER TABS -->
+        <div class="flex overflow-x-auto gap-2 mb-6 custom-scrollbar pb-2">
+            <button @click="activeTab = 'semua'" :class="activeTab === 'semua' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
+                Semua ({{ count($pendingLogbooks) + count($pendingAbsensis) }})
+            </button>
+            <button @click="activeTab = 'logbook'" :class="activeTab === 'logbook' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
+                Logbook Harian ({{ count($pendingLogbooks) }})
+            </button>
+            <button @click="activeTab = 'absensi'" :class="activeTab === 'absensi' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
+                Izin / Sakit / Flag ({{ count($pendingAbsensis) }})
+            </button>
+        </div>
+
+        <div class="space-y-6">
             
-            <div class="max-w-5xl mx-auto w-full flex-1">
+            <!-- LIST ITEM 1: LOGBOOK HARIAN -->
+            @forelse($pendingLogbooks as $logbook)
+            <div x-show="activeTab === 'semua' || activeTab === 'logbook'" class="bg-white rounded-2xl shadow-sm border border-yellow-200 overflow-hidden">
+                <div class="bg-yellow-50/60 border-b border-yellow-100 p-4 flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-700 p-1.5 rounded-lg"><i class="fas fa-book"></i></span>
+                        <h3 class="font-bold text-gray-800 text-sm">Pengajuan Logbook Harian</h3>
+                    </div>
+                    <span class="font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Tanggal Logbook: {{ $logbook->tanggal->format('d M Y') }}</span>
+                </div>
                 
-                <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Antrean Verifikasi</h2>
-                        <p class="text-sm text-gray-500 mt-1">Tinjau logbook, absensi flag, dan pengajuan izin dari mahasiswa bimbingan Anda.</p>
-                    </div>
-                </div>
-
-                <!-- QUICK FILTER TABS -->
-                <div class="flex overflow-x-auto gap-2 mb-6 custom-scrollbar pb-2">
-                    <button class="bg-vokasi-primary text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm">
-                        Semua (4)
-                    </button>
-                    <button class="bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors">
-                        Logbook Harian (2)
-                    </button>
-                    <button class="bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center">
-                        Izin / Sakit (1)
-                    </button>
-                    <button class="bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center">
-                        Flag Absensi (1)
-                    </button>
-                </div>
-
-                <div class="space-y-6">
-                    
-                    <!-- ITEM 1: LOGBOOK HARIAN -->
-                    <div class="bg-white rounded-xl shadow-sm border border-yellow-200 overflow-hidden">
-                        <div class="bg-yellow-50/50 border-b border-yellow-100 p-4 flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-blue-100 text-blue-700 p-1.5 rounded-lg"><i class="fas fa-book text-sm"></i></span>
-                                <h3 class="font-bold text-gray-800">Pengajuan Logbook Harian</h3>
-                            </div>
-                            <span class="text-xs font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Diajukan: Kemarin, 17:15 WITA</span>
-                        </div>
-                        <div class="p-5 flex flex-col md:flex-row gap-6">
-                            <!-- Info Mahasiswa & Konten -->
-                            <div class="flex-1 space-y-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name=Fadehl+Thristansyah&background=f3f4f6&color=37A7AC" alt="Mahasiswa" class="w-10 h-10 rounded-full border border-gray-200">
-                                    <div>
-                                        <p class="font-bold text-gray-800 text-sm">Fadehl Thristansyah <span class="text-gray-400 font-normal ml-1">H071231012</span></p>
-                                        <p class="text-xs text-gray-500">PT. SmartPlay Inovasi - Selasa, 21 Jul 2026</p>
-                                    </div>
-                                </div>
-                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed text-justify">
-                                    <p>Melakukan riset mengenai tren mainan edukasi berbasis sensorik. Mengikuti rapat divisi bersama Supervisor Lapangan untuk membahas konsep awal produk SmartBlocks. Membuat sketsa kasar dari hasil diskusi.</p>
-                                    <!-- Attachment if any -->
-                                    <div class="mt-3 flex items-center gap-2">
-                                        <span class="text-xs font-semibold text-gray-500"><i class="fas fa-paperclip"></i> Lampiran Foto:</span>
-                                        <a href="#" class="text-vokasi-primary hover:underline text-xs font-medium"><i class="fas fa-image mr-1"></i>sketsa_smartblock.jpg</a>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Action Area -->
-                            <div class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                                <textarea rows="2" placeholder="Tulis catatan (opsional jika setuju, wajib jika revisi)..." class="w-full text-xs p-2 border border-gray-300 rounded focus:outline-none focus:border-vokasi-primary resize-none"></textarea>
-                                <button class="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 rounded transition-colors shadow-sm">
-                                    <i class="fas fa-check mr-1"></i> Approve (-8 Jam)
-                                </button>
-                                <button class="w-full bg-white hover:bg-red-50 text-red-500 border border-red-200 text-sm font-bold py-2 rounded transition-colors shadow-sm">
-                                    <i class="fas fa-undo mr-1"></i> Minta Revisi
-                                </button>
+                <div class="p-5 flex flex-col md:flex-row gap-6">
+                    <!-- Info Mahasiswa & Uraian Logbook -->
+                    <div class="flex-1 space-y-3 text-xs">
+                        <div class="flex items-center gap-3">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($logbook->user->name) }}&background=37A7AC&color=fff" class="w-10 h-10 rounded-full border shadow-sm">
+                            <div>
+                                <p class="font-bold text-gray-800 text-sm">{{ $logbook->user->name }} <span class="text-gray-400 font-normal ml-1">NIM: {{ $logbook->user->mahasiswaProfile->nim ?? '-' }}</span></p>
+                                <p class="text-[11px] text-gray-500">{{ $logbook->pendaftaran->perusahaan->nama_perusahaan ?? 'Perusahaan Mitra' }} • {{ $logbook->user->mahasiswaProfile->prodi->nama_prodi ?? '-' }}</p>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- ITEM 2: SURAT IZIN / SAKIT -->
-                    <div class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden relative">
-                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
-                        <div class="bg-orange-50/30 border-b border-orange-100 p-4 pl-6 flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-orange-100 text-orange-700 p-1.5 rounded-lg"><i class="fas fa-notes-medical text-sm"></i></span>
-                                <h3 class="font-bold text-gray-800">Pengajuan Izin Sakit</h3>
-                            </div>
-                            <span class="text-xs font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Diajukan: Hari Ini, 07:30 WITA</span>
-                        </div>
-                        <div class="p-5 pl-6 flex flex-col md:flex-row gap-6">
-                            <div class="flex-1 space-y-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=f3f4f6&color=6b7280" alt="Mahasiswa" class="w-10 h-10 rounded-full border border-gray-200">
-                                    <div>
-                                        <p class="font-bold text-gray-800 text-sm">Siti Nurhaliza <span class="text-gray-400 font-normal ml-1">H071231088</span></p>
-                                        <p class="text-xs text-gray-500">PT. Agro Nusantara - Tanggal Izin: 22 Jul 2026</p>
-                                    </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-gray-700 leading-relaxed text-justify space-y-2">
+                            <p>{{ $logbook->uraian_kegiatan }}</p>
+
+                            <!-- Badge Mata Kuliah -->
+                            @if(!empty($logbook->mata_kuliah) && is_array($logbook->mata_kuliah))
+                                <div class="flex flex-wrap gap-1 pt-1 border-t border-gray-200/60">
+                                    @foreach($logbook->mata_kuliah as $mk)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-semibold border border-blue-200">
+                                            <i class="fas fa-book-open text-[9px] mr-1"></i> {{ $mk }}
+                                        </span>
+                                    @endforeach
                                 </div>
-                                <div class="bg-orange-50 border border-orange-100 rounded-lg p-4 text-sm text-gray-700">
-                                    <p class="mb-2"><strong>Alasan:</strong> Demam Berdarah (Tifus)</p>
-                                    <p class="text-xs text-gray-600 mb-3">Sesuai pemeriksaan dokter, mahasiswa perlu istirahat total selama 3 hari.</p>
-                                    <a href="#" class="inline-flex items-center text-xs font-bold bg-white text-orange-600 border border-orange-200 px-3 py-1.5 rounded hover:bg-orange-50 transition-colors">
-                                        <i class="fas fa-file-medical-alt mr-2"></i> Lihat Surat Keterangan Dokter (PDF)
+                            @endif
+
+                            @if($logbook->foto_dokumentasi)
+                                <div class="pt-2">
+                                    <a href="{{ asset('storage/' . $logbook->foto_dokumentasi) }}" target="_blank" class="inline-flex items-center gap-1.5 text-vokasi-primary font-bold hover:underline">
+                                        <i class="fas fa-image"></i> Lihat Foto Dokumentasi Kegiatan
                                     </a>
                                 </div>
-                            </div>
-                            
-                            <div class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                                <p class="text-[10px] text-gray-500 mb-1 leading-tight">Persetujuan ini <strong class="text-red-500">TIDAK</strong> memotong kuota 8 jam mahasiswa.</p>
-                                <button class="w-full bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-bold py-2 rounded transition-colors shadow-sm">
-                                    <i class="fas fa-check-circle mr-1"></i> Approve Izin
-                                </button>
-                                <button class="w-full bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 text-sm font-bold py-2 rounded transition-colors shadow-sm">
-                                    Tolak Alasan
-                                </button>
-                            </div>
+                            @endif
                         </div>
                     </div>
-
-                    <!-- ITEM 3: FLAG ABSENSI LUPA PULANG -->
-                    <div class="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden relative">
-                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
-                        <div class="bg-red-50/30 border-b border-red-100 p-4 pl-6 flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-red-100 text-red-700 p-1.5 rounded-lg"><i class="fas fa-flag text-sm"></i></span>
-                                <h3 class="font-bold text-gray-800">Flag: Lupa Absen Pulang</h3>
-                            </div>
-                            <span class="text-xs font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Sistem Generate: 17 Jul 2026</span>
+                    
+                    <!-- Action Form Area -->
+                    <form action="{{ route('dashboard-verifikasi-logbook-action', $logbook->id) }}" method="POST" class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 text-xs">
+                        @csrf
+                        <div>
+                            <textarea name="catatan_dosen" rows="2" placeholder="Catatan/Masukan untuk mahasiswa (opsional)..." class="w-full text-xs p-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:border-vokasi-primary resize-none"></textarea>
                         </div>
-                        <div class="p-5 pl-6 flex flex-col md:flex-row gap-6">
-                            <div class="flex-1 space-y-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name=Andi+Reza&background=f3f4f6&color=6b7280" alt="Mahasiswa" class="w-10 h-10 rounded-full border border-gray-200">
-                                    <div>
-                                        <p class="font-bold text-gray-800 text-sm">Andi Reza Syahputra <span class="text-gray-400 font-normal ml-1">H071231045</span></p>
-                                        <p class="text-xs text-gray-500">BRIDA Kota Makassar - Jumat, 17 Jul 2026</p>
-                                    </div>
-                                </div>
-                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex gap-4 items-center">
-                                    <div class="text-center px-4 border-r border-gray-200">
-                                        <p class="text-[10px] font-bold text-gray-500 uppercase">Absen Pagi</p>
-                                        <p class="font-mono font-bold text-green-600">08:02</p>
-                                    </div>
-                                    <div class="text-center px-4">
-                                        <p class="text-[10px] font-bold text-gray-500 uppercase">Absen Pulang</p>
-                                        <p class="font-mono font-bold text-red-500">-- : --</p>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs text-gray-700 leading-tight">
-                                            <strong>Klarifikasi Mahasiswa:</strong> "Maaf Pak, handphone saya kehabisan baterai saat jam pulang. Logbook harian sudah saya kerjakan. Mohon kebijakannya."
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                                <button class="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 rounded transition-colors shadow-sm">
-                                    <i class="fas fa-check-double mr-1"></i> Sahkan & Potong Jam
-                                </button>
-                                <button class="w-full bg-white hover:bg-red-50 text-red-500 border border-red-200 text-sm font-bold py-2 rounded transition-colors shadow-sm">
-                                    <i class="fas fa-times mr-1"></i> Tolak Absensi
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
+                        <button type="submit" name="action" value="approve" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm flex items-center justify-center">
+                            <i class="fas fa-check mr-1.5"></i> Approve (+8 Jam)
+                        </button>
+                        <button type="submit" name="action" value="revisi" class="w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-bold py-2 rounded-xl transition-colors shadow-sm flex items-center justify-center">
+                            <i class="fas fa-undo mr-1.5"></i> Minta Revisi
+                        </button>
+                    </form>
                 </div>
             </div>
+            @empty
+            <div x-show="activeTab === 'semua' || activeTab === 'logbook'" class="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-400">
+                <i class="fas fa-check-circle text-3xl mb-2 text-emerald-500 block"></i> Tidak ada antrean pengajuan logbook harian.
+            </div>
+            @endforelse
 
-            <!-- FOOTER -->
-            <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
-                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
-            </footer>
+            <!-- LIST ITEM 2: IZIN / SAKIT / ABSENSI -->
+            @forelse($pendingAbsensis as $absensi)
+            <div x-show="activeTab === 'semua' || activeTab === 'absensi'" class="bg-white rounded-2xl shadow-sm border border-orange-200 overflow-hidden">
+                <div class="bg-orange-50/50 border-b border-orange-100 p-4 flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-orange-100 text-orange-700 p-1.5 rounded-lg"><i class="fas fa-notes-medical"></i></span>
+                        <h3 class="font-bold text-gray-800 text-sm capitalize">Pengajuan {{ $absensi->tipe_kehadiran === 'hadir' ? 'Flag Absensi' : $absensi->tipe_kehadiran }}</h3>
+                    </div>
+                    <span class="font-semibold text-gray-500"><i class="far fa-clock mr-1"></i> Tanggal: {{ $absensi->tanggal->format('d M Y') }}</span>
+                </div>
 
-        </main>
+                <div class="p-5 flex flex-col md:flex-row gap-6">
+                    <div class="flex-1 space-y-3 text-xs">
+                        <div class="flex items-center gap-3">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($absensi->user->name) }}&background=f3f4f6&color=37A7AC" class="w-10 h-10 rounded-full border shadow-sm">
+                            <div>
+                                <p class="font-bold text-gray-800 text-sm">{{ $absensi->user->name }} <span class="text-gray-400 font-normal ml-1">NIM: {{ $absensi->user->mahasiswaProfile->nim ?? '-' }}</span></p>
+                                <p class="text-[11px] text-gray-500">{{ $absensi->pendaftaran->perusahaan->nama_perusahaan ?? 'Perusahaan Mitra' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-orange-50/60 border border-orange-100 rounded-xl p-4 text-gray-700 space-y-2">
+                            <p><strong>Alasan / Keterangan:</strong> {{ $absensi->alasan_izin ?? 'Tidak ada keterangan.' }}</p>
+                            
+                            @if($absensi->surat_izin)
+                                <a href="{{ asset('storage/' . $absensi->surat_izin) }}" target="_blank" class="inline-flex items-center text-xs font-bold bg-white text-orange-600 border border-orange-200 px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors">
+                                    <i class="fas fa-file-medical-alt mr-2"></i> Lihat Surat Keterangan Dokter / Bukti (PDF/Foto)
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    <form action="{{ route('dashboard-verifikasi-absensi-action', $absensi->id) }}" method="POST" class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 text-xs">
+                        @csrf
+                        <button type="submit" name="action" value="approve" class="w-full bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold py-2.5 rounded-xl transition-colors shadow-sm flex items-center justify-center">
+                            <i class="fas fa-check-circle mr-1.5"></i> Setujui Pengajuan
+                        </button>
+                        <button type="submit" name="action" value="reject" class="w-full bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 font-bold py-2 rounded-xl transition-colors shadow-sm flex items-center justify-center">
+                            Tolak Pengajuan
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @empty
+            <div x-show="activeTab === 'semua' || activeTab === 'absensi'" class="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-400">
+                <i class="fas fa-check-circle text-3xl mb-2 text-emerald-500 block"></i> Tidak ada antrean pengajuan izin / sakit.
+            </div>
+            @endforelse
+
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
+        Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
+    </footer>
+
+</main>
 @endsection

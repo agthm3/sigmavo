@@ -65,4 +65,14 @@ class User extends Authenticatable
         }
         return null; // Superadmin / Admin Fakultas
     }
+
+    public function seminars()
+    {
+        return $this->hasMany(Seminar::class);
+    }
+
+    public function absensis()
+    {
+        return $this->hasMany(Absensi::class);
+    }
 }

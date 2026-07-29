@@ -33,16 +33,33 @@ class Pendaftaran extends Model
         'tgl_selesai_magang' => 'date',
     ];
 
-    public function mahasiswa(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
+    /**
+     * Relasi ke Lowongan Magang
+     */
     public function lowongan(): BelongsTo
     {
         return $this->belongsTo(Lowongan::class, 'lowongan_id');
     }
 
+    /**
+     * Relasi ke Perusahaan Mitra
+     */
+    public function perusahaan(): BelongsTo
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
+    }
+
+    /**
+     * Relasi ke User (Mahasiswa)
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relasi ke Dosen Pembimbing
+     */
     public function dosen(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dosen_id');

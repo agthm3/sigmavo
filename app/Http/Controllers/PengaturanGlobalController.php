@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MataKuliah;
 use App\Models\Prodi;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class PengaturanGlobalController extends Controller
 {
-   public function index()
+    public function index()
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
@@ -18,7 +19,8 @@ class PengaturanGlobalController extends Controller
             return redirect()->route('dashboard-analitik')->with('error', 'Anda tidak memiliki akses ke pengaturan global.');
         }
 
-        $prodis = Prodi::withCount(['mahasiswas', 'dosens'])->get();
+        $prodis = Prodi::with(['mataKuliahs'])->withCount(['mahasiswas', 'dosens'])->get();
+        $mataKuliahs = MataKuliah::with('prodi')->latest()->get();
 
         // Ambil data settings global (dengan default fallback)
         $settings = [
@@ -29,7 +31,7 @@ class PengaturanGlobalController extends Controller
             'lokasi'         => Setting::getByKey('lokasi', 'Gedung Dekanat Vokasi, Kampus Tamalanrea Makassar'),
         ];
 
-        return view('dashboard.manajemen-akun.pengaturan', compact('prodis', 'settings'));
+        return view('dashboard.manajemen-akun.pengaturan', compact('prodis', 'mataKuliahs', 'settings'));
     }
 
     /**
@@ -110,5 +112,52 @@ class PengaturanGlobalController extends Controller
         $prodi->delete();
 
         return redirect()->back()->with('success', 'Program Studi berhasil dihapus.');
+    }
+
+    /**
+     * Tambah Mata Kuliah Baru
+     */
+    public function storeMataKuliah(Request $request)
+    {
+        $request->validate([
+            'prodi_id' => 'required|exists:prodis,id',
+            'kode_mk'  => 'nullable|string|max:50',
+            'nama_mk'  => 'required|string|max:255',
+            'sks'      => 'required|integer|min:1',
+        ]);
+
+        MataKuliah::create($request->all());
+
+        return redirect()->back()->with('success', 'Mata Kuliah berhasil ditambahkan.');
+    }
+
+    /**
+     * Update Mata Kuliah
+     */
+    public function updateMataKuliah(Request $request, $id)
+    {
+        $mk = MataKuliah::findOrFail($id);
+
+        $request->validate([
+            'prodi_id' => 'required|exists:prodis,id',
+            'kode_mk'  => 'nullable|string|max:50',
+            'nama_mk'  => 'required|string|max:255',
+            'sks'      => 'required|integer|min:1',
+        ]);
+
+        $mk->update($request->all());
+
+        return redirect()->back()->with('success', "Mata Kuliah '{$mk->nama_mk}' berhasil diperbarui.");
+    }
+
+    /**
+     * Hapus Mata Kuliah
+     */
+    public function destroyMataKuliah($id)
+    {
+        $mk = MataKuliah::findOrFail($id);
+        $mk->delete();
+
+        return redirect()->back()->with('success', 'Mata Kuliah berhasil dihapus.');
     }
 }
