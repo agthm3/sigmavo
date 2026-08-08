@@ -31,12 +31,23 @@
 
                 <!-- NOTIFIKASI SUKSES / ERROR -->
                 @if(session('success'))
-                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm">
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
                         <span>{{ session('success') }}</span>
                     </div>
                     <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+                </div>
+                @endif
+
+                @if($errors->any())
+                <div class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs shadow-sm">
+                    <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Terjadi Kesalahan:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
                 @endif
 
@@ -48,36 +59,38 @@
                     <div class="lg:col-span-2 space-y-6">
                         
                         <!-- Status Kehadiran Banner (Khusus Mahasiswa / Presensi Diri Sendiri) -->
-                        @if($presensi && $presensi->is_hadir)
-                            <div class="bg-gradient-to-r from-emerald-600 to-vokasi-primary rounded-xl shadow-sm p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-                                        <i class="fas fa-check-circle text-2xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-bold text-lg">Status: Telah Mengikuti Pembekalan</h3>
-                                        <p class="text-xs text-emerald-100 opacity-90 mt-0.5">Dikonfirmasi pada {{ \Carbon\Carbon::parse($presensi->waktu_presensi)->format('d M Y, H:i') }} WITA</p>
-                                    </div>
-                                </div>
-                            </div>
-                        @else
-                            <div class="bg-amber-500 rounded-xl shadow-sm p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-                                        <i class="fas fa-exclamation-triangle text-2xl"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-bold text-lg">Status: Belum Konfirmasi Kehadiran</h3>
-                                        <p class="text-xs text-amber-100 opacity-90 mt-0.5">Silakan isi konfirmasi kehadiran Anda untuk memenuhi syarat magang.</p>
+                        @if($user->hasRole('mahasiswa'))
+                            @if($presensi && $presensi->is_hadir)
+                                <div class="bg-gradient-to-r from-emerald-600 to-vokasi-primary rounded-xl shadow-sm p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                            <i class="fas fa-check-circle text-2xl"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-lg">Status: Telah Mengikuti Pembekalan</h3>
+                                            <p class="text-xs text-emerald-100 opacity-90 mt-0.5">Dikonfirmasi pada {{ \Carbon\Carbon::parse($presensi->waktu_presensi)->format('d M Y, H:i') }} WITA</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <form action="{{ route('dashboard-mahasiswa-pembekalan-magang-presensi', $pembekalan->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="bg-white text-amber-800 font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm hover:bg-amber-50 transition-colors w-full sm:w-auto text-center shrink-0">
-                                        <i class="fas fa-user-check mr-1.5"></i> Konfirmasi Kehadiran
-                                    </button>
-                                </form>
-                            </div>
+                            @else
+                                <div class="bg-amber-500 rounded-xl shadow-sm p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                                            <i class="fas fa-exclamation-triangle text-2xl"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-lg">Status: Belum Konfirmasi Kehadiran</h3>
+                                            <p class="text-xs text-amber-100 opacity-90 mt-0.5">Silakan isi konfirmasi kehadiran Anda untuk memenuhi syarat magang.</p>
+                                        </div>
+                                    </div>
+                                    <form action="{{ route('dashboard-mahasiswa-pembekalan-magang-presensi', $pembekalan->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="bg-white text-amber-800 font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm hover:bg-amber-50 transition-colors w-full sm:w-auto text-center shrink-0">
+                                            <i class="fas fa-user-check mr-1.5"></i> Konfirmasi Kehadiran
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
                         @endif
 
                         <!-- Detail Agenda Card -->
@@ -98,8 +111,8 @@
                                             <div class="w-8 flex justify-center text-gray-400 mt-0.5"><i class="fas fa-clock"></i></div>
                                             <div>
                                                 <p class="text-xs font-semibold text-gray-500 uppercase">Waktu Pelaksanaan</p>
-                                                <p class="font-medium text-gray-800">{{ $pembekalan->waktu_mulai->format('d F Y') }}</p>
-                                                <p class="text-xs text-gray-600">{{ $pembekalan->waktu_mulai->format('H:i') }} - {{ $pembekalan->waktu_selesai->format('H:i') }} WITA</p>
+                                                <p class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($pembekalan->waktu_mulai)->format('d F Y') }}</p>
+                                                <p class="text-xs text-gray-600">{{ \Carbon\Carbon::parse($pembekalan->waktu_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($pembekalan->waktu_selesai)->format('H:i') }} WITA</p>
                                             </div>
                                         </div>
                                         <div class="flex items-start">
@@ -157,16 +170,18 @@
                                 <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
                                     <div class="flex items-center gap-3">
                                         <div class="w-10 h-10 rounded bg-red-50 text-red-500 flex items-center justify-center shrink-0">
-                                            <i class="{{ $materi->tipe_file === 'DOCX' ? 'fas fa-file-word text-blue-500' : 'fas fa-file-pdf text-red-500' }} text-xl"></i>
+                                            <i class="{{ in_array(strtoupper($materi->tipe_file), ['DOCX', 'DOC']) ? 'fas fa-file-word text-blue-500' : (in_array(strtoupper($materi->tipe_file), ['PPTX', 'PPT']) ? 'fas fa-file-powerpoint text-orange-500' : 'fas fa-file-pdf text-red-500') }} text-xl"></i>
                                         </div>
                                         <div>
                                             <p class="font-semibold text-xs text-gray-800 group-hover:text-vokasi-primary transition-colors">{{ $materi->judul_materi }}</p>
                                             <p class="text-[10px] text-gray-400">{{ $materi->tipe_file }} • {{ $materi->ukuran_file }}</p>
                                         </div>
                                     </div>
-                                    <a href="#" class="text-gray-400 hover:text-vokasi-primary transition-colors p-2" title="Unduh File">
-                                        <i class="fas fa-download"></i>
-                                    </a>
+                                    @if(!empty($materi->file_path))
+                                        <a href="{{ asset('storage/' . $materi->file_path) }}" target="_blank" class="text-gray-400 hover:text-vokasi-primary transition-colors p-2" title="Unduh File">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    @endif
                                 </div>
                                 @empty
                                 <div class="p-6 text-center text-gray-400 text-xs">
@@ -286,10 +301,16 @@
                 @endif
 
                 @else
-                <div class="bg-white p-12 text-center rounded-2xl border border-gray-200 text-gray-400">
-                    <i class="fas fa-calendar-times text-4xl mb-3 block"></i>
-                    <p class="font-bold text-gray-600 text-base">Belum Ada Agenda Pembekalan</p>
-                    <p class="text-xs mt-1">Jadwal kegiatan pembekalan magang akan diinformasikan oleh panitia fakultas.</p>
+                <div class="bg-white p-12 text-center rounded-2xl border border-gray-200 text-gray-400 max-w-2xl mx-auto my-8">
+                    <i class="fas fa-calendar-times text-4xl mb-3 block text-vokasi-primary/40"></i>
+                    <p class="font-bold text-gray-700 text-base">Belum Ada Agenda Pembekalan Magang</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        @if(isset($user) && $user->hasAnyRole(['admin', 'superadmin', 'admin_prodi']))
+                            Silakan klik tombol <strong>"Buat Agenda Baru"</strong> di atas untuk membuat jadwal kegiatan pembekalan magang mahasiswa.
+                        @else
+                            Jadwal kegiatan pembekalan magang akan diinformasikan oleh panitia fakultas / prodi.
+                        @endif
+                    </p>
                 </div>
                 @endif
 
@@ -314,7 +335,7 @@
                     @csrf
                     <div>
                         <label class="block font-bold text-gray-700 uppercase mb-1">Judul Kegiatan <span class="text-red-500">*</span></label>
-                        <input type="text" name="judul" required placeholder="Contoh: Pembekalan Magang Vokasi 2026" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
+                        <input type="text" name="judul" required placeholder="Contoh: Pembekalan Magang Industri Vokasi 2026" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -331,7 +352,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-gray-700 uppercase mb-1">Pemateri <span class="text-red-500">*</span></label>
-                            <input type="text" name="pemateri" required placeholder="Nama Pemateri" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
+                            <input type="text" name="pemateri" required placeholder="Nama Pemateri / Tim K3" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
                         </div>
                         <div>
                             <label class="block font-bold text-gray-700 uppercase mb-1">Lokasi / Platform <span class="text-red-500">*</span></label>
@@ -357,7 +378,7 @@
             </div>
         </div>
 
-        <!-- MODAL POPUP 2: UNGGAH MATERI PEMBEKALAN BARU -->
+        <!-- MODAL POPUP 2: UNGGAH MATERI PEMBEKALAN BARU (DENGAN INPUT FILE) -->
         @if($pembekalan)
         <div x-show="openMateriModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div @click.away="openMateriModal = false" class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden">
@@ -366,26 +387,16 @@
                     <button type="button" @click="openMateriModal = false" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
                 </div>
 
-                <form action="{{ route('dashboard-mahasiswa-pembekalan-magang-materi-store', $pembekalan->id) }}" method="POST" class="p-6 space-y-4 text-xs">
+                <form action="{{ route('dashboard-mahasiswa-pembekalan-magang-materi-store', $pembekalan->id) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4 text-xs">
                     @csrf
                     <div>
                         <label class="block font-bold text-gray-700 uppercase mb-1">Judul / Nama Dokumen <span class="text-red-500">*</span></label>
-                        <input type="text" name="judul_materi" required placeholder="Contoh: Buku Saku Magang 2026" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
+                        <input type="text" name="judul_materi" required placeholder="Contoh: Buku Saku Magang Vokasi 2026" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-gray-700 uppercase mb-1">Tipe File <span class="text-red-500">*</span></label>
-                            <select name="tipe_file" required class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
-                                <option value="PDF">PDF Document</option>
-                                <option value="DOCX">Word (.docx)</option>
-                                <option value="PPTX">PowerPoint (.pptx)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold text-gray-700 uppercase mb-1">Ukuran File</label>
-                            <input type="text" name="ukuran_file" placeholder="1.5 MB" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none">
-                        </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 uppercase mb-1">Unggah Berkas File (PDF, Word, PPT) <span class="text-red-500">*</span></label>
+                        <input type="file" name="file_materi" required accept=".pdf,.doc,.docx,.ppt,.pptx" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-vokasi-primary/10 file:text-vokasi-primary hover:file:bg-vokasi-primary/20">
                     </div>
 
                     <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">

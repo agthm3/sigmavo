@@ -195,7 +195,7 @@
 
             <!-- 4. Pelaporan Magang Group -->
             @php
-                $isPelaporanActive = request()->routeIs('dashboard-pelaporan-download-template', 'dashboard-pelaporan-upload-dokumen');
+                $isPelaporanActive = request()->routeIs('dashboard-pelaporan-download-template', 'dashboard-pelaporan-upload-dokumen', 'dashboard-mahasiswa-laporan-akhir');
             @endphp
             <details class="group" {{ $isPelaporanActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isPelaporanActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
@@ -217,25 +217,22 @@
                         </a>
                     </li>
                     <li>
-                        @hasrole('mahasiswa')
-                            <a href="{{ route('dashboard-mahasiswa-laporan-akhir') }}" 
-                            class="flex items-center px-3 py-2 text-sm rounded-lg font-medium text-gray-700 hover:bg-gray-100 hover:text-vokasi-primary transition-colors">
-                                <i class="fas fa-file-pdf w-5"></i>
-                                <span class="ml-2">Laporan Akhir</span>
-                            </a>
-                        @endhasrole
+                        <a href="{{ route('dashboard-mahasiswa-laporan-akhir') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-mahasiswa-laporan-akhir') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Laporan Akhir
+                        </a>
                     </li>
                 </ul>
             </details>
             @endhasanyrole
-<!-- ======================================================== -->
+
+            <!-- ======================================================== -->
             <!-- SECTION: SUPERVISOR LAPANGAN (SPV) & DOSEN               -->
             <!-- ======================================================== -->
             @hasanyrole('dosen|dosen_pembimbing|spv')
             <hr class="my-4 border-gray-200">
             <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Pemeriksaan & Bimbingan</p>
 
-            <!-- Menu Khusus SPV / Dosen: Perlu Verifikasi Logbook & Absensi -->
             @php
                 $isVerifikasiActive = request()->routeIs('dashboard-dosen-perlu-verifikasi', 'dashboard-dosen-terverifikasi');
             @endphp
@@ -243,12 +240,10 @@
                class="flex items-center px-3 py-2 text-sm rounded-lg font-medium transition-colors {{ $isVerifikasiActive ? 'text-vokasi-dark bg-[#e6f4f5] font-bold border-l-4 border-vokasi-primary' : 'text-gray-700 hover:bg-gray-100 hover:text-vokasi-primary' }}">
                 <i class="fas fa-check-circle w-5"></i>
                 <span class="ml-2 flex-1">Perlu Verifikasi</span>
-                <!-- Badge Indikator -->
                 <span class="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-full">Antrean</span>
             </a>
 
             @hasanyrole('dosen|dosen_pembimbing')
-            <!-- Group Tambahan Khusus Dosen Fakultas (Mahasiswa Bimbingan) -->
             @php
                 $isDosenActive = request()->routeIs('dashboard-dosen-mahasiswa-bimbingan', 'dashboard-dosen-daftar-mahasiswa');
             @endphp
@@ -274,8 +269,6 @@
                 </ul>
             </details>
             @endhasanyrole  
-
-
             @endhasanyrole
 
             <!-- ======================================================== -->
@@ -286,7 +279,7 @@
             <hr class="my-4 border-gray-200">
             <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Pemeriksaan & Penilaian</p>
 
-            <!-- 6. Verifikasi Group -->
+            <!-- Verifikasi Group -->
             @php
                 $isVerifikasiActive = request()->routeIs('dashboard-verifikasi-daftar-mahasiswa-semua-laporan', 'dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi', 'dashboard-verifikasi-daftar-mahasiswa-terverifikasi');
             @endphp
@@ -318,7 +311,7 @@
                 </ul>
             </details>
 
-            <!-- 7. Penilaian Group -->
+            <!-- Penilaian Group -->
             @php
                 $isPenilaianActive = request()->routeIs('dashboard-penilaian-listing-mahasiswa');
             @endphp
@@ -347,9 +340,9 @@
             <hr class="my-4 border-gray-200">
             <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Sistem & Kemitraan</p>
 
-            <!-- 8. Manajemen Akun Group -->
+            <!-- Manajemen Akun Group -->
             @php
-                $isManajemenAkunActive = request()->routeIs('dashboard-manajemen-aktivasi-user', 'dashboard-manajemen-jenis-role', 'dashboard-manajemen-pengaturan');
+                $isManajemenAkunActive = request()->routeIs('dashboard-manajemen-aktivasi-user', 'dashboard-manajemen-jenis-role', 'dashboard-manajemen-pengaturan', 'dashboard-manajemen-rubrik-penilaian');
             @endphp
             <details class="group" {{ $isManajemenAkunActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isManajemenAkunActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
@@ -376,7 +369,7 @@
                             Pengaturan
                         </a>
                     </li>
-                <li>
+                    <li>
                         <a href="{{ route('dashboard-manajemen-rubrik-penilaian') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-manajemen-rubrik-penilaian') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
                             Rubrik Penilaian
@@ -385,14 +378,14 @@
                 </ul>
             </details>
 
-            <!-- 9. Daftar Lowongan (HR) Group -->
+            <!-- Daftar Lowongan & Pelaksanaan Group (Admin) -->
             @php
-                $isDaftarLowonganHRActive = request()->routeIs('dashboard-daftar-lowongan-daftar-perusahaan', 'dashboard-daftar-lowongan-listing-program', 'dashboard-daftar-lowongan-seleksi', 'dashboard-daftar-lowongan-pengajuan-magang');
+                $isDaftarLowonganHRActive = request()->routeIs('dashboard-daftar-lowongan-daftar-perusahaan', 'dashboard-daftar-lowongan-listing-program', 'dashboard-daftar-lowongan-seleksi', 'dashboard-daftar-lowongan-pengajuan-magang', 'dashboard-mahasiswa-pembekalan-magang');
             @endphp
             <details class="group" {{ $isDaftarLowonganHRActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isDaftarLowonganHRActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
                     <i class="fas fa-briefcase w-5"></i>
-                    <span class="ml-2 flex-1 text-sm">Daftar Lowongan</span>
+                    <span class="ml-2 flex-1 text-sm">Daftar Lowongan & Agenda</span>
                     <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
                 </summary>
                 <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
@@ -420,11 +413,18 @@
                             Pengajuan Magang
                         </a>
                     </li>
+                    <!-- TAMBAHAN TERBARU: MENU PEMBEKALAN MAGANG UNTUK ADMIN PRODI / ADMIN -->
+                    <li>
+                        <a href="{{ route('dashboard-mahasiswa-pembekalan-magang') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-mahasiswa-pembekalan-magang') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            <i class="fas fa-calendar-alt mr-1 text-vokasi-primary text-xs"></i> Pembekalan Magang
+                        </a>
+                    </li>
                 </ul>
             </details>
             @endhasanyrole
 
-            <!-- 1. TOMBOL LOGOUT DI FOOTER SIDEBAR (Bagian Bawah Navigation Bar Kiri) -->
+            <!-- TOMBOL LOGOUT DI FOOTER SIDEBAR -->
             <div class="p-4 border-t border-gray-200/80 bg-white">
                 <form method="POST" action="{{ route('logout') }}" onsubmit="return confirm('Apakah Anda yakin ingin keluar dari sistem?')">
                     @csrf
@@ -468,8 +468,8 @@
 
                 @php
                     $authUser = Auth::user();
-                    $userName = $authUser->name ?? 'Fadehl Thristansyah';
-                    $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'Pengguna') : 'Mahasiswa';
+                    $userName = $authUser->name ?? 'Pengguna';
+                    $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'Pengguna') : 'Pengguna';
                 @endphp
 
                 <div class="flex items-center space-x-2.5 border-l pl-3 md:pl-4 border-gray-200">

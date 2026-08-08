@@ -169,17 +169,43 @@ class PembekalanMagangController extends Controller
     {
         $request->validate([
             'judul_materi' => 'required|string|max:255',
-            'tipe_file'    => 'required|string',
-            'ukuran_file'  => 'nullable|string',
+            'file_materi'  => 'required|file|mimes:pdf,doc,docx,ppt,pptx|max:10240',
+        ], [
+            'judul_materi.required' => 'Judul dokumen wajib diisi.',
+            'file_materi.required'  => 'Berkas materi wajib diunggah.',
+            'file_materi.mimes'     => 'Format berkas harus berupa PDF, Word (.doc/.docx), atau PowerPoint (.ppt/.pptx).',
+            'file_materi.max'       => 'Ukuran berkas maksimal 10MB.',
         ]);
 
-        PembekalanMateri::create([
-            'pembekalan_id' => $id,
-            'judul_materi'  => $request->judul_materi,
-            'tipe_file'     => $request->tipe_file,
-            'ukuran_file'   => $request->ukuran_file ?? '1.2 MB',
-        ]);
+        $pembekalan = Pembekalan::findOrFail($id);
 
-        return redirect()->back()->with('success', 'Materi pembekalan berhasil ditambahkan.');
+        if ($request->hasFile('file_materi')) {
+            $file = $request->file('file_materi');
+            
+            // Deteksi ekstensi file secara otomatis (misal: PDF, DOCX, PPTX)
+            $extension = strtoupper($file->getClientOriginalExtension());
+            
+            // Hitung ukuran file dalam MB/KB
+            $sizeInBytes = $file->getSize();
+            if ($sizeInBytes >= 1048576) {
+                $formattedSize = round($sizeInBytes / 1048576, 1) . ' MB';
+            } else {
+                $formattedSize = round($sizeInBytes / 1024, 1) . ' KB';
+            }
+
+            // Simpan file ke storage public
+            $filePath = $file->store('materi_pembekalan', 'public');
+
+            // Simpan record ke database
+            PembekalanMateri::create([
+                'pembekalan_id' => $pembekalan->id,
+                'judul_materi'  => $request->judul_materi,
+                'tipe_file'     => $extension, // Otomatis terisi dari ekstensi file
+                'ukuran_file'   => $formattedSize,
+                'file_path'     => $filePath,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Materi pembekalan berhasil diunggah.');
     }
 }
