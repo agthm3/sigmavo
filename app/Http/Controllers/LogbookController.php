@@ -10,10 +10,6 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\SimpleType\Jc;
-use PhpOffice\PhpWord\Style\Table;
 
 class LogbookController extends Controller
 {
@@ -22,11 +18,22 @@ class LogbookController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // 1. Ambil pendaftaran magang aktif mahasiswa
+        // 1. Ambil pendaftaran magang aktif mahasiswa (status 'diterima')
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
             ->first();
+
+        // JIKA BELUM DITERIMA MAGANG -> Set flag isLocked = true
+        if (!$pendaftaran) {
+            return view('dashboard.logbook.index', [
+                'isLocked'    => true,
+                'logbooks'    => collect(),
+                'pendaftaran' => null,
+                'daftarCpmk'  => [],
+                'user'        => $user
+            ]);
+        }
 
         // 2. Query Logbook Mahasiswa
         $query = Logbook::where('user_id', $user->id);
@@ -66,7 +73,13 @@ class LogbookController extends Controller
             ];
         }
 
-        return view('dashboard.logbook.index', compact('logbooks', 'pendaftaran', 'daftarCpmk', 'user'));
+        return view('dashboard.logbook.index', [
+            'isLocked'    => false,
+            'logbooks'    => $logbooks,
+            'pendaftaran' => $pendaftaran,
+            'daftarCpmk'  => $daftarCpmk,
+            'user'        => $user
+        ]);
     }
 
     /**
@@ -76,16 +89,21 @@ class LogbookController extends Controller
     {
         $user = Auth::user();
 
-        $request->validate([
-            'uraian_kegiatan'  => 'required|string',
-            'mata_kuliah'      => 'nullable|array', // Tetap menggunakan nama kolom DB mata_kuliah (array CPMK)
-            'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
-        ]);
-
+        // Proteksi Backend: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
             ->first();
+
+        if (!$pendaftaran) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
+        }
+
+        $request->validate([
+            'uraian_kegiatan'  => 'required|string',
+            'mata_kuliah'      => 'nullable|array',
+            'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+        ]);
 
         // Simpan Gambar
         $fotoPath = null;
@@ -95,10 +113,10 @@ class LogbookController extends Controller
 
         Logbook::create([
             'user_id'          => $user->id,
-            'pendaftaran_id'   => $pendaftaran?->id,
+            'pendaftaran_id'   => $pendaftaran->id,
             'tanggal'          => now()->toDateString(),
             'uraian_kegiatan'  => $request->uraian_kegiatan,
-            'mata_kuliah'      => $request->mata_kuliah ?? [], // Menyimpan pilihan CPMK
+            'mata_kuliah'      => $request->mata_kuliah ?? [],
             'foto_dokumentasi' => $fotoPath,
             'status_asistensi' => 'pending',
         ]);
@@ -111,8 +129,20 @@ class LogbookController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
+
+        // Proteksi Backend: Cek Pendaftaran Aktif
+        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+            ->where('status_seleksi', 'diterima')
+            ->latest()
+            ->first();
+
+        if (!$pendaftaran) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
+        }
+
         $logbook = Logbook::where('id', $id)
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->firstOrFail();
 
         if ($logbook->status_asistensi === 'approved') {
@@ -148,8 +178,20 @@ class LogbookController extends Controller
      */
     public function destroy($id)
     {
+        $user = Auth::user();
+
+        // Proteksi Backend: Cek Pendaftaran Aktif
+        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+            ->where('status_seleksi', 'diterima')
+            ->latest()
+            ->first();
+
+        if (!$pendaftaran) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
+        }
+
         $logbook = Logbook::where('id', $id)
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->firstOrFail();
 
         if ($logbook->status_asistensi === 'approved') {
@@ -165,26 +207,30 @@ class LogbookController extends Controller
         return redirect()->back()->with('success', 'Entri logbook berhasil dihapus.');
     }
 
-/**
+    /**
      * Export Logbook Pribadi Mahasiswa ke Dokumen Microsoft Word (.doc)
      */
     public function exportWord()
     {
-        // 1. Bersihkan output buffer
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // 2. Ambil Data Pendaftaran & Profile Mahasiswa
+        // Proteksi Backend: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
             ->first();
 
-        // 3. Ambil Logbook Mahasiswa
+        if (!$pendaftaran) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
+        }
+
+        // 1. Bersihkan output buffer
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // 2. Ambil Logbook Mahasiswa
         $logbooks = Logbook::where('user_id', $user->id)
             ->orderBy('tanggal', 'asc')
             ->get();
@@ -193,7 +239,7 @@ class LogbookController extends Controller
             return redirect()->back()->with('error', 'Belum ada data logbook untuk di-export.');
         }
 
-        // 4. Pre-processing Gambar ke Format Base64
+        // 3. Pre-processing Gambar ke Format Base64
         foreach ($logbooks as $logbook) {
             $logbook->foto_base64 = null;
 
@@ -213,14 +259,14 @@ class LogbookController extends Controller
             }
         }
 
-        // 5. Render HTML View khusus Word
+        // 4. Render HTML View khusus Word
         $htmlContent = view('dashboard.logbook.word-export', compact('user', 'pendaftaran', 'logbooks'))->render();
 
-        // 6. Nama File Download
+        // 5. Nama File Download
         $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '_', $user->name);
         $fileName = 'Logbook_Magang_' . $cleanName . '.doc';
 
-        // 7. Stream Response langsung sebagai Dokumen Word
+        // 6. Stream Response langsung sebagai Dokumen Word
         return response($htmlContent, 200, [
             'Content-Type'        => 'application/msword; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',

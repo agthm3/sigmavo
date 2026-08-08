@@ -16,16 +16,19 @@ class AbsensiController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // 1. Ambil pendaftaran magang aktif
+        // 1. Ambil pendaftaran magang aktif yang sudah DITERIMA
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
             ->first();
 
-        // 2. Ambil parameter target jam dari Setting Global (Default: 900 Jam)
+        // 2. Jika mahasiswa belum diterima magang, set isLocked = true
+        $isLocked = !$pendaftaran;
+
+        // 3. Ambil parameter target jam dari Setting Global (Default: 900 Jam)
         $targetJam = (int) Setting::getByKey('min_jam_magang', 900);
 
-        // 3. Hitung total jam yang telah diapprove dosen
+        // 4. Hitung total jam yang telah diapprove dosen
         $jamTercapai = Absensi::where('user_id', $user->id)
             ->where('status_verifikasi', 'approved')
             ->sum('jam_diperoleh');
@@ -33,13 +36,13 @@ class AbsensiController extends Controller
         $sisaJam = max(0, $targetJam - $jamTercapai);
         $persentase = $targetJam > 0 ? min(100, round(($jamTercapai / $targetJam) * 100, 1)) : 0;
 
-        // 4. Data absensi hari ini
+        // 5. Data absensi hari ini
         $today = now()->toDateString();
         $absensiHariIni = Absensi::where('user_id', $user->id)
             ->where('tanggal', $today)
             ->first();
 
-        // 5. Riwayat Absensi
+        // 6. Riwayat Absensi
         $riwayats = Absensi::where('user_id', $user->id)
             ->orderBy('tanggal', 'desc')
             ->take(10)
@@ -47,6 +50,7 @@ class AbsensiController extends Controller
 
         return view('dashboard.absensi.index', compact(
             'pendaftaran',
+            'isLocked',
             'targetJam',
             'jamTercapai',
             'sisaJam',
@@ -63,6 +67,17 @@ class AbsensiController extends Controller
     public function storeAbsensi(Request $request)
     {
         $user = Auth::user();
+
+        // Proteksi Backend: Cek Pendaftaran Aktif
+        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+            ->where('status_seleksi', 'diterima')
+            ->latest()
+            ->first();
+
+        if (!$pendaftaran) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima pada program magang aktif.');
+        }
+
         $today = now()->toDateString();
 
         $request->validate([
@@ -71,11 +86,6 @@ class AbsensiController extends Controller
             'latitude'  => 'nullable|string',
             'longitude' => 'nullable|string',
         ]);
-
-        $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
-            ->latest()
-            ->first();
 
         // Decode Base64 Image
         $imageParts = explode(";base64,", $request->image);
@@ -88,7 +98,7 @@ class AbsensiController extends Controller
             'tanggal' => $today,
         ]);
 
-        $absensi->pendaftaran_id = $pendaftaran?->id;
+        $absensi->pendaftaran_id = $pendaftaran->id;
 
         if ($request->tipe === 'masuk') {
             $absensi->waktu_masuk     = now()->toTimeString();
@@ -118,6 +128,17 @@ class AbsensiController extends Controller
     public function storeIzin(Request $request)
     {
         $user = Auth::user();
+
+        // Proteksi Backend: Cek Pendaftaran Aktif
+        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+            ->where('status_seleksi', 'diterima')
+            ->latest()
+            ->first();
+
+        if (!$pendaftaran) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima pada program magang aktif.');
+        }
+
         $today = now()->toDateString();
 
         $request->validate([
@@ -125,11 +146,6 @@ class AbsensiController extends Controller
             'alasan_izin'    => 'required|string',
             'surat_izin'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
-
-        $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
-            ->latest()
-            ->first();
 
         $suratPath = null;
         if ($request->hasFile('surat_izin')) {
@@ -139,7 +155,7 @@ class AbsensiController extends Controller
         Absensi::updateOrCreate(
             ['user_id' => $user->id, 'tanggal' => $today],
             [
-                'pendaftaran_id'    => $pendaftaran?->id,
+                'pendaftaran_id'    => $pendaftaran->id,
                 'tipe_kehadiran'    => $request->tipe_kehadiran,
                 'alasan_izin'       => $request->alasan_izin,
                 'surat_izin'        => $suratPath,
