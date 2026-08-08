@@ -2,21 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
 use Illuminate\Http\Request;
 
 class PengajuanMagangController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
     {
-        $query = Pendaftaran::with(['mahasiswa.mahasiswaProfile.prodi', 'lowongan.perusahaan']);
+        // Hanya ambil pendaftaran yang memiliki akun user aktif
+        $query = Pendaftaran::has('user')
+            ->with(['user.mahasiswaProfile.prodi', 'lowongan.perusahaan']);
 
-        // Search Filter
+        // Filter Pencarian Teks (Nama, NIM, Perusahaan)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->whereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('mahasiswa.mahasiswaProfile', fn($mp) => $mp->where('nim', 'like', "%{$search}%"))
+                $q->whereHas('user', fn($m) => $m->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('user.mahasiswaProfile', fn($mp) => $mp->where('nim', 'like', "%{$search}%"))
                   ->orWhereHas('lowongan.perusahaan', fn($p) => $p->where('nama_perusahaan', 'like', "%{$search}%"))
                   ->orWhere('nama_instansi_mandiri', 'like', "%{$search}%");
             });
@@ -35,10 +38,10 @@ class PengajuanMagangController extends Controller
         $pendaftarans = $query->latest()->paginate(10)->withQueryString();
 
         // Ringkasan Statistik
-        $totalPengajuan = Pendaftaran::count();
-        $totalPerluSurat = Pendaftaran::where('status_surat', 'menunggu')->count();
-        $totalSuratTerbit = Pendaftaran::where('status_surat', 'terbit')->count();
-        $totalMandiri = Pendaftaran::where('jalur_magang', 'mandiri')->count();
+        $totalPengajuan  = Pendaftaran::has('user')->count();
+        $totalPerluSurat = Pendaftaran::has('user')->where('status_surat', 'menunggu')->count();
+        $totalSuratTerbit = Pendaftaran::has('user')->where('status_surat', 'terbit')->count();
+        $totalMandiri    = Pendaftaran::has('user')->where('jalur_magang', 'mandiri')->count();
 
         return view('dashboard.pengajuan-magang.index', compact(
             'pendaftarans',
@@ -50,7 +53,7 @@ class PengajuanMagangController extends Controller
     }
 
     /**
-     * Terbitkan Surat Pengantar Magang
+     * Terbitkan / Update Surat Pengantar Magang
      */
     public function terbitSurat(Request $request, $id)
     {
@@ -71,6 +74,29 @@ class PengajuanMagangController extends Controller
             'status_surat'       => 'terbit',
         ]);
 
-        return redirect()->back()->with('success', "Surat pengantar untuk {$pendaftaran->mahasiswa->name} berhasil diterbitkan.");
+        $namaMahasiswa = $pendaftaran->user?->name ?? 'Mahasiswa';
+
+        return redirect()->back()->with('success', "Surat pengantar untuk {$namaMahasiswa} berhasil diterbitkan.");
+    }
+
+ 
+    public function verifikasiSuratBalasan(Request $request, $id)
+    {
+        $pendaftaran = Pendaftaran::findOrFail($id);
+
+        $request->validate([
+            'status_seleksi'  => 'required|in:diterima,ditolak',
+            'catatan_seleksi' => 'nullable|string|max:255',
+        ]);
+
+        $pendaftaran->update([
+            'status_seleksi'  => $request->status_seleksi,
+            'catatan_seleksi' => $request->catatan_seleksi,
+        ]);
+
+        $statusText = $request->status_seleksi === 'diterima' ? 'DITERIMA MAGANG' : 'DITOLAK';
+        $namaMhs = $pendaftaran->user?->name ?? 'Mahasiswa';
+
+        return redirect()->back()->with('success', "Berhasil memperbarui status pendaftaran {$namaMhs} menjadi {$statusText}.");
     }
 }

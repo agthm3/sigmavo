@@ -1,19 +1,22 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50"
+         x-data="{ openUploadModal: false, activeUrl: '' }">
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
             
             <div class="max-w-5xl mx-auto w-full flex-1">
                 
                 <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Status Pengajuan Magang</h2>
-                        <p class="text-sm text-gray-500 mt-1">Pantau perkembangan seleksi dan verifikasi pengajuan magang Anda.</p>
+                        <p class="text-sm text-gray-500 mt-1">Pantau perkembangan seleksi, unduh surat pengantar, dan unggah surat balasan perusahaan.</p>
                     </div>
                     
                     <!-- Filter Form -->
                     <form action="{{ route('dashboard-mahasiswa-status-pengajuan') }}" method="GET">
-                        <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary focus:border-vokasi-primary block p-2 outline-none shadow-sm">
+                        <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary focus:border-vokasi-primary block p-2 outline-none shadow-sm">
                             <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
                             <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Sedang Diproses (Menunggu)</option>
                             <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Diterima</option>
@@ -24,7 +27,7 @@
 
                 <!-- NOTIFIKASI SUKSES / ERROR -->
                 @if(session('success'))
-                <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm">
+                <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
                         <span>{{ session('success') }}</span>
@@ -34,12 +37,23 @@
                 @endif
 
                 @if(session('error'))
-                <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center justify-between text-sm">
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-exclamation-circle text-red-600 text-lg"></i>
                         <span>{{ session('error') }}</span>
                     </div>
                     <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-900"><i class="fas fa-times"></i></button>
+                </div>
+                @endif
+
+                @if($errors->any())
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs shadow-sm">
+                    <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Gagal Mengunggah Berkas:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
                 @endif
 
@@ -99,9 +113,9 @@
                                     </div>
                                 </div>
 
-                                <!-- Progress Timeline (Hanya untuk yang sedang aktif/diproses atau diterima) -->
+                                <!-- Progress Timeline -->
                                 @if($item->status_seleksi !== 'ditolak')
-                                <div class="relative pt-2">
+                                <div class="relative pt-2 mb-2">
                                     <div class="absolute inset-0 flex items-center" aria-hidden="true">
                                         <div class="w-full border-t-2 {{ $item->status_seleksi == 'diterima' ? 'border-green-400' : 'border-gray-200' }}"></div>
                                     </div>
@@ -114,20 +128,20 @@
                                             <span class="text-xs font-bold text-gray-800 mt-2">Diajukan</span>
                                         </div>
 
-                                        <!-- Step 2: Verifikasi Admin/Dosen -->
-                                        <div class="flex flex-col items-center">
-                                            <div class="h-8 w-8 rounded-full {{ $item->status_seleksi == 'diterima' ? 'bg-vokasi-primary text-white' : 'bg-yellow-400 text-white animate-pulse' }} flex items-center justify-center ring-4 ring-white z-10">
-                                                <i class="fas fa-search text-sm"></i>
-                                            </div>
-                                            <span class="text-xs font-bold {{ $item->status_seleksi == 'diterima' ? 'text-gray-800' : 'text-yellow-600' }} mt-2">Verifikasi Berkasi</span>
-                                        </div>
-
-                                        <!-- Step 3: Surat Pengantar -->
+                                        <!-- Step 2: Surat Pengantar -->
                                         <div class="flex flex-col items-center">
                                             <div class="h-8 w-8 rounded-full {{ $item->status_surat == 'terbit' ? 'bg-vokasi-primary text-white' : 'bg-gray-200 text-gray-400' }} flex items-center justify-center ring-4 ring-white z-10">
                                                 <i class="fas fa-envelope-open-text text-sm"></i>
                                             </div>
-                                            <span class="text-xs font-medium {{ $item->status_surat == 'terbit' ? 'text-gray-800 font-bold' : 'text-gray-400' }} mt-2">Surat Pengantar</span>
+                                            <span class="text-xs font-bold {{ $item->status_surat == 'terbit' ? 'text-gray-800' : 'text-gray-400' }} mt-2">Surat Pengantar</span>
+                                        </div>
+
+                                        <!-- Step 3: Surat Balasan -->
+                                        <div class="flex flex-col items-center">
+                                            <div class="h-8 w-8 rounded-full {{ !empty($item->surat_balasan) ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-400' }} flex items-center justify-center ring-4 ring-white z-10">
+                                                <i class="fas fa-file-upload text-sm"></i>
+                                            </div>
+                                            <span class="text-xs font-bold {{ !empty($item->surat_balasan) ? 'text-purple-700' : 'text-gray-400' }} mt-2">Surat Balasan</span>
                                         </div>
 
                                         <!-- Step 4: Keputusan Akhir -->
@@ -141,7 +155,6 @@
                                 </div>
                                 @endif
 
-                                <!-- Catatan Seleksi / Penolakan jika Ada -->
                                 @if($item->catatan_seleksi)
                                 <div class="mt-4 p-3 rounded-lg text-xs border
                                     {{ $item->status_seleksi == 'ditolak' ? 'bg-red-50 text-red-800 border-red-100' : 'bg-gray-50 text-gray-700 border-gray-200' }}">
@@ -151,25 +164,56 @@
 
                             </div>
 
-                            <!-- Card Footer Action -->
+                            <!-- CARD FOOTER ACTIONS -->
                             <div class="bg-gray-50 p-4 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3">
-                                @if($item->status_seleksi == 'diterima')
-                                    <span class="text-xs text-green-800 font-medium"><i class="fas fa-info-circle mr-1"></i> Selamat! Program magang ini telah disetujui.</span>
-                                    <a href="{{ route('dashboard-mahasiswa-program-magang') }}" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-4 rounded-lg transition-colors shadow-sm">
-                                        Buka Dashboard Magang
-                                    </a>
-                                @elseif($item->status_seleksi == 'menunggu')
-                                    <span class="text-xs text-gray-500">Berkas sedang ditinjau oleh pengelola / prodi.</span>
-                                    <form action="{{ route('dashboard-mahasiswa-status-pengajuan-cancel', $item->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
-                                            Batalkan Pengajuan
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="text-xs text-gray-400">Pengajuan ini tidak lolos seleksi. Anda dapat melamar lowongan lainnya.</span>
-                                @endif
+                                
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <!-- 1. Tombol Download Surat Pengantar -->
+                                    @if($item->status_surat == 'terbit')
+                                        <a href="{{ route('dashboard-mahasiswa-status-pengajuan-download-surat', $item->id) }}" 
+                                           target="_blank" 
+                                           class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                                            <i class="fas fa-file-pdf text-sm"></i> Download Surat Pengantar (PDF)
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-500 flex items-center gap-1">
+                                            <i class="fas fa-clock text-yellow-500"></i> Surat Pengantar belum diterbitkan Admin.
+                                        </span>
+                                    @endif
+
+                                    <!-- 2. Tombol Upload / Lihat Surat Balasan Perusahaan -->
+                                    @if($item->status_surat == 'terbit' && $item->status_seleksi == 'menunggu')
+                                        @if(!empty($item->surat_balasan))
+                                            <a href="{{ asset('storage/' . $item->surat_balasan) }}" target="_blank" class="bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 text-xs font-bold py-2 px-3.5 rounded-xl transition-colors flex items-center gap-2">
+                                                <i class="fas fa-file-alt"></i> Surat Balasan Terunggah
+                                            </a>
+                                            <button type="button" @click="activeUrl = '{{ route('dashboard-mahasiswa-status-pengajuan-upload-surat-balasan', $item->id) }}'; openUploadModal = true" class="text-xs font-bold text-purple-600 hover:underline">
+                                                (Ganti File)
+                                            </button>
+                                        @else
+                                            <button type="button" @click="activeUrl = '{{ route('dashboard-mahasiswa-status-pengajuan-upload-surat-balasan', $item->id) }}'; openUploadModal = true" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                                                <i class="fas fa-upload"></i> Upload Surat Balasan Perusahaan
+                                            </button>
+                                        @endif
+                                    @endif
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    @if($item->status_seleksi == 'diterima')
+                                        <a href="{{ route('dashboard-mahasiswa-program-magang') }}" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors shadow-sm">
+                                            Buka Dashboard Magang
+                                        </a>
+                                    @elseif($item->status_seleksi == 'menunggu')
+                                        <form action="{{ route('dashboard-mahasiswa-status-pengajuan-cancel', $item->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                                Batalkan Pengajuan
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+
                             </div>
 
                         </div>
@@ -177,17 +221,45 @@
                         <div class="bg-white p-12 text-center rounded-2xl border border-gray-200 text-gray-400">
                             <i class="fas fa-folder-open text-4xl mb-3 block"></i>
                             <p class="font-bold text-gray-600 text-base">Belum Ada Pengajuan Magang</p>
-                            <p class="text-xs mt-1">Anda belum melamar lowongan apa pun. Silakan kunjungi menu <a href="{{ route('dashboard-mahasiswa-daftar-lowongan') }}" class="text-vokasi-primary underline font-semibold">Daftar Lowongan</a> atau <a href="{{ route('dashboard-mahasiswa-ajukan-mandiri') }}" class="text-vokasi-primary underline font-semibold">Ajukan Mandiri</a>.</p>
                         </div>
                     @endforelse
 
                 </div>
             </div>
 
-            <!-- FOOTER -->
             <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
                 Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
             </footer>
 
         </main>
+
+        <!-- MODAL UPLOAD SURAT BALASAN (WAJIB enctype="multipart/form-data") -->
+        <div x-show="openUploadModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div @click.away="openUploadModal = false" class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden">
+                <div class="bg-purple-600 px-6 py-4 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-base"><i class="fas fa-file-upload mr-2"></i> Upload Surat Balasan Perusahaan</h3>
+                    <button type="button" @click="openUploadModal = false" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+                </div>
+
+                <!-- DIPERBAIKI: Menambahkan enctype="multipart/form-data" -->
+                <form :action="activeUrl" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+                    @csrf
+                    <p class="text-xs text-gray-600">Unggah berkas resmi Surat Balasan / Jawaban dari instansi/perusahaan tujuan magang Anda (Format: PDF/JPG/PNG, Maks. 3MB).</p>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">File Surat Balasan <span class="text-red-500">*</span></label>
+                        <input type="file" name="surat_balasan" required accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                        <button type="button" @click="openUploadModal = false" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 bg-white font-bold text-xs">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-2">
+                            <i class="fas fa-upload"></i> Simpan File
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
 @endsection

@@ -61,6 +61,13 @@ Route::get('/pengajuan-magang/ajukan-mandiri', [AjukanMandiriController::class, 
     // STATUS PENGAJUAN
 Route::get('/pengajuan-magang/status-pengajuan', [StatusPengajuanController::class, 'index'])->name('dashboard-mahasiswa-status-pengajuan');
 Route::delete('/pengajuan-magang/status-pengajuan/{id}/cancel', [StatusPengajuanController::class, 'cancel'])->name('dashboard-mahasiswa-status-pengajuan-cancel');
+Route::get('/pengajuan-magang/status-pengajuan/{id}/download-surat', [StatusPengajuanController::class, 'downloadSurat'])->name('dashboard-mahasiswa-status-pengajuan-download-surat');
+// MAHASISWA: Upload Surat Balasan Perusahaan
+Route::post('/pengajuan-magang/status-pengajuan/{id}/upload-surat-balasan', [StatusPengajuanController::class, 'uploadSuratBalasan'])
+    ->name('dashboard-mahasiswa-status-pengajuan-upload-surat-balasan');
+// ADMIN: Verifikasi Surat Balasan & Keputusan Akhir Seleksi
+Route::put('/pengajuan-magang/{id}/verifikasi-balasan', [PengajuanMagangController::class, 'verifikasiSuratBalasan'])
+    ->name('dashboard-daftar-lowongan-pengajuan-magang-verifikasi-balasan');
 
 //PELAKSANAAN MAGANG
     // PEMBEKALAN MAGANG

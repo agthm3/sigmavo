@@ -27,6 +27,7 @@ class Pendaftaran extends Model
         'file_cv',
         'file_transkrip',
         'catatan_seleksi',
+        'surat_balasan',
     ];
 
     protected $casts = [
