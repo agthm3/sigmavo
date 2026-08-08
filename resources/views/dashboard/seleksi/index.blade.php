@@ -119,10 +119,10 @@
                                     <td class="p-4 text-center text-gray-500 font-medium">{{ $pendaftarans->firstItem() + $index }}</td>
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
-                                            <img src="https://ui-avatars.com/api/?name={{ urlencode($item->mahasiswa->name ?? 'Mhs') }}&background=f3f4f6&color=37A7AC" alt="Avatar" class="w-9 h-9 rounded-full border border-gray-200">
+                                            <img src="https://ui-avatars.com/api/?name={{ urlencode($item->user->name ?? 'Mhs') }}&background=f3f4f6&color=37A7AC" alt="Avatar" class="w-9 h-9 rounded-full border border-gray-200">
                                             <div>
-                                                <p class="font-bold text-gray-800">{{ $item->mahasiswa->name ?? '-' }}</p>
-                                                <p class="text-xs text-gray-500">NIM: {{ $item->mahasiswa->mahasiswaProfile->nim ?? '-' }}</p>
+                                                <p class="font-bold text-gray-800">{{ $item->user->name ?? '-' }}</p>
+                                                <p class="text-xs text-gray-500">NIM: {{ $item->user->mahasiswaProfile->nim ?? '-' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -214,17 +214,18 @@
 
                 <!-- Modal Body (Scrollable) -->
                 <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-                    
+                                        
                     <!-- Profile Pelamar Summary -->
                     <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <img :src="'https://ui-avatars.com/api/?name=' + encodeURIComponent(activeData?.mahasiswa?.name || 'Mhs') + '&background=37A7AC&color=fff'" alt="Pelamar" class="w-16 h-16 rounded-full border-2 border-white shadow-sm shrink-0">
+                        <!-- Perhatikan perubahan dari activeData?.mahasiswa menjadi activeData?.user -->
+                        <img :src="'https://ui-avatars.com/api/?name=' + encodeURIComponent(activeData?.user?.name || 'Mhs') + '&background=37A7AC&color=fff'" alt="Pelamar" class="w-16 h-16 rounded-full border-2 border-white shadow-sm shrink-0">
                         <div class="flex-1">
                             <div class="flex justify-between items-start">
                                 <div>
-                                    <h4 class="font-bold text-lg text-gray-800" x-text="activeData?.mahasiswa?.name"></h4>
+                                    <h4 class="font-bold text-lg text-gray-800" x-text="activeData?.user?.name"></h4>
                                     <p class="text-xs text-gray-500">
-                                        NIM: <span x-text="activeData?.mahasiswa?.mahasiswa_profile?.nim || '-'"></span> — 
-                                        <span x-text="activeData?.mahasiswa?.mahasiswa_profile?.prodi?.nama_prodi || '-'"></span>
+                                        NIM: <span x-text="activeData?.user?.mahasiswa_profile?.nim || '-'"></span> — 
+                                        <span x-text="activeData?.user?.mahasiswa_profile?.prodi?.nama_prodi || '-'"></span>
                                     </p>
                                 </div>
                             </div>

@@ -2,10 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Absensi;
+use App\Models\AdminProdiProfile;
+use App\Models\DosenProfile;
+use App\Models\Logbook;
+use App\Models\MahasiswaProfile;
+use App\Models\MitraProfile;
+use App\Models\Seminar;
+use App\Models\SpvProfile;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -74,5 +83,15 @@ class User extends Authenticatable
     public function absensis()
     {
         return $this->hasMany(Absensi::class);
+    }
+
+    public function spvProfile()
+    {
+        return $this->hasOne(SpvProfile::class, 'user_id');
+    }
+
+    public function logbooks(): HasMany
+    {
+        return $this->hasMany(Logbook::class, 'user_id');
     }
 }

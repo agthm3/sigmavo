@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MataKuliah;
+use App\Models\Cpmk;
 use App\Models\Prodi;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -15,14 +15,22 @@ class PengaturanGlobalController extends Controller
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
 
-        if (!$currentUser->hasAnyRole(['admin', 'superadmin'])) {
+        // Hak akses ke halaman pengaturan: Superadmin, Admin, atau Admin Prodi
+        if (!$currentUser->hasAnyRole(['admin', 'superadmin', 'admin_prodi'])) {
             return redirect()->route('dashboard-analitik')->with('error', 'Anda tidak memiliki akses ke pengaturan global.');
         }
 
-        $prodis = Prodi::with(['mataKuliahs'])->withCount(['mahasiswas', 'dosens'])->get();
-        $mataKuliahs = MataKuliah::with('prodi')->latest()->get();
+        // Jika yang login Admin Prodi, filter prodi & cpmk untuk prodi dia sendiri
+        if ($currentUser->hasRole('admin_prodi')) {
+            $prodiId = $currentUser->prodi_id;
+            $prodis = Prodi::where('id', $prodiId)->with(['cpmks'])->withCount(['mahasiswaProfiles', 'dosenProfiles'])->get();
+            $cpmks  = Cpmk::where('prodi_id', $prodiId)->with('prodi')->latest()->get();
+        } else {
+            $prodis = Prodi::with(['cpmks'])->withCount(['mahasiswaProfiles', 'dosenProfiles'])->get();
+            $cpmks  = Cpmk::with('prodi')->latest()->get();
+        }
 
-        // Ambil data settings global (dengan default fallback)
+        // Ambil data settings global
         $settings = [
             'tahun_akademik' => Setting::getByKey('tahun_akademik', '2025/2026 Ganjil'),
             'min_jam_magang' => Setting::getByKey('min_jam_magang', '900'),
@@ -31,14 +39,16 @@ class PengaturanGlobalController extends Controller
             'lokasi'         => Setting::getByKey('lokasi', 'Gedung Dekanat Vokasi, Kampus Tamalanrea Makassar'),
         ];
 
-        return view('dashboard.manajemen-akun.pengaturan', compact('prodis', 'mataKuliahs', 'settings'));
+        return view('dashboard.manajemen-akun.pengaturan', compact('prodis', 'cpmks', 'settings', 'currentUser'));
     }
 
-    /**
-     * Menyimpan Parameter Global ke Database
-     */
     public function updateSettings(Request $request)
     {
+        // KUNCI: Hanya Superadmin yang boleh mengubah Setting Global
+        if (!Auth::user()->hasRole('superadmin')) {
+            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak mengubah parameter global.');
+        }
+
         $request->validate([
             'tahun_akademik' => 'required|string|max:100',
             'min_jam_magang' => 'required|numeric|min:1',
@@ -56,11 +66,13 @@ class PengaturanGlobalController extends Controller
         return redirect()->back()->with('success', 'Parameter & Pengaturan Global berhasil disimpan.');
     }
 
-    /**
-     * Tambah Prodi Baru
-     */
     public function storeProdi(Request $request)
     {
+        // KUNCI: Hanya Superadmin yang boleh membuat Master Prodi baru
+        if (!Auth::user()->hasRole('superadmin')) {
+            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak membuat Master Program Studi.');
+        }
+
         $request->validate([
             'kode_prodi' => 'required|string|max:10|unique:prodis,kode_prodi',
             'nama_prodi' => 'required|string|max:255',
@@ -76,11 +88,12 @@ class PengaturanGlobalController extends Controller
         return redirect()->back()->with('success', 'Program Studi baru berhasil ditambahkan.');
     }
 
-    /**
-     * Update Prodi
-     */
     public function updateProdi(Request $request, $id)
     {
+        if (!Auth::user()->hasRole('superadmin')) {
+            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak memperbarui Master Program Studi.');
+        }
+
         $prodi = Prodi::findOrFail($id);
 
         $request->validate([
@@ -98,14 +111,15 @@ class PengaturanGlobalController extends Controller
         return redirect()->back()->with('success', "Data Program Studi '{$prodi->nama_prodi}' berhasil diperbarui.");
     }
 
-    /**
-     * Hapus Prodi
-     */
     public function destroyProdi($id)
     {
+        if (!Auth::user()->hasRole('superadmin')) {
+            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak menghapus Master Program Studi.');
+        }
+
         $prodi = Prodi::findOrFail($id);
 
-        if ($prodi->mahasiswas()->count() > 0 || $prodi->dosens()->count() > 0) {
+        if ($prodi->mahasiswaProfiles()->count() > 0 || $prodi->dosenProfiles()->count() > 0) {
             return redirect()->back()->with('error', 'Gagal menghapus! Masih ada mahasiswa/dosen yang terikat di prodi ini.');
         }
 
@@ -114,50 +128,39 @@ class PengaturanGlobalController extends Controller
         return redirect()->back()->with('success', 'Program Studi berhasil dihapus.');
     }
 
-    /**
-     * Tambah Mata Kuliah Baru
-     */
-    public function storeMataKuliah(Request $request)
+    public function storeCpmk(Request $request)
     {
         $request->validate([
-            'prodi_id' => 'required|exists:prodis,id',
-            'kode_mk'  => 'nullable|string|max:50',
-            'nama_mk'  => 'required|string|max:255',
-            'sks'      => 'required|integer|min:1',
+            'prodi_id'       => 'required|exists:prodis,id',
+            'kode_cpmk'      => 'required|string|max:50',
+            'deskripsi_cpmk' => 'required|string',
         ]);
 
-        MataKuliah::create($request->all());
+        Cpmk::create($request->all());
 
-        return redirect()->back()->with('success', 'Mata Kuliah berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Master CPMK berhasil ditambahkan.');
     }
 
-    /**
-     * Update Mata Kuliah
-     */
-    public function updateMataKuliah(Request $request, $id)
+    public function updateCpmk(Request $request, $id)
     {
-        $mk = MataKuliah::findOrFail($id);
+        $cpmk = Cpmk::findOrFail($id);
 
         $request->validate([
-            'prodi_id' => 'required|exists:prodis,id',
-            'kode_mk'  => 'nullable|string|max:50',
-            'nama_mk'  => 'required|string|max:255',
-            'sks'      => 'required|integer|min:1',
+            'prodi_id'       => 'required|exists:prodis,id',
+            'kode_cpmk'      => 'required|string|max:50',
+            'deskripsi_cpmk' => 'required|string',
         ]);
 
-        $mk->update($request->all());
+        $cpmk->update($request->all());
 
-        return redirect()->back()->with('success', "Mata Kuliah '{$mk->nama_mk}' berhasil diperbarui.");
+        return redirect()->back()->with('success', "CPMK '{$cpmk->kode_cpmk}' berhasil diperbarui.");
     }
 
-    /**
-     * Hapus Mata Kuliah
-     */
-    public function destroyMataKuliah($id)
+    public function destroyCpmk($id)
     {
-        $mk = MataKuliah::findOrFail($id);
-        $mk->delete();
+        $cpmk = Cpmk::findOrFail($id);
+        $cpmk->delete();
 
-        return redirect()->back()->with('success', 'Mata Kuliah berhasil dihapus.');
+        return redirect()->back()->with('success', 'CPMK berhasil dihapus.');
     }
 }

@@ -11,14 +11,15 @@ class SeleksiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pendaftaran::with(['mahasiswa.mahasiswaProfile.prodi', 'lowongan.perusahaan', 'dosen']);
+        // Menggunakan relasi 'user' yang terhubung ke MahasiswaProfile
+        $query = Pendaftaran::with(['user.mahasiswaProfile.prodi', 'lowongan.perusahaan', 'dosen']);
 
         // Search Filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->whereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('mahasiswa.mahasiswaProfile', fn($mp) => $mp->where('nim', 'like', "%{$search}%"))
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('user.mahasiswaProfile', fn($mp) => $mp->where('nim', 'like', "%{$search}%"))
                   ->orWhereHas('lowongan', fn($l) => $l->where('judul_posisi', 'like', "%{$search}%"));
             });
         }
@@ -66,15 +67,17 @@ class SeleksiController extends Controller
             'catatan_seleksi' => 'nullable|string',
         ]);
 
+        $statusLama = $pendaftaran->status_seleksi;
+
         $pendaftaran->update([
             'status_seleksi'  => $request->status_seleksi,
             'dosen_id'        => $request->dosen_id,
             'catatan_seleksi' => $request->catatan_seleksi,
         ]);
 
-        // Jika status diterima, tambahkan kuota terisi di lowongan
-        if ($request->status_seleksi === 'diterima') {
-            $pendaftaran->lowongan->increment('kuota_terisi');
+        // Jika status berubah menjadi diterima dan sebelumnya bukan diterima, tambahkan kuota terisi
+        if ($request->status_seleksi === 'diterima' && $statusLama !== 'diterima') {
+            $pendaftaran->lowongan?->increment('kuota_terisi');
         }
 
         return redirect()->back()->with('success', 'Keputusan seleksi & Dosen Pendamping berhasil disimpan.');

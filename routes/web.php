@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardAnalitik;
 use App\Http\Controllers\DashboardMahasiswaAkunController;
 use App\Http\Controllers\DownloadTemplateController;
 use App\Http\Controllers\JenisRoleController;
+use App\Http\Controllers\LaporanAkhirMahasiswaController;
 use App\Http\Controllers\ListingProgramController;
 use App\Http\Controllers\LogbookController;
 use App\Http\Controllers\MahasiswaBimbinganController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\PerluVerifikasiController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramMagangController;
 use App\Http\Controllers\RiwayatMagangController;
+use App\Http\Controllers\RubrikPenilaianController;
 use App\Http\Controllers\SeleksiController;
 use App\Http\Controllers\SeminarController;
 use App\Http\Controllers\SemuaLaporanController;
@@ -78,6 +80,8 @@ Route::get('/pelaksanaan-magang/logbook', [LogbookController::class, 'index'])->
 Route::post('/pelaksanaan-magang/logbook', [LogbookController::class, 'store'])->name('dashboard-mahasiswa-logbook-store');
 Route::put('/pelaksanaan-magang/logbook/{id}', [LogbookController::class, 'update'])->name('dashboard-mahasiswa-logbook-update');
 Route::delete('/pelaksanaan-magang/logbook/{id}', [LogbookController::class, 'destroy'])->name('dashboard-mahasiswa-logbook-destroy');
+Route::get('/mahasiswa/logbook/export-word', [LogbookController::class, 'exportWord'])->name('dashboard-mahasiswa-logbook-export-word');
+
 // PELAKSANAAN MAGANG
     // SEMINAR HASIL
 Route::get('/pelaksanaan-magang/seminar-hasil', [SeminarController::class, 'index'])->name('dashboard-mahasiswa-seminar');
@@ -99,20 +103,40 @@ Route::get('/dashboard-dosen/daftar-mahasiswa', [DaftarMahasiswaController::clas
 //VERIFIKASI
     //DAFTAR MAHASISWA TERVERFIKASI
 Route::get('/verifikasi/daftar-mahasiswa-terverifikasi', [TerverifikasiController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-terverifikasi');
-/// VERIFIKASI & DASHBOARD DOSEN
-Route::get('/verifikasi/perlu-verifikasi', [PerluVerifikasiController::class, 'index'])->name('dashboard-dosen-perlu-verifikasi');
-Route::get('/verifikasi/daftar-mahasiswa/perlu-verifikasi', [PerluVerifikasiController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi');
+// VERIFIKASI & DASHBOARD DOSEN
+Route::get('/pelaksanaan-magang/perlu-verifikasi', [PerluVerifikasiController::class, 'index'])
+    ->name('dashboard-dosen-perlu-verifikasi');
+
+Route::get('/verifikasi/daftar-mahasiswa/perlu-verifikasi', [PerluVerifikasiController::class, 'index'])
+    ->name('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi');
+
+Route::get('/verifikasi/daftar-mahasiswa-terverifikasi', [TerverifikasiController::class, 'index'])
+    ->name('dashboard-verifikasi-daftar-mahasiswa-terverifikasi');
+
+Route::post('/verifikasi/logbook/{id}', [PerluVerifikasiController::class, 'verifyLogbook'])
+    ->name('dashboard-verifikasi-logbook-action');
+
+Route::post('/verifikasi/absensi/{id}', [PerluVerifikasiController::class, 'verifyAbsensi'])
+    ->name('dashboard-verifikasi-absensi-action');
 
 Route::post('/verifikasi/logbook/{id}', [PerluVerifikasiController::class, 'verifyLogbook'])->name('dashboard-verifikasi-logbook-action');
 Route::post('/verifikasi/absensi/{id}', [PerluVerifikasiController::class, 'verifyAbsensi'])->name('dashboard-verifikasi-absensi-action');
     //DAFTAR MAHASISWA  SEMUA LAPORAN
-Route::get('/verifikasi/daftar-mahasiswa-semua-laporan', [SemuaLaporanController::class, 'index'])->name('dashboard-verifikasi-daftar-mahasiswa-semua-laporan');
+Route::get('/verifikasi/daftar-mahasiswa-semua-laporan', [SemuaLaporanController::class, 'index'])
+    ->name('dashboard-verifikasi-daftar-mahasiswa-semua-laporan');
+Route::put('/verifikasi/daftar-mahasiswa-semua-laporan/{id}', [SemuaLaporanController::class, 'updateStatus'])
+    ->name('dashboard-verifikasi-daftar-mahasiswa-semua-laporan-update');
 
+    // LOGBOOK & LAPORAN AKHIR MAHASISWA
+Route::get('/pelaksanaan-magang/laporan-akhir', [LaporanAkhirMahasiswaController::class, 'index'])
+    ->name('dashboard-mahasiswa-laporan-akhir');
+Route::post('/pelaksanaan-magang/laporan-akhir', [LaporanAkhirMahasiswaController::class, 'store'])
+    ->name('dashboard-mahasiswa-laporan-akhir-store');
 
-//PENILAIAN
-    //LISTING MAHASISWA
+// PENILAIAN MAGANG
 Route::get('/penilaian/listing-mahasiswa', [PenilaianListingMahasiswaController::class, 'index'])->name('dashboard-penilaian-listing-mahasiswa');
-
+Route::post('/penilaian/listing-mahasiswa/{pendaftaran_id}/store', [PenilaianListingMahasiswaController::class, 'storePenilaian'])->name('dashboard-penilaian-listing-mahasiswa-store');
+Route::get('/penilaian/listing-mahasiswa/export-pdf', [PenilaianListingMahasiswaController::class, 'exportPdf'])->name('dashboard-penilaian-listing-mahasiswa-export');
 
 // DAFTAR LOWONGAN
     // DAFTAR PERUSAHAAN
@@ -178,10 +202,18 @@ Route::patch('/manajemen-akun/aktivasi-user/{id}/toggle', [AktivasiUserControlle
 
     Route::delete('/manajemen-akun/pengaturan/prodi/{id}', [PengaturanGlobalController::class, 'destroyProdi'])
         ->name('dashboard-manajemen-pengaturan-prodi-destroy');
-// PENGATURAN GLOBAL
-Route::post('/manajemen-akun/pengaturan/matkul', [PengaturanGlobalController::class, 'storeMataKuliah'])->name('dashboard-manajemen-pengaturan-matkul-store');
-Route::put('/manajemen-akun/pengaturan/matkul/{id}', [PengaturanGlobalController::class, 'updateMataKuliah'])->name('dashboard-manajemen-pengaturan-matkul-update');
-Route::delete('/manajemen-akun/pengaturan/matkul/{id}', [PengaturanGlobalController::class, 'destroyMataKuliah'])->name('dashboard-manajemen-pengaturan-matkul-destroy');
+
+
+// ROUTE MASTER CPMK
+Route::post('/manajemen-akun/pengaturan/cpmk', [PengaturanGlobalController::class, 'storeCpmk']) ->name('dashboard-manajemen-pengaturan-cpmk-store');
+Route::put('/manajemen-akun/pengaturan/cpmk/{id}', [PengaturanGlobalController::class, 'updateCpmk'])->name('dashboard-manajemen-pengaturan-cpmk-update');
+Route::delete('/manajemen-akun/pengaturan/cpmk/{id}', [PengaturanGlobalController::class, 'destroyCpmk'])->name('dashboard-manajemen-pengaturan-cpmk-destroy');
+
+// MANAJEMEN AKUN (RUBRIK PENILAIAN GLOBAL)
+Route::get('/manajemen-akun/rubrik-penilaian', [RubrikPenilaianController::class, 'index'])->name('dashboard-manajemen-rubrik-penilaian');
+Route::post('/manajemen-akun/rubrik-penilaian', [RubrikPenilaianController::class, 'store'])->name('dashboard-manajemen-rubrik-penilaian-store');
+Route::put('/manajemen-akun/rubrik-penilaian/{id}', [RubrikPenilaianController::class, 'update'])->name('dashboard-manajemen-rubrik-penilaian-update');
+Route::delete('/manajemen-akun/rubrik-penilaian/{id}', [RubrikPenilaianController::class, 'destroy'])->name('dashboard-manajemen-rubrik-penilaian-destroy');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

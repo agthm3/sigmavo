@@ -1,6 +1,27 @@
 @extends('layouts.dashboard')
 
 @section('content')
+<!-- NOTIFIKASI SUKSES -->
+    @if(session('success'))
+    <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between text-sm shadow-sm">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+            <span>{{ session('success') }}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+    </div>
+    @endif
+
+    <!-- NOTIFIKASI ERROR / ATURAN PRESENSI BELUM TERPENUHI -->
+    @if(session('error'))
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl flex items-center justify-between text-sm shadow-sm">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle text-red-600 text-lg"></i>
+            <span>{{ session('error') }}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-900"><i class="fas fa-times"></i></button>
+    </div>
+    @endif
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
       x-data="{ activeTab: 'semua' }">
     

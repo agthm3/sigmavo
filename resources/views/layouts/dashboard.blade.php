@@ -216,22 +216,43 @@
                             Upload Dokumen
                         </a>
                     </li>
+                    <li>
+                        @hasrole('mahasiswa')
+                            <a href="{{ route('dashboard-mahasiswa-laporan-akhir') }}" 
+                            class="flex items-center px-3 py-2 text-sm rounded-lg font-medium text-gray-700 hover:bg-gray-100 hover:text-vokasi-primary transition-colors">
+                                <i class="fas fa-file-pdf w-5"></i>
+                                <span class="ml-2">Laporan Akhir</span>
+                            </a>
+                        @endhasrole
+                    </li>
                 </ul>
             </details>
             @endhasanyrole
-
+<!-- ======================================================== -->
+            <!-- SECTION: SUPERVISOR LAPANGAN (SPV) & DOSEN               -->
             <!-- ======================================================== -->
-            <!-- SECTION: DOSEN ONLY                                      -->
-            <!-- ======================================================== -->
-            @hasanyrole('dosen|dosen_pembimbing')
+            @hasanyrole('dosen|dosen_pembimbing|spv')
             <hr class="my-4 border-gray-200">
-            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Bimbingan & Verifikasi</p>
+            <p class="px-3 text-xs font-semibold text-vokasi-primary uppercase tracking-wider mb-2">Pemeriksaan & Bimbingan</p>
 
-            <!-- 5. Dashboard Dosen Group -->
+            <!-- Menu Khusus SPV / Dosen: Perlu Verifikasi Logbook & Absensi -->
             @php
-                $isDosenActive = request()->routeIs('dashboard-dosen-mahasiswa-bimbingan', 'dashboard-dosen-perlu-verifikasi', 'dashboard-dosen-terverifikasi', 'dashboard-dosen-daftar-mahasiswa');
+                $isVerifikasiActive = request()->routeIs('dashboard-dosen-perlu-verifikasi', 'dashboard-dosen-terverifikasi');
             @endphp
-            <details class="group" {{ $isDosenActive ? 'open' : '' }}>
+            <a href="{{ route('dashboard-dosen-perlu-verifikasi') }}" 
+               class="flex items-center px-3 py-2 text-sm rounded-lg font-medium transition-colors {{ $isVerifikasiActive ? 'text-vokasi-dark bg-[#e6f4f5] font-bold border-l-4 border-vokasi-primary' : 'text-gray-700 hover:bg-gray-100 hover:text-vokasi-primary' }}">
+                <i class="fas fa-check-circle w-5"></i>
+                <span class="ml-2 flex-1">Perlu Verifikasi</span>
+                <!-- Badge Indikator -->
+                <span class="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-full">Antrean</span>
+            </a>
+
+            @hasanyrole('dosen|dosen_pembimbing')
+            <!-- Group Tambahan Khusus Dosen Fakultas (Mahasiswa Bimbingan) -->
+            @php
+                $isDosenActive = request()->routeIs('dashboard-dosen-mahasiswa-bimbingan', 'dashboard-dosen-daftar-mahasiswa');
+            @endphp
+            <details class="group mt-1" {{ $isDosenActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isDosenActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
                     <i class="fas fa-chalkboard-teacher w-5"></i>
                     <span class="ml-2 flex-1 text-sm">Dashboard Dosen</span>
@@ -245,18 +266,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('dashboard-dosen-perlu-verifikasi') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-dosen-perlu-verifikasi') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
-                            Perlu Verifikasi
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('dashboard-dosen-terverifikasi') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-dosen-terverifikasi') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
-                            Terverifikasi
-                        </a>
-                    </li>
-                    <li>
                         <a href="{{ route('dashboard-dosen-daftar-mahasiswa') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-dosen-daftar-mahasiswa') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
                             Daftar Mahasiswa
@@ -264,6 +273,9 @@
                     </li>
                 </ul>
             </details>
+            @endhasanyrole  
+
+
             @endhasanyrole
 
             <!-- ======================================================== -->
@@ -364,6 +376,12 @@
                             Pengaturan
                         </a>
                     </li>
+                <li>
+                        <a href="{{ route('dashboard-manajemen-rubrik-penilaian') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-manajemen-rubrik-penilaian') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Rubrik Penilaian
+                        </a>
+                    </li>
                 </ul>
             </details>
 
@@ -405,6 +423,17 @@
                 </ul>
             </details>
             @endhasanyrole
+
+            <!-- 1. TOMBOL LOGOUT DI FOOTER SIDEBAR (Bagian Bawah Navigation Bar Kiri) -->
+            <div class="p-4 border-t border-gray-200/80 bg-white">
+                <form method="POST" action="{{ route('logout') }}" onsubmit="return confirm('Apakah Anda yakin ingin keluar dari sistem?')">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition-colors border border-red-200/60 shadow-sm">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Keluar / Logout</span>
+                    </button>
+                </form>
+            </div>
 
         </nav>
     </aside>

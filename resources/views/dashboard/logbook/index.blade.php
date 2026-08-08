@@ -8,7 +8,7 @@
             activeLogbook: null, 
             activeEditUrl: '', 
             fotoUrl: '',
-            editSelectedMatkul: []
+            editSelectedCpmk: []
          }">
 
         <!-- CONTENT -->
@@ -19,10 +19,15 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Logbook Harian Magang</h2>
-                        <p class="text-sm text-gray-500 mt-1">Isi catatan harian aktivitas magang Anda beserta keterkaitan mata kuliah dan foto kegiatan.</p>
+                        <p class="text-sm text-gray-500 mt-1">Isi catatan harian aktivitas magang Anda beserta keterkaitan Capaian Pembelajaran Mata Kuliah (CPMK) dan foto kegiatan.</p>
+                    </div>
+                    <div>
+                        <a href="{{ route('dashboard-mahasiswa-logbook-export-word') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-file-word text-sm"></i> Export Logbook (Word)
+                        </a>
                     </div>
                 </div>
-
+                
                 <!-- NOTIFIKASI SUKSES / ERROR -->
                 @if(session('success'))
                 <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
@@ -55,7 +60,7 @@
                 </div>
                 @endif
 
-                <!-- FORM PENGISIAN LOGBOOK (Removed overflow-hidden & Added relative z-20) -->
+                <!-- FORM PENGISIAN LOGBOOK -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 relative z-20">
                     <div class="bg-vokasi-primary/5 px-6 py-4 border-b border-gray-100 flex items-center justify-between rounded-t-xl">
                         <h3 class="font-bold text-gray-800 flex items-center">
@@ -70,50 +75,51 @@
                         @csrf
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             
-                            <!-- Kolom Kiri: Uraian & Multi-Select Mata Kuliah (2 Cols) -->
+                            <!-- Kolom Kiri: Uraian & Multi-Select CPMK (2 Cols) -->
                             <div class="lg:col-span-2 space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Uraian Kegiatan / Pekerjaan <span class="text-red-500">*</span></label>
                                     <textarea name="uraian_kegiatan" rows="4" placeholder="Jelaskan aktivitas, tugas, alat/software yang digunakan, dan hasil pekerjaan hari ini..." class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors resize-none text-sm" required></textarea>
                                 </div>
 
-                                <!-- MULTI-SELECT DROPDOWN MATA KULIAH TERKAIT -->
-                                <div x-data="dropdownMatkulComponent()" class="relative z-30">
+                                <!-- MULTI-SELECT DROPDOWN CPMK TERKAIT -->
+                                <div x-data="dropdownCpmkComponent()" class="relative z-30">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        Mata Kuliah Terkait <span class="text-gray-400 font-normal text-xs">(Pilih satu atau lebih)</span>
+                                        Capaian Pembelajaran (CPMK) Terkait <span class="text-gray-400 font-normal text-xs">(Pilih satu atau lebih)</span>
                                     </label>
                                     
                                     <!-- Box Input Trigger -->
                                     <div @click="toggleDropdown()" class="min-h-[42px] p-2 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer flex flex-wrap items-center gap-1.5 focus-within:ring-2 focus-within:ring-vokasi-primary">
-                                        <template x-for="item in selectedMatkul" :key="item">
-                                            <span class="inline-flex items-center gap-1 bg-vokasi-primary/10 text-vokasi-primary border border-vokasi-primary/20 text-xs font-semibold px-2.5 py-1 rounded-md">
-                                                <span x-text="item"></span>
-                                                <button type="button" @click.stop="removeMatkul(item)" class="hover:text-red-500 text-xs font-bold">&times;</button>
+                                        <template x-for="item in selectedCpmk" :key="item">
+                                            <span class="inline-flex items-center gap-1 bg-vokasi-primary/10 text-vokasi-primary border border-vokasi-primary/20 text-xs font-semibold px-2.5 py-1 rounded-md max-w-full truncate">
+                                                <i class="fas fa-bullseye text-[10px]"></i>
+                                                <span x-text="item" class="truncate"></span>
+                                                <button type="button" @click.stop="removeCpmk(item)" class="hover:text-red-500 text-xs font-bold shrink-0">&times;</button>
                                                 <input type="hidden" name="mata_kuliah[]" :value="item">
                                             </span>
                                         </template>
 
-                                        <template x-if="selectedMatkul.length === 0">
-                                            <span class="text-xs text-gray-400 pl-1">-- Pilih / Cari Mata Kuliah Terkait --</span>
+                                        <template x-if="selectedCpmk.length === 0">
+                                            <span class="text-xs text-gray-400 pl-1">-- Pilih / Cari CPMK Terkait --</span>
                                         </template>
 
                                         <i class="fas fa-chevron-down text-gray-400 text-xs ml-auto pr-2"></i>
                                     </div>
 
-                                    <!-- Dropdown Popover dengan Search (Highest Z-Index: z-50 & shadow-2xl) -->
-                                    <div x-show="openMatkul" @click.away="openMatkul = false" x-cloak class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl p-2 max-h-60 overflow-y-auto custom-scrollbar z-50">
+                                    <!-- Dropdown Popover dengan Search -->
+                                    <div x-show="openCpmk" @click.away="openCpmk = false" x-cloak class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl p-2 max-h-60 overflow-y-auto custom-scrollbar z-50">
                                         <div class="p-1 mb-2 border-b border-gray-100">
-                                            <input type="text" x-model="searchMatkul" placeholder="Cari mata kuliah..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-vokasi-primary" @click.stop>
+                                            <input type="text" x-model="searchCpmk" placeholder="Cari kode atau deskripsi CPMK..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-vokasi-primary" @click.stop>
                                         </div>
                                         <div class="space-y-1">
-                                            <template x-for="m in filteredMatkul" :key="m">
-                                                <div @click="toggleMatkul(m)" class="px-3 py-2 text-xs rounded-md cursor-pointer hover:bg-teal-50 flex items-center justify-between transition-colors" :class="selectedMatkul.includes(m) ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'">
-                                                    <span x-text="m"></span>
-                                                    <i x-show="selectedMatkul.includes(m)" class="fas fa-check text-vokasi-primary text-xs"></i>
+                                            <template x-for="c in filteredCpmk" :key="c">
+                                                <div @click="toggleCpmk(c)" class="px-3 py-2 text-xs rounded-md cursor-pointer hover:bg-teal-50 flex items-center justify-between transition-colors" :class="selectedCpmk.includes(c) ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'">
+                                                    <span x-text="c" class="pr-2 leading-relaxed"></span>
+                                                    <i x-show="selectedCpmk.includes(c)" class="fas fa-check text-vokasi-primary text-xs shrink-0"></i>
                                                 </div>
                                             </template>
-                                            <template x-if="filteredMatkul.length === 0">
-                                                <div class="p-3 text-center text-xs text-gray-400">Tidak ada mata kuliah ditemukan.</div>
+                                            <template x-if="filteredCpmk.length === 0">
+                                                <div class="p-3 text-center text-xs text-gray-400">Tidak ada CPMK ditemukan.</div>
                                             </template>
                                         </div>
                                     </div>
@@ -168,7 +174,7 @@
                     </form>
                 </div>
 
-                <!-- TABEL RIWAYAT LOGBOOK (z-10 agar berada di bawah popover dropdown) -->
+                <!-- TABEL RIWAYAT LOGBOOK -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative z-10">
                     
                     <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gray-50/50">
@@ -180,8 +186,8 @@
                         <form action="{{ route('dashboard-mahasiswa-logbook') }}" method="GET" class="flex items-center gap-2">
                             <select name="bulan" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
                                 <option value="semua" {{ request('bulan') == 'semua' ? 'selected' : '' }}>Semua Bulan</option>
+                                <option value="2026-08" {{ request('bulan') == '2026-08' ? 'selected' : '' }}>Agustus 2026</option>
                                 <option value="2026-07" {{ request('bulan') == '2026-07' ? 'selected' : '' }}>Juli 2026</option>
-                                <option value="2026-06" {{ request('bulan') == '2026-06' ? 'selected' : '' }}>Juni 2026</option>
                             </select>
                         </form>
                     </div>
@@ -192,7 +198,7 @@
                                 <tr class="bg-gray-100/50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     <th class="p-4 w-12 text-center">No</th>
                                     <th class="p-4 w-32">Tanggal</th>
-                                    <th class="p-4 min-w-[280px]">Uraian Kegiatan & Mata Kuliah</th>
+                                    <th class="p-4 min-w-[280px]">Uraian Kegiatan & CPMK Terkait</th>
                                     <th class="p-4 w-28 text-center">Foto</th>
                                     <th class="p-4 w-36">Status</th>
                                     <th class="p-4 w-48">Catatan Dosen</th>
@@ -211,12 +217,12 @@
                                     <td class="p-4 text-gray-700 leading-relaxed">
                                         <p class="mb-2 text-justify">{{ $item->uraian_kegiatan }}</p>
 
-                                        <!-- Badge Mata Kuliah -->
+                                        <!-- Badge CPMK Terkait -->
                                         @if(!empty($item->mata_kuliah) && is_array($item->mata_kuliah))
                                             <div class="flex flex-wrap gap-1 mt-1">
-                                                @foreach($item->mata_kuliah as $mk)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-semibold border border-blue-200">
-                                                        <i class="fas fa-book-open text-[9px] mr-1"></i> {{ $mk }}
+                                                @foreach($item->mata_kuliah as $cpmk)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded bg-teal-50 text-vokasi-primary text-[10px] font-semibold border border-vokasi-primary/20">
+                                                        <i class="fas fa-bullseye text-[9px] mr-1"></i> {{ $cpmk }}
                                                     </span>
                                                 @endforeach
                                             </div>
@@ -261,7 +267,7 @@
                                             <span class="text-gray-400 text-xs" title="Telah disetujui"><i class="fas fa-lock"></i></span>
                                         @else
                                             <div class="flex items-center justify-center gap-1.5">
-                                                <button type="button" @click="activeLogbook = {{ json_encode($item) }}; editSelectedMatkul = {{ json_encode($item->mata_kuliah ?? []) }}; activeEditUrl = '{{ route('dashboard-mahasiswa-logbook-update', $item->id) }}'; openEditModal = true" 
+                                                <button type="button" @click="activeLogbook = {{ json_encode($item) }}; editSelectedCpmk = {{ json_encode($item->mata_kuliah ?? []) }}; activeEditUrl = '{{ route('dashboard-mahasiswa-logbook-update', $item->id) }}'; openEditModal = true" 
                                                         class="{{ $item->status_asistensi == 'revisi' ? 'bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 py-1 text-xs' : 'text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5' }} rounded transition-colors" 
                                                         title="Edit / Revisi">
                                                     @if($item->status_asistensi == 'revisi')
@@ -337,14 +343,14 @@
                         <textarea name="uraian_kegiatan" x-text="activeLogbook?.uraian_kegiatan" rows="4" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary resize-none" required></textarea>
                     </div>
 
-                    <!-- Multi-select Mata Kuliah Terkait (Edit Mode) -->
+                    <!-- Multi-select CPMK Terkait (Edit Mode) -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Mata Kuliah Terkait</label>
-                        <div class="grid grid-cols-2 gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl max-h-40 overflow-y-auto custom-scrollbar">
-                            @foreach($daftarMatkul as $mk)
-                            <label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer">
-                                <input type="checkbox" name="mata_kuliah[]" value="{{ $mk }}" :checked="editSelectedMatkul.includes('{{ $mk }}')" class="rounded border-gray-300 text-vokasi-primary focus:ring-vokasi-primary">
-                                <span>{{ $mk }}</span>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Capaian Pembelajaran (CPMK) Terkait</label>
+                        <div class="grid grid-cols-1 gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl max-h-40 overflow-y-auto custom-scrollbar">
+                            @foreach($daftarCpmk as $cpmk)
+                            <label class="flex items-start space-x-2 text-xs text-gray-700 cursor-pointer">
+                                <input type="checkbox" name="mata_kuliah[]" value="{{ $cpmk }}" :checked="editSelectedCpmk.includes('{{ $cpmk }}')" class="mt-0.5 rounded border-gray-300 text-vokasi-primary focus:ring-vokasi-primary shrink-0">
+                                <span class="leading-relaxed">{{ $cpmk }}</span>
                             </label>
                             @endforeach
                         </div>
@@ -382,34 +388,34 @@
 
     </div>
 
-    <!-- SCRIPT ALPINE COMPONENT UNTUK DROPDOWN MATKUL -->
+    <!-- SCRIPT ALPINE COMPONENT UNTUK DROPDOWN CPMK -->
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('dropdownMatkulComponent', () => ({
-                openMatkul: false,
-                searchMatkul: '',
-                selectedMatkul: [],
-                allMatkul: {!! json_encode($daftarMatkul) !!},
+            Alpine.data('dropdownCpmkComponent', () => ({
+                openCpmk: false,
+                searchCpmk: '',
+                selectedCpmk: [],
+                allCpmk: {!! json_encode($daftarCpmk) !!},
                 
                 toggleDropdown() {
-                    this.openMatkul = !this.openMatkul;
+                    this.openCpmk = !this.openCpmk;
                 },
                 
-                get filteredMatkul() {
-                    if (!this.searchMatkul) return this.allMatkul;
-                    return this.allMatkul.filter(m => m.toLowerCase().includes(this.searchMatkul.toLowerCase()));
+                get filteredCpmk() {
+                    if (!this.searchCpmk) return this.allCpmk;
+                    return this.allCpmk.filter(c => c.toLowerCase().includes(this.searchCpmk.toLowerCase()));
                 },
 
-                toggleMatkul(m) {
-                    if (this.selectedMatkul.includes(m)) {
-                        this.selectedMatkul = this.selectedMatkul.filter(item => item !== m);
+                toggleCpmk(c) {
+                    if (this.selectedCpmk.includes(c)) {
+                        this.selectedCpmk = this.selectedCpmk.filter(item => item !== c);
                     } else {
-                        this.selectedMatkul.push(m);
+                        this.selectedCpmk.push(c);
                     }
                 },
 
-                removeMatkul(m) {
-                    this.selectedMatkul = this.selectedMatkul.filter(item => item !== m);
+                removeCpmk(c) {
+                    this.selectedCpmk = this.selectedCpmk.filter(item => item !== c);
                 }
             }));
         });
