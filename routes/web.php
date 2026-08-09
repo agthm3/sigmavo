@@ -181,6 +181,15 @@ Route::post('/manajemen-akun/aktivasi-user', [AktivasiUserController::class, 'st
 Route::patch('/manajemen-akun/aktivasi-user/{id}/toggle', [AktivasiUserController::class, 'toggleStatus'])
         ->name('dashboard-manajemen-aktivasi-toggle');
 
+Route::get('/manajemen-akun/aktivasi-user/template-excel', [AktivasiUserController::class, 'downloadTemplateExcel'])
+    ->name('dashboard-manajemen-aktivasi-template');
+
+Route::post('/manajemen-akun/aktivasi-user/import-preview', [AktivasiUserController::class, 'previewImport'])
+    ->name('dashboard-manajemen-aktivasi-import-preview');
+
+Route::post('/manajemen-akun/aktivasi-user/import-store', [AktivasiUserController::class, 'storeImport'])
+    ->name('dashboard-manajemen-aktivasi-import-store');
+
 // MANAJEMEN AKUN (Jenis User / Role)
     Route::get('/manajemen-akun/jenis-role', [JenisRoleController::class, 'index'])
         ->name('dashboard-manajemen-jenis-role');

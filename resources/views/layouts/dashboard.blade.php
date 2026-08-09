@@ -7,6 +7,7 @@
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -466,10 +467,22 @@
                     <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
                 </button>
 
-                @php
+@php
                     $authUser = Auth::user();
                     $userName = $authUser->name ?? 'Pengguna';
                     $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'Pengguna') : 'Pengguna';
+                    
+                    // Ambil nama prodi dari relasi Eloquent
+                    $namaProdi = null;
+                    if ($authUser) {
+                        if ($authUser->hasRole('mahasiswa')) {
+                            $namaProdi = $authUser->mahasiswaProfile?->prodi?->nama_prodi;
+                        } elseif ($authUser->hasRole('dosen')) {
+                            $namaProdi = $authUser->dosenProfile?->prodi?->nama_prodi;
+                        } elseif ($authUser->hasRole('admin_prodi')) {
+                            $namaProdi = $authUser->adminProdiProfile?->prodi?->nama_prodi;
+                        }
+                    }
                 @endphp
 
                 <div class="flex items-center space-x-2.5 border-l pl-3 md:pl-4 border-gray-200">
@@ -479,7 +492,9 @@
                     
                     <div class="hidden sm:block text-sm text-right">
                         <p class="font-bold text-gray-800 leading-tight text-xs md:text-sm">{{ $userName }}</p>
-                        <p class="text-[11px] text-gray-500 capitalize">{{ str_replace('_', ' ', $userRole) }}</p>
+                        <p class="text-[10px] font-semibold text-vokasi-primary capitalize mt-0.5">
+                            {{ $namaProdi ?? str_replace('_', ' ', $userRole) }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -490,6 +505,43 @@
         @yield('content')
 
     </div>
+@if(session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: "{!! session('success') !!}",
+            confirmButtonColor: '#37A7AC'
+        });
+    </script>
+    @endif
 
+    @if(session('error'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal / Ditolak!',
+            text: "{!! session('error') !!}",
+            confirmButtonColor: '#37A7AC'
+        });
+    </script>
+    @endif
+
+    @if($errors->any())
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Terjadi Kesalahan!',
+            html: `
+                <ul class="text-left text-sm text-red-600 mt-2">
+                    @foreach($errors->all() as $error)
+                        <li>• {{ $error }}</li>
+                    @endforeach
+                </ul>
+            `,
+            confirmButtonColor: '#37A7AC'
+        });
+    </script>
+    @endif
 </body>
 </html>
