@@ -38,6 +38,7 @@ class PengaturanGlobalController extends Controller
             'max_pengajuan'  => Setting::getByKey('max_pengajuan', '3'),
             'email_resmi'    => Setting::getByKey('email_resmi', 'vokasi@unhas.ac.id'),
             'lokasi'         => Setting::getByKey('lokasi', 'Gedung Dekanat Vokasi, Kampus Tamalanrea Makassar'),
+            'mode_testing'   => Setting::getByKey('mode_testing', 'true'),
         ];
 
         return view('dashboard.manajemen-akun.pengaturan', compact('prodis', 'cpmks', 'settings', 'currentUser'));
@@ -45,9 +46,8 @@ class PengaturanGlobalController extends Controller
 
     public function updateSettings(Request $request)
     {
-        // Admin & Superadmin berhak mengubah Setting Global
         if (!Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
-            return redirect()->back()->with('error', 'Akses ditolak! Anda tidak berhak mengubah parameter global.');
+            return redirect()->back()->with('error', 'Akses ditolak!');
         }
 
         $request->validate([
@@ -63,6 +63,10 @@ class PengaturanGlobalController extends Controller
         Setting::setKey('max_pengajuan', $request->max_pengajuan);
         Setting::setKey('email_resmi', $request->email_resmi);
         Setting::setKey('lokasi', $request->lokasi);
+        
+        // Saklar Mode Testing (Jika dicentang = 'true', jika tidak = 'false')
+        $modeTesting = $request->has('mode_testing') ? 'true' : 'false';
+        Setting::setKey('mode_testing', $modeTesting);
 
         return redirect()->back()->with('success', 'Parameter & Pengaturan Global berhasil disimpan.');
     }

@@ -222,6 +222,24 @@
                         <input type="number" name="max_pengajuan" value="{{ old('max_pengajuan', $settings['max_pengajuan']) }}" required {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
                     </div>
 
+                    <!-- TOGGLE MODE TESTING VS PRODUKSI (DI DALAM FORM) -->
+                    <div class="pt-2 border-t border-gray-100">
+                        <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                            <div>
+                                <label for="mode_testing" class="text-xs font-bold text-amber-900 block cursor-pointer">
+                                    <i class="fas fa-vial text-amber-600 mr-1"></i> Mode Testing Absensi
+                                </label>
+                                <p class="text-[10px] text-amber-700 mt-0.5 leading-tight">
+                                    Abaikan batas 8 jam saat Absen Pulang untuk kemudahan pengujian.
+                                </p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="mode_testing" name="mode_testing" value="true" {{ ($settings['mode_testing'] ?? 'true') === 'true' ? 'checked' : '' }} class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
                     @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
                     <div class="pt-2">
                         <button type="submit" class="w-full py-2.5 bg-vokasi-primary hover:bg-vokasi-dark text-white font-semibold text-xs rounded-xl transition shadow-sm">
@@ -250,7 +268,7 @@
 
     </div>
 
-    <!-- MODAL POPUP: TAMBAH PRODI BARU (ADMIN & SUPERADMIN) -->
+    <!-- MODAL POPUP: TAMBAH PRODI BARU -->
     @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
     <div x-show="openAddProdiModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div @click.away="openAddProdiModal = false" class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-gray-100">

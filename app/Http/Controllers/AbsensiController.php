@@ -8,6 +8,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class AbsensiController extends Controller
 {
@@ -100,26 +101,52 @@ class AbsensiController extends Controller
 
         $absensi->pendaftaran_id = $pendaftaran->id;
 
+        // Ambil status Mode Testing dari Setting Global (Default: 'true')
+        $isTestingMode = Setting::getByKey('mode_testing', 'true') === 'true';
+
         if ($request->tipe === 'masuk') {
             $absensi->waktu_masuk     = now()->toTimeString();
             $absensi->foto_masuk      = $fileName;
             $absensi->latitude_masuk  = $request->latitude;
             $absensi->longitude_masuk = $request->longitude;
         } else {
+            // PROSES ABSEN PULANG
+            if (!$absensi->waktu_masuk) {
+                return redirect()->back()->with('error', 'Gagal Absen Pulang: Anda belum melakukan Absen Masuk hari ini.');
+            }
+
+            // KONTROL VALIDASI MODE FINAL VS TESTING
+            if (!$isTestingMode) {
+                $waktuMasuk = Carbon::parse($absensi->waktu_masuk);
+                $selisihMenit = now()->diffInMinutes($waktuMasuk);
+                $selisihJam = round($selisihMenit / 60, 1);
+
+                // Di Mode Final/Produksi: Harus minimal 8 jam (480 menit) setelah absen masuk
+                if ($selisihMenit < 480) {
+                    $sisaMenit = 480 - $selisihMenit;
+                    $sisaJam = floor($sisaMenit / 60);
+                    $sisaMenitSisa = $sisaMenit % 60;
+
+                    $pesanSisa = $sisaJam > 0 
+                        ? "{$sisaJam} jam {$sisaMenitSisa} menit" 
+                        : "{$sisaMenitSisa} menit";
+
+                    return redirect()->back()->with('error', "Absen pulang belum dapat dilakukan. Durasi kerja Anda baru {$selisihJam} jam. Minimal durasi kerja adalah 8 jam (Harus menunggu {$pesanSisa} lagi).");
+                }
+            }
+
+            // Jika lulus validasi (atau sedang di Mode Testing)
             $absensi->waktu_pulang     = now()->toTimeString();
             $absensi->foto_pulang      = $fileName;
             $absensi->latitude_pulang  = $request->latitude;
             $absensi->longitude_pulang = $request->longitude;
-
-            // Jika masuk & pulang sudah ada, set alokasi jam standar (8 jam)
-            if ($absensi->waktu_masuk) {
-                $absensi->jam_diperoleh = 8;
-            }
+            $absensi->jam_diperoleh    = 8; // Mengalokasikan 8 jam
         }
 
         $absensi->save();
 
-        return redirect()->back()->with('success', 'Absensi ' . ucfirst($request->tipe) . ' berhasil dicatat.');
+        $pesanMode = $isTestingMode ? ' [MODE TESTING]' : '';
+        return redirect()->back()->with('success', 'Absensi ' . ucfirst($request->tipe) . ' berhasil dicatat' . $pesanMode . '.');
     }
 
     /**
@@ -144,7 +171,7 @@ class AbsensiController extends Controller
         $request->validate([
             'tipe_kehadiran' => 'required|in:izin,sakit',
             'alasan_izin'    => 'required|string',
-            'surat_izin'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'surat_izin'     => 'nullable|file|mimes:pdf,jpg,jpeg,png,webp|max:10240', // Maksimal 10MB
         ]);
 
         $suratPath = null;

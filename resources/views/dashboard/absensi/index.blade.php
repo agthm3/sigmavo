@@ -1,15 +1,16 @@
 @extends('layouts.dashboard')
 
 @section('content')
+<!-- CDN PDF-LIB Untuk Kompresi PDF Client-Side -->
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
       x-data="absensiComponent()">
     
     <div class="max-w-6xl mx-auto w-full flex-1">
         
         @if(isset($isLocked) && $isLocked)
-            <!-- ========================================== -->
-            <!-- STATE TERKUNCI: BELUM DITERIMA MAGANG      -->
-            <!-- ========================================== -->
+            <!-- STATE TERKUNCI: BELUM DITERIMA MAGANG -->
             <div class="bg-white rounded-2xl p-8 md:p-12 border border-amber-200 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-4">
                 <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto text-2xl border border-amber-200 shadow-sm">
                     <i class="fas fa-user-lock"></i>
@@ -27,9 +28,7 @@
                 </div>
             </div>
         @else
-            <!-- ========================================== -->
-            <!-- STATE NORMAL: SUDAH DITERIMA MAGANG        -->
-            <!-- ========================================== -->
+            <!-- STATE NORMAL: SUDAH DITERIMA MAGANG -->
 
             <!-- HEADER & DATE -->
             <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -279,9 +278,37 @@
                             <textarea name="alasan_izin" rows="3" required placeholder="Jelaskan alasan ketidakhadiran Anda secara singkat..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none resize-none"></textarea>
                         </div>
 
-                        <div>
-                            <label class="block font-bold text-gray-700 uppercase mb-1">Unggah Surat Dokter / Pendukung (PDF/JPG)</label>
-                            <input type="file" name="surat_izin" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-vokasi-primary/10 file:text-vokasi-primary">
+                        <div x-data="{ isCompressing: false, fileInfo: '' }">
+                            <label class="block font-bold text-gray-700 uppercase mb-1">
+                                Unggah Surat Dokter / Pendukung
+                                <span class="text-vokasi-primary font-normal text-[10px] ml-1">(Bisa pilih s.d 10 MB, PDF &lt; 500KB, Gambar &lt; 300KB)</span>
+                            </label>
+                            <input type="file" name="surat_izin" accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-vokasi-primary/10 file:text-vokasi-primary hover:file:bg-vokasi-primary/20" @change="
+                                const input = $event.target;
+                                const file = input.files[0];
+                                if(file) {
+                                    if(file.size > 10 * 1024 * 1024) {
+                                        alert('Ukuran file melebihi batas maksimal 10 MB!');
+                                        input.value = '';
+                                        return;
+                                    }
+                                    isCompressing = true;
+                                    handleAbsensiFileCompression(file, 300, 500, function(compressedFile) {
+                                        const container = new DataTransfer();
+                                        container.items.add(compressedFile);
+                                        input.files = container.files;
+                                        
+                                        const origStr = (file.size / (1024 * 1024)).toFixed(2) + 'MB';
+                                        const newStr = (compressedFile.size / 1024).toFixed(0) + 'KB';
+                                        fileInfo = `Hasil Kompresi: ${origStr} → ${newStr}`;
+                                        isCompressing = false;
+                                    });
+                                }
+                            ">
+                            <p x-show="isCompressing" class="text-[10px] text-vokasi-primary font-bold mt-1 animate-pulse">
+                                <i class="fas fa-spinner fa-spin mr-1"></i> Mengompresi file di browser...
+                            </p>
+                            <p x-show="!isCompressing && fileInfo" class="text-[10px] text-emerald-600 font-bold mt-1" x-text="fileInfo"></p>
                         </div>
 
                         <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
@@ -302,8 +329,105 @@
 
 </main>
 
-<!-- SCRIPT KAMERA WEBRTC & GEOLOKASI GPS -->
+<!-- SCRIPT KAMERA WEBRTC, GEOLOKASI GPS & OFFLINE COMPRESSION ENGINE -->
 <script>
+    /**
+     * ENGINE KOMPRESI BERKAS CLIENT-SIDE (OFFLINE BROWSER)
+     * Gambar < 300 KB, PDF < 500 KB
+     */
+    async function handleAbsensiFileCompression(file, maxImgKb = 300, maxPdfKb = 500, callback) {
+        const isImage = file.type.startsWith('image/');
+        const isPdf = file.type === 'application/pdf';
+
+        if (isImage) {
+            compressAbsensiImage(file, maxImgKb, callback);
+        } else if (isPdf) {
+            compressAbsensiPdf(file, maxPdfKb, callback);
+        } else {
+            callback(file);
+        }
+    }
+
+    function compressAbsensiImage(file, targetKb, callback) {
+        const targetBytes = targetKb * 1024;
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 1280;
+
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                let quality = 0.82;
+
+                function attemptCompress() {
+                    canvas.toBlob(function(blob) {
+                        if (!blob) {
+                            callback(file);
+                            return;
+                        }
+                        if (blob.size > targetBytes && quality > 0.35) {
+                            quality -= 0.12;
+                            attemptCompress();
+                        } else {
+                            const compressedFile = new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            callback(compressedFile);
+                        }
+                    }, 'image/jpeg', quality);
+                }
+
+                attemptCompress();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function compressAbsensiPdf(file, targetKb, callback) {
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+            pdfDoc.setTitle('');
+            pdfDoc.setAuthor('');
+            pdfDoc.setSubject('');
+            pdfDoc.setKeywords([]);
+            pdfDoc.setProducer('');
+            pdfDoc.setCreator('');
+
+            const pdfBytes = await pdfDoc.save({ useObjectStreams: true });
+            const compressedFile = new File([pdfBytes], file.name, {
+                type: 'application/pdf',
+                lastModified: Date.now()
+            });
+
+            callback(compressedFile);
+        } catch (err) {
+            console.warn('Gagal mengompresi PDF, menggunakan file original:', err);
+            callback(file);
+        }
+    }
+
     function absensiComponent() {
         return {
             openIzinModal: false,
@@ -365,7 +489,8 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                // Mengompresi foto selfie langsung ke format JPG dengan kualitas 0.7 (di bawah 300KB)
+                const imageData = canvas.toDataURL('image/jpeg', 0.7);
                 
                 if (!imageData || imageData === 'data:,') {
                     alert("Gagal mengambil foto dari kamera. Coba klik kamera kembali.");
