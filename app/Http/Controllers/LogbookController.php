@@ -102,7 +102,7 @@ class LogbookController extends Controller
         $request->validate([
             'uraian_kegiatan'  => 'required|string',
             'mata_kuliah'      => 'nullable|array',
-            'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
 
         // Simpan Gambar
@@ -152,7 +152,7 @@ class LogbookController extends Controller
         $request->validate([
             'uraian_kegiatan'  => 'required|string',
             'mata_kuliah'      => 'nullable|array',
-            'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
 
         if ($request->hasFile('foto_dokumentasi')) {

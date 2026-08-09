@@ -1,6 +1,9 @@
 @extends('layouts.dashboard')
 
 @section('content')
+    <!-- CDN PDF-LIB Untuk Kompresi PDF Client-Side -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50"
          x-data="{ 
             openEditModal: false, 
@@ -17,9 +20,7 @@
             <div class="max-w-7xl mx-auto w-full flex-1 space-y-6">
                 
                 @if(isset($isLocked) && $isLocked)
-                    <!-- ========================================== -->
-                    <!-- STATE TERKUNCI: BELUM DITERIMA MAGANG      -->
-                    <!-- ========================================== -->
+                    <!-- STATE TERKUNCI: BELUM DITERIMA MAGANG -->
                     <div class="bg-white rounded-2xl p-8 md:p-12 border border-amber-200 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-4">
                         <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto text-2xl border border-amber-200 shadow-sm">
                             <i class="fas fa-lock"></i>
@@ -37,9 +38,7 @@
                         </div>
                     </div>
                 @else
-                    <!-- ========================================== -->
-                    <!-- STATE NORMAL: SUDAH DITERIMA MAGANG        -->
-                    <!-- ========================================== -->
+                    <!-- STATE NORMAL: SUDAH DITERIMA MAGANG -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">Logbook Harian Magang</h2>
@@ -153,34 +152,67 @@
 
                                 <!-- Kolom Kanan: Upload Foto & Submit Button -->
                                 <div class="space-y-4">
-                                    <div x-data="{ fileName: null, filePreview: null }">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Dokumentasi Foto <span class="text-gray-400 font-normal text-xs ml-1">*Maks 3MB</span></label>
+                                    <div x-data="{ fileName: null, filePreview: null, isCompressing: false, fileSizeInfo: '' }">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Dokumentasi Foto 
+                                            <span class="text-gray-400 font-normal text-xs ml-1">(Bisa pilih s.d 10 MB)</span>
+                                        </label>
                                         <div class="flex items-center justify-center w-full">
                                             <label class="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors relative overflow-hidden">
-                                                <template x-if="!filePreview">
+                                                
+                                                <template x-if="!filePreview && !isCompressing">
                                                     <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-2">
                                                         <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-1"></i>
                                                         <p class="mb-1 text-xs text-gray-500"><span class="font-semibold text-vokasi-primary">Klik upload foto</span></p>
-                                                        <p class="text-[10px] text-gray-400">PNG, JPG, WEBP</p>
+                                                        <p class="text-[10px] text-gray-400">PNG, JPG, WEBP (Max 10 MB)</p>
                                                     </div>
                                                 </template>
 
-                                                <template x-if="filePreview">
-                                                    <div class="w-full h-full relative">
+                                                <template x-if="isCompressing">
+                                                    <div class="flex flex-col items-center justify-center p-4 text-center">
+                                                        <i class="fas fa-spinner fa-spin text-vokasi-primary text-2xl mb-2"></i>
+                                                        <p class="text-xs font-bold text-gray-700">Mengompresi Gambar...</p>
+                                                        <p class="text-[10px] text-emerald-600 font-medium mt-0.5">Menyesuaikan ukuran ke &lt; 300KB</p>
+                                                    </div>
+                                                </template>
+
+                                                <template x-if="filePreview && !isCompressing">
+                                                    <div class="w-full h-full relative group">
                                                         <img :src="filePreview" class="w-full h-full object-cover">
-                                                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs font-bold opacity-0 hover:opacity-100 transition-opacity">
-                                                            Ganti Foto
+                                                        <div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity p-2 text-center">
+                                                            <span>Ganti Foto</span>
+                                                            <span class="text-[10px] font-semibold text-emerald-300 mt-1" x-text="fileSizeInfo"></span>
                                                         </div>
                                                     </div>
                                                 </template>
 
-                                                <input type="file" name="foto_dokumentasi" class="hidden" accept="image/*" @change="
-                                                    const file = $event.target.files[0];
+                                                <input type="file" id="foto_store_input" name="foto_dokumentasi" class="hidden" accept="image/jpeg,image/png,image/webp" @change="
+                                                    const input = $event.target;
+                                                    const file = input.files[0];
                                                     if(file) {
-                                                        fileName = file.name;
-                                                        const reader = new FileReader();
-                                                        reader.onload = (e) => { filePreview = e.target.result; };
-                                                        reader.readAsDataURL(file);
+                                                        if(file.size > 10 * 1024 * 1024) {
+                                                            alert('Ukuran file melebihi batas maksimal 10 MB!');
+                                                            input.value = '';
+                                                            return;
+                                                        }
+                                                        isCompressing = true;
+                                                        const origSizeStr = (file.size / (1024 * 1024)).toFixed(2) + 'MB';
+                                                        handleSmartFileCompression(file, 300, 500, function(compressedFile) {
+                                                            const container = new DataTransfer();
+                                                            container.items.add(compressedFile);
+                                                            input.files = container.files;
+                                                            
+                                                            const newSizeStr = (compressedFile.size / 1024).toFixed(0) + 'KB';
+                                                            fileSizeInfo = `Awal: ${origSizeStr} → Hasil: ${newSizeStr}`;
+                                                            fileName = compressedFile.name;
+                                                            
+                                                            const reader = new FileReader();
+                                                            reader.onload = (e) => { 
+                                                                filePreview = e.target.result; 
+                                                                isCompressing = false;
+                                                            };
+                                                            reader.readAsDataURL(compressedFile);
+                                                        });
                                                     }
                                                 " />
                                             </label>
@@ -383,8 +415,26 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Ganti Foto Dokumentasi (Opsional)</label>
-                            <input type="file" name="foto_dokumentasi" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-vokasi-primary/10 file:text-vokasi-primary hover:file:bg-vokasi-primary/20" accept="image/*">
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                Ganti Foto Dokumentasi (Opsional) 
+                                <span class="text-vokasi-primary font-normal text-[11px] ml-1">(Bisa upload s.d 10 MB)</span>
+                            </label>
+                            <input type="file" name="foto_dokumentasi" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-vokasi-primary/10 file:text-vokasi-primary hover:file:bg-vokasi-primary/20" accept="image/jpeg,image/png,image/webp" @change="
+                                const input = $event.target;
+                                const file = input.files[0];
+                                if(file) {
+                                    if(file.size > 10 * 1024 * 1024) {
+                                        alert('Ukuran file melebihi batas maksimal 10 MB!');
+                                        input.value = '';
+                                        return;
+                                    }
+                                    handleSmartFileCompression(file, 300, 500, function(compressedFile) {
+                                        const container = new DataTransfer();
+                                        container.items.add(compressedFile);
+                                        input.files = container.files;
+                                    });
+                                }
+                            ">
                         </div>
 
                         <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
@@ -415,8 +465,116 @@
 
     </div>
 
-    <!-- SCRIPT ALPINE COMPONENT UNTUK DROPDOWN CPMK -->
+    <!-- GLOBAL COMPRESSION ENGINE SCRIPT (PDF & GAMBAR) -->
     <script>
+        /**
+         * FUNGSI UTAMA PENGOMPRES FILE OTOMATIS OFFLINE DI BROWSER
+         * Target: Gambar < maxImgKb (Default 300 KB), PDF < maxPdfKb (Default 500 KB)
+         */
+        async function handleSmartFileCompression(file, maxImgKb = 300, maxPdfKb = 500, callback) {
+            const isImage = file.type.startsWith('image/');
+            const isPdf = file.type === 'application/pdf';
+
+            // Jika Gambar, kompres via HTML5 Canvas
+            if (isImage) {
+                compressImageToTarget(file, maxImgKb, callback);
+            } 
+            // Jika PDF, optimalkan via PDF-Lib
+            else if (isPdf) {
+                compressPdfToTarget(file, maxPdfKb, callback);
+            } 
+            // File tipe lain
+            else {
+                callback(file);
+            }
+        }
+
+        // 1. KOMPRESI GAMBAR (< 300 KB)
+        function compressImageToTarget(file, targetKb, callback) {
+            const targetBytes = targetKb * 1024;
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Skala rasio resolusi maks 1280px
+                    const maxDim = 1280;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    let quality = 0.85;
+
+                    function attemptCompress() {
+                        canvas.toBlob(function(blob) {
+                            if (!blob) {
+                                callback(file);
+                                return;
+                            }
+
+                            // Jika ukuran masih > 300KB dan kualitas > 0.3, kurangi kualitas bertahap
+                            if (blob.size > targetBytes && quality > 0.35) {
+                                quality -= 0.12;
+                                attemptCompress();
+                            } else {
+                                const compressedFile = new File([blob], file.name, {
+                                    type: 'image/jpeg',
+                                    lastModified: Date.now()
+                                });
+                                callback(compressedFile);
+                            }
+                        }, 'image/jpeg', quality);
+                    }
+
+                    attemptCompress();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 2. KOMPRESI PDF (< 500 KB)
+        async function compressPdfToTarget(file, targetKb, callback) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+                // Bersihkan metadata bawaan untuk mengurangi ukuran byte PDF
+                pdfDoc.setTitle('');
+                pdfDoc.setAuthor('');
+                pdfDoc.setSubject('');
+                pdfDoc.setKeywords([]);
+                pdfDoc.setProducer('');
+                pdfDoc.setCreator('');
+
+                const pdfBytes = await pdfDoc.save({ useObjectStreams: true });
+                const compressedFile = new File([pdfBytes], file.name, {
+                    type: 'application/pdf',
+                    lastModified: Date.now()
+                });
+
+                callback(compressedFile);
+            } catch (err) {
+                console.warn('Gagal mengompresi PDF secara penuh, mengirimkan file asli:', err);
+                callback(file);
+            }
+        }
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('dropdownCpmkComponent', () => ({
                 openCpmk: false,
