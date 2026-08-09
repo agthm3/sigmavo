@@ -22,10 +22,17 @@ class MahasiswaProfile extends Model
     }
 
     /**
-     * RELASI KE MODEL PRODI
-     * Dinamai masterProdi agar tidak bentrok dengan properti/kolom 'prodi'
+     * RELASI UTAMA KE MODEL PRODI
      */
     public function masterProdi(): BelongsTo
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_id');
+    }
+
+    /**
+     * ALIAS RELASI (Agar tidak error saat sistem memanggil ->prodi)
+     */
+    public function prodi(): BelongsTo
     {
         return $this->belongsTo(Prodi::class, 'prodi_id');
     }

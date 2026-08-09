@@ -61,7 +61,7 @@ class User extends Authenticatable
     /**
      * Mendapatkan ID Prodi dari User (baik Mahasiswa, Dosen, maupun Admin Prodi)
      */
-    public function getProdiIdAttribute()
+  public function getProdiIdAttribute()
     {
         if ($this->hasRole('admin_prodi')) {
             return $this->adminProdiProfile?->prodi_id;
@@ -72,7 +72,7 @@ class User extends Authenticatable
         if ($this->hasRole('dosen')) {
             return $this->dosenProfile?->prodi_id;
         }
-        return null; // Superadmin / Admin Fakultas
+        return null;
     }
 
     public function seminars()

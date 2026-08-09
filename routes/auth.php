@@ -7,21 +7,33 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    
+    // ==========================================
+    // BLOKIR AKSES ROUTE REGISTRASI MANDIRI
+    // ==========================================
+    Route::get('register', function () {
+        return redirect()->route('login')->with('error', 'Registrasi mandiri dinonaktifkan. Akun dibuat terpusat oleh Admin Vokasi.');
+    })->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', function () {
+        return redirect()->route('login')->with('error', 'Aksi pendaftaran tidak diizinkan.');
+    });
 
+    // ==========================================
+    // LOGIN ROUTES
+    // ==========================================
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    // ==========================================
+    // LUPA PASSWORD & RESET PASSWORD
+    // ==========================================
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 

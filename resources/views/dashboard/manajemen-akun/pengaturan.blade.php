@@ -58,7 +58,7 @@
                         <p class="text-xs text-gray-500 mt-0.5">Daftar prodi aktif di Fakultas Vokasi Universitas Hasanuddin.</p>
                     </div>
 
-                    @if(Auth::user()->hasRole('superadmin'))
+                    @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
                     <button type="button" @click="openAddProdiModal = true" class="px-4 py-2 bg-vokasi-primary hover:bg-vokasi-dark text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center gap-2">
                         <i class="fas fa-plus"></i> Tambah Prodi
                     </button>
@@ -94,7 +94,7 @@
                                     <i class="fas fa-bullseye text-vokasi-primary mr-1"></i> {{ $prodi->cpmks->count() }} CPMK
                                 </td>
                                 <td class="p-4 text-right pr-6 space-x-2">
-                                    @if(Auth::user()->hasRole('superadmin'))
+                                    @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
                                     <button type="button" @click="activeProdi = {{ json_encode($prodi) }}; openEditProdiModal = true" class="p-1.5 text-gray-400 hover:text-vokasi-primary transition-colors" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -106,7 +106,7 @@
                                         </button>
                                     </form>
                                     @else
-                                    <span class="text-xs text-gray-400 italic">Khusus Superadmin</span>
+                                    <span class="text-xs text-gray-400 italic">Khusus Admin / Superadmin</span>
                                     @endif
                                 </td>
                             </tr>
@@ -206,23 +206,23 @@
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tahun Akademik Berjalan <span class="text-red-500">*</span></label>
-                        <input type="text" name="tahun_akademik" value="{{ old('tahun_akademik', $settings['tahun_akademik']) }}" required {{ !Auth::user()->hasRole('superadmin') ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
+                        <input type="text" name="tahun_akademik" value="{{ old('tahun_akademik', $settings['tahun_akademik']) }}" required {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Standar Minimal Jam Magang <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <input type="number" name="min_jam_magang" value="{{ old('min_jam_magang', $settings['min_jam_magang']) }}" required {{ !Auth::user()->hasRole('superadmin') ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
+                            <input type="number" name="min_jam_magang" value="{{ old('min_jam_magang', $settings['min_jam_magang']) }}" required {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
                             <span class="absolute right-3 top-2.5 text-xs text-gray-400 font-semibold">Jam</span>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Batas Maksimal Pengajuan Lowongan <span class="text-red-500">*</span></label>
-                        <input type="number" name="max_pengajuan" value="{{ old('max_pengajuan', $settings['max_pengajuan']) }}" required {{ !Auth::user()->hasRole('superadmin') ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
+                        <input type="number" name="max_pengajuan" value="{{ old('max_pengajuan', $settings['max_pengajuan']) }}" required {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
                     </div>
 
-                    @if(Auth::user()->hasRole('superadmin'))
+                    @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
                     <div class="pt-2">
                         <button type="submit" class="w-full py-2.5 bg-vokasi-primary hover:bg-vokasi-dark text-white font-semibold text-xs rounded-xl transition shadow-sm">
                             <i class="fas fa-save mr-1"></i> Simpan Parameter
@@ -237,11 +237,11 @@
                     <div class="space-y-3 text-xs">
                         <div>
                             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Resmi</label>
-                            <input type="email" name="email_resmi" value="{{ old('email_resmi', $settings['email_resmi']) }}" required {{ !Auth::user()->hasRole('superadmin') ? 'disabled' : '' }} class="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg">
+                            <input type="email" name="email_resmi" value="{{ old('email_resmi', $settings['email_resmi']) }}" required {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Lokasi Sekretariat</label>
-                            <input type="text" name="lokasi" value="{{ old('lokasi', $settings['lokasi']) }}" {{ !Auth::user()->hasRole('superadmin') ? 'disabled' : '' }} class="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg">
+                            <input type="text" name="lokasi" value="{{ old('lokasi', $settings['lokasi']) }}" {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg">
                         </div>
                     </div>
                 </div>
@@ -250,8 +250,8 @@
 
     </div>
 
-    <!-- MODAL POPUP: TAMBAH PRODI BARU (KHUSUS SUPERADMIN) -->
-    @if(Auth::user()->hasRole('superadmin'))
+    <!-- MODAL POPUP: TAMBAH PRODI BARU (ADMIN & SUPERADMIN) -->
+    @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
     <div x-show="openAddProdiModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div @click.away="openAddProdiModal = false" class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">

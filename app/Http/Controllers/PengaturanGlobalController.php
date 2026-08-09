@@ -21,11 +21,12 @@ class PengaturanGlobalController extends Controller
         }
 
         // Jika yang login Admin Prodi, filter prodi & cpmk untuk prodi dia sendiri
-        if ($currentUser->hasRole('admin_prodi')) {
-            $prodiId = $currentUser->prodi_id;
+        if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi'])) {
+            $prodiId = $currentUser->adminProdiProfile?->prodi_id ?? $currentUser->prodi_id;
             $prodis = Prodi::where('id', $prodiId)->with(['cpmks'])->withCount(['mahasiswaProfiles', 'dosenProfiles'])->get();
             $cpmks  = Cpmk::where('prodi_id', $prodiId)->with('prodi')->latest()->get();
         } else {
+            // Admin & Superadmin melihat seluruh prodi
             $prodis = Prodi::with(['cpmks'])->withCount(['mahasiswaProfiles', 'dosenProfiles'])->get();
             $cpmks  = Cpmk::with('prodi')->latest()->get();
         }
@@ -44,9 +45,9 @@ class PengaturanGlobalController extends Controller
 
     public function updateSettings(Request $request)
     {
-        // KUNCI: Hanya Superadmin yang boleh mengubah Setting Global
-        if (!Auth::user()->hasRole('superadmin')) {
-            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak mengubah parameter global.');
+        // Admin & Superadmin berhak mengubah Setting Global
+        if (!Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
+            return redirect()->back()->with('error', 'Akses ditolak! Anda tidak berhak mengubah parameter global.');
         }
 
         $request->validate([
@@ -66,17 +67,20 @@ class PengaturanGlobalController extends Controller
         return redirect()->back()->with('success', 'Parameter & Pengaturan Global berhasil disimpan.');
     }
 
-    public function storeProdi(Request $request)
+   public function storeProdi(Request $request)
     {
-        // KUNCI: Hanya Superadmin yang boleh membuat Master Prodi baru
-        if (!Auth::user()->hasRole('superadmin')) {
-            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak membuat Master Program Studi.');
+        // Admin & Superadmin berhak membuat Master Prodi baru
+        if (!Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
+            return redirect()->back()->with('error', 'Akses ditolak! Anda tidak berhak membuat Master Program Studi.');
         }
 
         $request->validate([
-            'kode_prodi' => 'required|string|max:10|unique:prodis,kode_prodi',
+            'kode_prodi' => 'required|string|max:50|unique:prodis,kode_prodi', // <-- Diubah max:10 menjadi max:50
             'nama_prodi' => 'required|string|max:255',
             'jenjang'    => 'required|string|in:D3,D4,S1,S2',
+        ], [
+            'kode_prodi.max'    => 'Kode Prodi tidak boleh lebih dari 50 karakter.',
+            'kode_prodi.unique' => 'Kode Prodi sudah terdaftar.',
         ]);
 
         Prodi::create([
@@ -90,16 +94,19 @@ class PengaturanGlobalController extends Controller
 
     public function updateProdi(Request $request, $id)
     {
-        if (!Auth::user()->hasRole('superadmin')) {
-            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak memperbarui Master Program Studi.');
+        if (!Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
+            return redirect()->back()->with('error', 'Akses ditolak! Anda tidak berhak memperbarui Master Program Studi.');
         }
 
         $prodi = Prodi::findOrFail($id);
 
         $request->validate([
-            'kode_prodi' => 'required|string|max:10|unique:prodis,kode_prodi,' . $id,
+            'kode_prodi' => 'required|string|max:50|unique:prodis,kode_prodi,' . $id, // <-- Diubah max:10 menjadi max:50
             'nama_prodi' => 'required|string|max:255',
             'jenjang'    => 'required|string|in:D3,D4,S1,S2',
+        ], [
+            'kode_prodi.max'    => 'Kode Prodi tidak boleh lebih dari 50 karakter.',
+            'kode_prodi.unique' => 'Kode Prodi sudah terdaftar.',
         ]);
 
         $prodi->update([
@@ -113,8 +120,8 @@ class PengaturanGlobalController extends Controller
 
     public function destroyProdi($id)
     {
-        if (!Auth::user()->hasRole('superadmin')) {
-            return redirect()->back()->with('error', 'Akses ditolak! Hanya Superadmin yang berhak menghapus Master Program Studi.');
+        if (!Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
+            return redirect()->back()->with('error', 'Akses ditolak! Anda tidak berhak menghapus Master Program Studi.');
         }
 
         $prodi = Prodi::findOrFail($id);
