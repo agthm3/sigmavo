@@ -123,7 +123,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Download & Upload Dokumen Umum
     Route::get('/download-template', [DownloadTemplateController::class, 'index'])->name('dashboard-pelaporan-download-template');
     Route::get('/upload-dokumen', [UploadDokumenController::class, 'index'])->name('dashboard-pelaporan-upload-dokumen');
-
+    Route::post('/upload-dokumen', [UploadDokumenController::class, 'store'])->name('dashboard-pelaporan-upload-dokumen-store');
+    Route::delete('/upload-dokumen/{id}', [UploadDokumenController::class, 'destroy'])->name('dashboard-pelaporan-upload-dokumen-destroy');
 
     // ==========================================
     // 5. FITUR DOSEN & SPV MITRA (Verifikasi & Penilaian)

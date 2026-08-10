@@ -35,6 +35,11 @@ class LaporanAkhirMahasiswaController extends Controller
         $request->validate([
             'judul_laporan' => 'required|string|max:255',
             'file_laporan'  => 'required|file|mimes:pdf|max:10240', // Maksimal 10MB PDF
+        ], [
+            'judul_laporan.required' => 'Judul laporan wajib diisi.',
+            'file_laporan.required'  => 'File dokumen PDF laporan akhir wajib diunggah.',
+            'file_laporan.mimes'     => 'Format file laporan harus berupa dokumen PDF (.pdf).',
+            'file_laporan.max'       => 'Ukuran file laporan maksimal adalah 10 MB.',
         ]);
 
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
