@@ -44,14 +44,6 @@ class Pendaftaran extends Model
     }
 
     /**
-     * Relasi ke Perusahaan Mitra
-     */
-    public function perusahaan(): BelongsTo
-    {
-        return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
-    }
-
-    /**
      * Relasi ke User (Mahasiswa)
      */
     public function user(): BelongsTo
@@ -70,5 +62,25 @@ class Pendaftaran extends Model
     public function penilaians(): HasMany
     {
         return $this->hasMany(Penilaian::class, 'pendaftaran_id');
+    }
+    public function perusahaan()
+    {
+        return $this->hasOneThrough(
+            Perusahaan::class,
+            Lowongan::class,
+            'id',            // Foreign key di tabel lowongans (lowongans.id)
+            'id',            // Foreign key di tabel perusahaans (perusahaans.id)
+            'lowongan_id',   // Local key di tabel pendaftarans (pendaftarans.lowongan_id)
+            'perusahaan_id'  // Local key di tabel lowongans (lowongans.perusahaan_id)
+        );
+    }
+
+    public function getNamaPerusahaanAttribute()
+    {
+        if ($this->jalur_magang === 'mandiri' || $this->nama_instansi_mandiri) {
+            return $this->nama_instansi_mandiri;
+        }
+
+        return $this->lowongan?->perusahaan?->nama_perusahaan ?? '-';
     }
 }

@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/daftar-lowongan/{id}/lamar', [DaftarLowonganController::class, 'lamar'])->name('dashboard-mahasiswa-daftar-lowongan-lamar');
             
             Route::get('/ajukan-mandiri', [AjukanMandiriController::class, 'index'])->name('dashboard-mahasiswa-ajukan-mandiri');
+            Route::post('/ajukan-mandiri', [AjukanMandiriController::class, 'store'])->name('dashboard-mahasiswa-ajukan-mandiri-store');
             
             Route::get('/status-pengajuan', [StatusPengajuanController::class, 'index'])->name('dashboard-mahasiswa-status-pengajuan');
             Route::delete('/status-pengajuan/{id}/cancel', [StatusPengajuanController::class, 'cancel'])->name('dashboard-mahasiswa-status-pengajuan-cancel');
