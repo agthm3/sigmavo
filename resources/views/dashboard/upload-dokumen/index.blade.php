@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <!-- NOTIFIKASI SUKSES / ERROR -->
+    <!-- NOTIFIKASI SUKSES / ERROR BANNER -->
     @if(session('success'))
     <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between text-sm shadow-sm">
         <div class="flex items-center gap-2">
@@ -334,7 +334,19 @@
 
                 this.isSubmitting = true;
 
-                // SUSUN FORMDATA DENGAN FILE TERKOMPRES (<5MB)
+                // 1. POP-UP LOADING MODAL DENGAN SWEETALERT2
+                Swal.fire({
+                    title: 'Mengunggah Dokumen...',
+                    html: '<p class="text-xs text-gray-600 mt-2">Berkas terkompresi sedang dikirim ke server. Mohon tunggu sejenak dan jangan menutup halaman ini.</p>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // 2. SUSUN FORMDATA DENGAN FILE TERKOMPRES (<5MB)
                 const formData = new FormData();
                 formData.append('_token', '{{ csrf_token() }}');
                 formData.append('jenis_dokumen', this.jenisDokumen);
@@ -371,11 +383,25 @@
                     return { status: 'success' };
                 })
                 .then(data => {
-                    window.location.reload();
+                    // POP-UP NOTIFIKASI SUKSES SEBELUM RELOAD
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Unggah Berhasil!',
+                        text: 'Dokumen Anda berhasil tersimpan di repositori.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
                 })
                 .catch(err => {
                     this.isSubmitting = false;
-                    alert('Gagal Mengunggah Berkas: ' + err.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Mengunggah!',
+                        text: err.message,
+                        confirmButtonColor: '#37A7AC'
+                    });
                 });
             }
         };

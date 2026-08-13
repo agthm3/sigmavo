@@ -110,7 +110,12 @@
                             </span>
                         </div>
                         
-                        <form action="{{ route('dashboard-mahasiswa-logbook-store') }}" method="POST" enctype="multipart/form-data" class="p-6">
+                        <!-- CARI TAG FORM STORE LOGBOOK DAN SESUAIKAN KODENYA: -->
+                        <form action="{{ route('dashboard-mahasiswa-logbook-store') }}" 
+                            method="POST" 
+                            enctype="multipart/form-data" 
+                            class="p-6"
+                            onsubmit="showLogbookLoading(event)">
                             @csrf
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 
@@ -621,4 +626,20 @@
             }));
         });
     </script>
+
+    <script>
+    function showLogbookLoading(event) {
+        // Tampilkan SweetAlert2 Loading Pop-up
+        Swal.fire({
+            title: 'Mengunggah Logbook...',
+            html: '<p class="text-xs text-gray-600 mt-2">Mohon tunggu, berkas foto dan catatan harian Anda sedang dikirim ke server.</p>',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
+</script>
 @endsection
