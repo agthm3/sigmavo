@@ -3,7 +3,18 @@
 @section('content')
 <!-- CDN PDF-LIB Untuk Kompresi PDF Client-Side -->
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-
+@if(!$sudahPembekalan)
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center text-amber-900 max-w-2xl mx-auto my-12">
+        <i class="fas fa-exclamation-triangle text-5xl mb-4 text-amber-500"></i>
+        <h3 class="font-bold text-lg mb-2">Akses Absensi Terkunci</h3>
+        <p class="text-sm">Anda telah diterima magang, namun Anda belum melakukan Konfirmasi Kehadiran pada acara Pembekalan Magang. Silakan menuju ke menu <strong>Pembekalan Magang</strong> untuk mengonfirmasi kehadiran Anda terlebih dahulu.</p>
+        <div class="mt-4">
+            <a href="{{ route('dashboard-mahasiswa-pembekalan-magang') }}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-sm transition-colors inline-block">
+                Buka Menu Pembekalan
+            </a>
+        </div>
+    </div>
+@endif
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
       x-data="absensiComponent()">
     

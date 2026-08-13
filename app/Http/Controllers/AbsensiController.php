@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Absensi;
 use App\Models\Pendaftaran;
 use App\Models\Setting;
+use App\Models\Pembekalan;
+use App\Models\PembekalanPresensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -23,13 +25,28 @@ class AbsensiController extends Controller
             ->latest()
             ->first();
 
-        // 2. Jika mahasiswa belum diterima magang, set isLocked = true
-        $isLocked = !$pendaftaran;
+        // 2. Cek apakah ada Agenda Pembekalan & apakah mahasiswa sudah Presensi Hadir
+        $latestPembekalan = Pembekalan::latest()->first();
+        $sudahPembekalan = true; // Default true jika admin belum pernah membuat agenda sama sekali
 
-        // 3. Ambil parameter target jam dari Setting Global (Default: 900 Jam)
+        if ($latestPembekalan) {
+            $cekPresensi = PembekalanPresensi::where('pembekalan_id', $latestPembekalan->id)
+                ->where('user_id', $user->id)
+                ->where('is_hadir', true)
+                ->exists();
+            
+            if (!$cekPresensi) {
+                $sudahPembekalan = false;
+            }
+        }
+
+        // 3. Kunci Absensi jika belum diterima magang ATAU belum ikut pembekalan
+        $isLocked = !$pendaftaran || !$sudahPembekalan;
+
+        // 4. Ambil parameter target jam dari Setting Global (Default: 900 Jam)
         $targetJam = (int) Setting::getByKey('min_jam_magang', 900);
 
-        // 4. Hitung total jam yang telah diapprove dosen
+        // 5. Hitung total jam yang telah diapprove dosen
         $jamTercapai = Absensi::where('user_id', $user->id)
             ->where('status_verifikasi', 'approved')
             ->sum('jam_diperoleh');
@@ -37,13 +54,13 @@ class AbsensiController extends Controller
         $sisaJam = max(0, $targetJam - $jamTercapai);
         $persentase = $targetJam > 0 ? min(100, round(($jamTercapai / $targetJam) * 100, 1)) : 0;
 
-        // 5. Data absensi hari ini
+        // 6. Data absensi hari ini
         $today = now()->toDateString();
         $absensiHariIni = Absensi::where('user_id', $user->id)
             ->where('tanggal', $today)
             ->first();
 
-        // 6. Riwayat Absensi
+        // 7. Riwayat Absensi
         $riwayats = Absensi::where('user_id', $user->id)
             ->orderBy('tanggal', 'desc')
             ->take(10)
@@ -52,6 +69,7 @@ class AbsensiController extends Controller
         return view('dashboard.absensi.index', compact(
             'pendaftaran',
             'isLocked',
+            'sudahPembekalan', // Variabel baru untuk blade
             'targetJam',
             'jamTercapai',
             'sisaJam',
@@ -69,7 +87,7 @@ class AbsensiController extends Controller
     {
         $user = Auth::user();
 
-        // Proteksi Backend: Cek Pendaftaran Aktif
+        // Proteksi Backend 1: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
@@ -77,6 +95,19 @@ class AbsensiController extends Controller
 
         if (!$pendaftaran) {
             return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima pada program magang aktif.');
+        }
+
+        // Proteksi Backend 2: Cek Kehadiran Pembekalan
+        $latestPembekalan = Pembekalan::latest()->first();
+        if ($latestPembekalan) {
+            $cekPresensi = PembekalanPresensi::where('pembekalan_id', $latestPembekalan->id)
+                ->where('user_id', $user->id)
+                ->where('is_hadir', true)
+                ->exists();
+                
+            if (!$cekPresensi) {
+                return redirect()->back()->with('error', 'Akses Ditolak. Anda wajib melakukan konfirmasi kehadiran pada menu Pembekalan Magang terlebih dahulu.');
+            }
         }
 
         $today = now()->toDateString();
@@ -156,7 +187,7 @@ class AbsensiController extends Controller
     {
         $user = Auth::user();
 
-        // Proteksi Backend: Cek Pendaftaran Aktif
+        // Proteksi Backend 1: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
@@ -164,6 +195,19 @@ class AbsensiController extends Controller
 
         if (!$pendaftaran) {
             return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima pada program magang aktif.');
+        }
+
+        // Proteksi Backend 2: Cek Kehadiran Pembekalan
+        $latestPembekalan = Pembekalan::latest()->first();
+        if ($latestPembekalan) {
+            $cekPresensi = PembekalanPresensi::where('pembekalan_id', $latestPembekalan->id)
+                ->where('user_id', $user->id)
+                ->where('is_hadir', true)
+                ->exists();
+                
+            if (!$cekPresensi) {
+                return redirect()->back()->with('error', 'Akses Ditolak. Anda wajib melakukan konfirmasi kehadiran pada menu Pembekalan Magang terlebih dahulu.');
+            }
         }
 
         $today = now()->toDateString();
