@@ -112,6 +112,14 @@ class AktivasiUserController extends Controller
             return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menambah user.');
         }
 
+        // PERBAIKAN: Jika yang login Admin Prodi, suntikkan prodi_id miliknya sebelum validasi!
+        if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi'])) {
+            $adminProdiId = $currentUser->adminProdiProfile?->prodi_id;
+            if ($adminProdiId) {
+                $request->merge(['prodi_id' => $adminProdiId]);
+            }
+        }
+
         $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => 'required|string|email|max:255|unique:users',
@@ -124,24 +132,27 @@ class AktivasiUserController extends Controller
             'nip_nidn'      => 'nullable|required_if:role,dosen,admin_prodi|string',
             'jabatan'       => 'nullable|string',
             'no_hp'         => 'nullable|string',
+        ], [
+            'prodi_id.required_if' => 'Program Studi wajib dipilih untuk role ' . $request->role . '.',
+            'nim.required_if'      => 'NIM Mahasiswa wajib diisi.',
+            'nim.unique'           => 'NIM tersebut sudah terdaftar di sistem.',
+            'email.unique'         => 'Email tersebut sudah terdaftar di sistem.',
         ]);
 
-        $prodiId = $currentUser->hasAnyRole(['admin_prodi', 'admin-prodi']) 
-            ? $currentUser->adminProdiProfile?->prodi_id 
-            : $request->prodi_id;
+        $prodiId = $request->prodi_id;
 
         $user = User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'password'  => Hash::make($request->password),
-            'is_active' => true,
+            'name'          => $request->name,
+            'email'         => $request->email,
+            'password'      => Hash::make($request->password),
+            'temp_password' => $request->password, // Simpan password sementara untuk modal
+            'is_active'     => true,
         ]);
 
         $user->assignRole($request->role);
 
         switch ($request->role) {
             case 'mahasiswa':
-                // Gunakan native object
                 $mhs = new MahasiswaProfile();
                 $mhs->user_id = $user->id;
                 $mhs->prodi_id = $prodiId;
@@ -397,5 +408,33 @@ class AktivasiUserController extends Controller
             return redirect()->route('dashboard-manajemen-aktivasi-user')
                 ->with('error', 'Terjadi kesalahan sistem saat menyimpan data: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Reset Password User oleh Admin / Admin Prodi
+     */
+ public function resetPassword(Request $request, $id)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = Auth::user();
+
+        $user = User::findOrFail($id);
+
+        if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi']) && ($user->hasRole('admin') || $user->hasRole('superadmin'))) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki wewenang mengubah password akun ini.');
+        }
+
+        $request->validate([
+            'new_password' => 'required|string|min:8',
+        ], [
+            'new_password.required' => 'Password baru wajib diisi.',
+            'new_password.min'      => 'Password baru minimal 8 karakter.',
+        ]);
+
+        $user->password      = Hash::make($request->new_password);
+        $user->temp_password = $request->new_password; // Update temp_password agar dapat dikontrol kembali oleh admin
+        $user->save();
+
+        return redirect()->back()->with('success', "Password untuk akun {$user->name} berhasil diperbarui.");
     }
 }

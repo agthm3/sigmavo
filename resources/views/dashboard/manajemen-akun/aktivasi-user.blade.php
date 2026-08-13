@@ -1,7 +1,8 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<main class="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-8 custom-scrollbar" x-data="{ openModal: false, selectedRole: 'mahasiswa' }">
+<main class="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-8 custom-scrollbar" 
+      x-data="{ openModal: false, selectedRole: 'mahasiswa', openProfileModal: false, activeUser: null, openResetForm: false }">
     
     <!-- HEADER HALAMAN & TOMBOL AKSI -->
     <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -92,12 +93,38 @@
                         <th class="p-4 pl-6">Pengguna</th>
                         <th class="p-4">Role / Peran</th>
                         <th class="p-4">Program Studi / Instansi</th>
-                        <th class="p-4">Status Akun</th>
-                        <th class="p-4 text-right pr-6">Aksi Aktivasi</th>
+                        <th class="p-4 text-center">Status</th>
+                        <th class="p-4 text-right pr-6">Aksi & Aktivasi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-gray-700">
                     @forelse($users as $user)
+                    
+                    @php
+                        $identitasStr = '-';
+                        $instansiStr = 'Fakultas Vokasi UNHAS';
+                        
+                        if($user->mahasiswaProfile) {
+                            $identitasStr = 'NIM: ' . $user->mahasiswaProfile->nim;
+                            $instansiStr = $user->mahasiswaProfile->masterProdi?->nama_prodi ?? '-';
+                        } elseif($user->dosenProfile) {
+                            $identitasStr = 'NIP/NIDN: ' . $user->dosenProfile->nip_nidn;
+                            $instansiStr = $user->dosenProfile->masterProdi?->nama_prodi ?? '-';
+                        } elseif($user->spvProfile) {
+                            $identitasStr = 'Jabatan: ' . ($user->spvProfile->jabatan ?? '-');
+                            $instansiStr = $user->spvProfile->perusahaan?->nama_perusahaan ?? '-';
+                        } elseif($user->adminProdiProfile) {
+                            $identitasStr = 'NIP/NIDN: ' . $user->adminProdiProfile->nip_nidn;
+                            $instansiStr = $user->adminProdiProfile->masterProdi?->nama_prodi ?? '-';
+                        }
+
+                        $roleNames = [];
+                        foreach($user->roles as $r) {
+                            $roleNames[] = strtoupper(str_replace('_', ' ', $r->name));
+                        }
+                        $roleStr = implode(', ', $roleNames);
+                    @endphp
+
                     <tr class="hover:bg-gray-50/50 transition-colors">
                         <td class="p-4 pl-6">
                             <div class="flex items-center space-x-3">
@@ -110,7 +137,7 @@
                         </td>
                         <td class="p-4">
                             @foreach($user->roles as $role)
-                                <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-lg uppercase tracking-wider
+                                <span class="inline-block px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider
                                     {{ $role->name == 'admin' ? 'bg-purple-100 text-purple-700' : '' }}
                                     {{ $role->name == 'admin_prodi' ? 'bg-indigo-100 text-indigo-700' : '' }}
                                     {{ $role->name == 'dosen' ? 'bg-blue-100 text-blue-700' : '' }}
@@ -120,43 +147,55 @@
                                 </span>
                             @endforeach
                         </td>
-    <td class="p-4 text-xs font-medium text-gray-600">
-                                @if($user->mahasiswaProfile)
-                                    <span class="font-bold text-gray-800">{{ $user->mahasiswaProfile->masterProdi?->nama_prodi ?? '-' }}</span><br>
-                                    <span class="text-gray-400">NIM: {{ $user->mahasiswaProfile->nim }}</span>
-                                @elseif($user->dosenProfile)
-                                    <span class="font-bold text-gray-800">{{ $user->dosenProfile->masterProdi?->nama_prodi ?? '-' }}</span><br>
-                                    <span class="text-gray-400">NIP: {{ $user->dosenProfile->nip_nidn }}</span>
-                                @elseif($user->spvProfile)
-                                    <span class="font-bold text-amber-700">{{ $user->spvProfile->perusahaan?->nama_perusahaan ?? '-' }}</span><br>
-                                    <span class="text-gray-500">Prodi: {{ $user->spvProfile->masterProdi?->nama_prodi ?? '-' }}</span>
-                                @elseif($user->adminProdiProfile)
-                                    <span class="font-bold text-indigo-600">{{ $user->adminProdiProfile->masterProdi?->nama_prodi ?? '-' }}</span>
-                                @else
-                                    <span class="text-gray-400">Fakultas Vokasi</span>
-                                @endif
-                            </td>
-                        <td class="p-4">
+                        <td class="p-4 text-xs font-medium text-gray-600">
+                            <span class="font-bold {{ $user->spvProfile ? 'text-amber-700' : ($user->adminProdiProfile ? 'text-indigo-600' : 'text-gray-800') }}">
+                                {{ $instansiStr }}
+                            </span><br>
+                            <span class="text-gray-400">{{ $identitasStr }}</span>
+                        </td>
+                        <td class="p-4 text-center">
                             @if($user->is_active)
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Aktif
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span> Non-Aktif
                                 </span>
                             @endif
                         </td>
-                        <td class="p-4 text-right pr-6">
+                        <td class="p-4 text-right pr-6 whitespace-nowrap">
+                            
+                            <!-- Tombol VIEW PROFIL & RESET PASSWORD -->
+                            <button type="button" title="Lihat Profil & Kelola Password" @click="
+                                activeUser = {
+                                    id: {{ $user->id }},
+                                    name: '{{ addslashes($user->name) }}',
+                                    email: '{{ addslashes($user->email) }}',
+                                    role: '{{ addslashes($roleStr) }}',
+                                    identitas: '{{ addslashes($identitasStr) }}',
+                                    instansi: '{{ addslashes($instansiStr) }}',
+                                    tempPassword: '{{ addslashes($user->temp_password ?? 'Tidak Tersedia (User Mengubah Sendiri)') }}',
+                                    status: {{ $user->is_active ? 'true' : 'false' }},
+                                    created_at: '{{ $user->created_at->format('d M Y, H:i') }}',
+                                    resetUrl: '{{ route('dashboard-manajemen-aktivasi-reset-password', $user->id) }}'
+                                };
+                                openResetForm = false;
+                                openProfileModal = true;
+                            " class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-xs rounded-lg border border-blue-200 transition-colors mr-1">
+                                <i class="fas fa-eye"></i> Profil & Password
+                            </button>
+
+                            <!-- Tombol TOGGLE AKTIVASI -->
                             <form action="{{ route('dashboard-manajemen-aktivasi-toggle', $user->id) }}" method="POST" class="inline-block">
                                 @csrf
                                 @method('PATCH')
                                 @if($user->is_active)
-                                    <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg border border-red-200 transition-colors">
+                                    <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-lg border border-red-200 transition-colors" title="Nonaktifkan User">
                                         Nonaktifkan
                                     </button>
                                 @else
-                                    <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
+                                    <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors" title="Aktifkan User">
                                         Aktifkan
                                     </button>
                                 @endif
@@ -166,7 +205,7 @@
                     @empty
                     <tr>
                         <td colspan="5" class="p-8 text-center text-gray-400">
-                            Tidak ada data pengguna ditemukan.
+                            <i class="fas fa-users-slash text-3xl mb-2 block"></i> Tidak ada data pengguna ditemukan.
                         </td>
                     </tr>
                     @endforelse
@@ -179,7 +218,7 @@
         </div>
     </div>
 
-    <!-- MODAL POPUP 1: FORM TAMBAH USER MANUAL -->
+<!-- MODAL POPUP 1: FORM TAMBAH USER MANUAL -->
     <div x-show="openModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div @click.away="openModal = false" class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             
@@ -191,6 +230,19 @@
             <form action="{{ route('dashboard-manajemen-aktivasi-store') }}" method="POST" class="p-6 space-y-4">
                 @csrf
 
+                <!-- INFORMASI PRODI OTOMATIS KHUSUS ADMIN PRODI -->
+                @if($currentUser->hasRole('admin_prodi'))
+                <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl flex items-center gap-2.5 text-xs text-vokasi-dark">
+                    <i class="fas fa-building text-vokasi-primary text-base shrink-0"></i>
+                    <div>
+                        <p class="font-bold">Unit Program Studi Otomatis:</p>
+                        <p class="font-medium text-gray-700">
+                            User baru akan otomatis terdaftar di <strong>{{ $currentUser->adminProdiProfile?->prodi?->nama_prodi ?? 'Program Studi Anda' }}</strong>.
+                        </p>
+                    </div>
+                </div>
+                @endif
+
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Lengkap & Gelar <span class="text-red-500">*</span></label>
                     <input type="text" name="name" required placeholder="Contoh: Budi Santoso, S.T. (Supervisor)" class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
@@ -201,9 +253,16 @@
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Resmi <span class="text-red-500">*</span></label>
                         <input type="email" name="email" required placeholder="user@perusahaan.com" class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
                     </div>
-                    <div>
+                    
+                    <!-- FITUR VIEW PASSWORD (IKON MATA) -->
+                    <div x-data="{ showPassword: false }">
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password Awal <span class="text-red-500">*</span></label>
-                        <input type="password" name="password" required placeholder="Min. 8 Karakter" class="w-full px-3.5 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none">
+                        <div class="relative">
+                            <input :type="showPassword ? 'text' : 'password'" name="password" required placeholder="Min. 8 Karakter" class="w-full px-3.5 py-2 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none transition-colors">
+                            <button type="button" @click="showPassword = !showPassword" tabindex="-1" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-vokasi-primary transition-colors focus:outline-none">
+                                <i class="fas" :class="showPassword ? 'fa-eye-slash text-vokasi-primary' : 'fa-eye'"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -219,6 +278,7 @@
                     </select>
                 </div>
 
+                <!-- DITAMPILKAN HANYA UNTUK SUPERADMIN / ADMIN FAKULTAS -->
                 @if(!$currentUser->hasRole('admin_prodi'))
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Program Studi <span class="text-red-500">*</span></label>
@@ -258,8 +318,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button type="button" @click="openModal = false" class="px-4 py-2 bg-gray-100 text-gray-600 font-semibold text-xs rounded-xl">Batal</button>
-                    <button type="submit" class="px-5 py-2 bg-vokasi-primary hover:bg-vokasi-dark text-white font-semibold text-xs rounded-xl shadow-sm">Simpan & Aktifkan</button>
+                    <button type="button" @click="openModal = false" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs rounded-xl transition-colors">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold text-xs rounded-xl shadow-sm transition-colors">Simpan & Aktifkan</button>
                 </div>
 
             </form>
@@ -296,6 +356,111 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP 3: DETAIL PROFIL USER & RESET PASSWORD -->
+    <div x-show="openProfileModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div @click.away="openProfileModal = false" class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-gray-100" x-transition x-if="activeUser">
+            
+            <!-- Modal Header -->
+            <div class="relative bg-vokasi-primary p-6 pb-12 flex justify-between items-start text-white">
+                <h3 class="font-bold text-lg"><i class="fas fa-id-badge mr-2"></i> Detail Pengguna</h3>
+                <button type="button" @click="openProfileModal = false" class="text-white/80 hover:text-white transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+
+            <!-- Avatar Float -->
+            <div class="px-6 relative -mt-10 mb-4 text-center">
+                <img :src="'https://ui-avatars.com/api/?name=' + encodeURIComponent(activeUser?.name || 'User') + '&background=f8f9fa&color=37A7AC&size=128'" 
+                     alt="Avatar" 
+                     class="w-24 h-24 rounded-full border-4 border-white shadow-md mx-auto bg-white">
+                <h4 class="font-bold text-xl text-gray-800 mt-2 leading-tight" x-text="activeUser?.name"></h4>
+                <p class="text-sm text-vokasi-primary font-semibold mt-0.5" x-text="activeUser?.role"></p>
+                
+                <div class="mt-2">
+                    <template x-if="activeUser?.status">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <i class="fas fa-check-circle mr-1"></i> AKUN AKTIF
+                        </span>
+                    </template>
+                    <template x-if="!activeUser?.status">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> NON-AKTIF (DITANGGUHKAN)
+                        </span>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Detail List -->
+            <div class="px-6 pb-8 space-y-4">
+                <div class="p-4 bg-gray-50 border border-gray-100 rounded-xl space-y-3 text-sm">
+                    <div class="flex flex-col border-b border-gray-200 pb-2">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Email Resmi</span>
+                        <span class="font-medium text-gray-800" x-text="activeUser?.email"></span>
+                    </div>
+                    <div class="flex flex-col border-b border-gray-200 pb-2">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Program Studi / Instansi Mitra</span>
+                        <span class="font-medium text-gray-800" x-text="activeUser?.instansi"></span>
+                    </div>
+                    <div class="flex flex-col border-b border-gray-200 pb-2">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Identitas Akademik / Jabatan</span>
+                        <span class="font-mono font-medium text-gray-800" x-text="activeUser?.identitas"></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Waktu Registrasi Akun</span>
+                        <span class="font-medium text-gray-600" x-text="activeUser?.created_at"></span>
+                    </div>
+                </div>
+
+                <!-- TAMPILAN RECENT PASSWORD & FORM RESET -->
+                <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3" x-data="{ showRecentPass: false }">
+                    <div class="flex items-center justify-between border-b border-amber-200/60 pb-2">
+                        <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                            <i class="fas fa-key text-amber-600"></i> Password Terakhir / Awal:
+                        </span>
+                        <button type="button" @click="openResetForm = !openResetForm" class="text-xs font-bold text-vokasi-primary hover:underline">
+                            <span x-text="openResetForm ? 'Batal' : 'Reset Password Baru'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Tampilan Password Awal Terakhir -->
+                    <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-amber-200 text-xs" x-show="!openResetForm">
+                        <span class="font-mono font-bold text-gray-800" x-text="showRecentPass ? activeUser?.tempPassword : '••••••••••••'"></span>
+                        <button type="button" @click="showRecentPass = !showRecentPass" class="text-gray-400 hover:text-vokasi-primary transition-colors focus:outline-none ml-2">
+                            <i class="fas" :class="showRecentPass ? 'fa-eye-slash text-vokasi-primary' : 'fa-eye'"></i>
+                        </button>
+                    </div>
+
+                    <!-- Form Reset Password Baru -->
+                    <form :action="activeUser?.resetUrl" method="POST" x-show="openResetForm" x-cloak class="space-y-3 pt-2" x-data="{ showNewPass: false }">
+                        @csrf
+                        @method('PATCH')
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase mb-1">Ketik Password Baru <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <input :type="showNewPass ? 'text' : 'password'" name="new_password" required placeholder="Min. 8 Karakter" class="w-full px-3 py-2 pr-10 text-xs bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-vokasi-primary">
+                                <button type="button" @click="showNewPass = !showNewPass" tabindex="-1" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-vokasi-primary">
+                                    <i class="fas" :class="showNewPass ? 'fa-eye-slash text-vokasi-primary' : 'fa-eye'"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                                <i class="fas fa-save"></i> Simpan Password Baru
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="text-center pt-2">
+                    <button type="button" @click="openProfileModal = false" class="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition-colors">
+                        Tutup Profil
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 

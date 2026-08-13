@@ -202,6 +202,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/aktivasi-user', [AktivasiUserController::class, 'index'])->name('dashboard-manajemen-aktivasi-user');
             Route::post('/aktivasi-user', [AktivasiUserController::class, 'store'])->name('dashboard-manajemen-aktivasi-store');
             Route::patch('/aktivasi-user/{id}/toggle', [AktivasiUserController::class, 'toggleStatus'])->name('dashboard-manajemen-aktivasi-toggle');
+            Route::patch('/manajemen-akun/aktivasi-user/{id}/reset-password', [AktivasiUserController::class, 'resetPassword'])->name('dashboard-manajemen-aktivasi-reset-password');
             
             Route::get('/aktivasi-user/template-excel', [AktivasiUserController::class, 'downloadTemplateExcel'])->name('dashboard-manajemen-aktivasi-template');
             Route::post('/aktivasi-user/import-preview', [AktivasiUserController::class, 'previewImport'])->name('dashboard-manajemen-aktivasi-import-preview');
