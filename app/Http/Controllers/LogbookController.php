@@ -7,6 +7,8 @@ use App\Models\Cpmk;
 use App\Models\Logbook;
 use App\Models\Pendaftaran;
 use App\Models\Setting;
+use App\Models\Pembekalan;
+use App\Models\PembekalanPresensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -24,18 +26,36 @@ class LogbookController extends Controller
             ->latest()
             ->first();
 
-        // JIKA BELUM DITERIMA MAGANG -> Set flag isLocked = true
-        if (!$pendaftaran) {
+        // 2. Cek Kehadiran Pembekalan
+        $latestPembekalan = Pembekalan::latest()->first();
+        $sudahPembekalan = true;
+
+        if ($latestPembekalan) {
+            $cekPresensi = PembekalanPresensi::where('pembekalan_id', $latestPembekalan->id)
+                ->where('user_id', $user->id)
+                ->where('is_hadir', true)
+                ->exists();
+            
+            if (!$cekPresensi) {
+                $sudahPembekalan = false;
+            }
+        }
+
+        // JIKA BELUM DITERIMA MAGANG ATAU BELUM IKUT PEMBEKALAN -> Kunci Akses (isLocked = true)
+        $isLocked = !$pendaftaran || !$sudahPembekalan;
+
+        if ($isLocked) {
             return view('dashboard.logbook.index', [
-                'isLocked'    => true,
-                'logbooks'    => collect(),
-                'pendaftaran' => null,
-                'daftarCpmk'  => [],
-                'user'        => $user
+                'isLocked'        => true,
+                'sudahPembekalan' => $sudahPembekalan, // Pass variabel ke view
+                'logbooks'        => collect(),
+                'pendaftaran'     => $pendaftaran,
+                'daftarCpmk'      => [],
+                'user'            => $user
             ]);
         }
 
-        // 2. Query Logbook Mahasiswa
+        // 3. Query Logbook Mahasiswa (Jika Akses Normal)
         $query = Logbook::where('user_id', $user->id);
 
         if ($request->filled('bulan') && $request->bulan !== 'semua') {
@@ -48,7 +68,7 @@ class LogbookController extends Controller
 
         $logbooks = $query->orderBy('tanggal', 'desc')->paginate(10)->withQueryString();
 
-        // 3. AMBIL DATA CPMK BERDASARKAN PRODI MAHASISWA
+        // 4. AMBIL DATA CPMK BERDASARKAN PRODI MAHASISWA
         $mahasiswaProdiId = $user->mahasiswaProfile?->prodi_id;
 
         if ($mahasiswaProdiId) {
@@ -74,11 +94,12 @@ class LogbookController extends Controller
         }
 
         return view('dashboard.logbook.index', [
-            'isLocked'    => false,
-            'logbooks'    => $logbooks,
-            'pendaftaran' => $pendaftaran,
-            'daftarCpmk'  => $daftarCpmk,
-            'user'        => $user
+            'isLocked'        => false,
+            'sudahPembekalan' => true,
+            'logbooks'        => $logbooks,
+            'pendaftaran'     => $pendaftaran,
+            'daftarCpmk'      => $daftarCpmk,
+            'user'            => $user
         ]);
     }
 
@@ -89,7 +110,7 @@ class LogbookController extends Controller
     {
         $user = Auth::user();
 
-        // Proteksi Backend: Cek Pendaftaran Aktif
+        // Proteksi Backend 1: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
@@ -97,6 +118,19 @@ class LogbookController extends Controller
 
         if (!$pendaftaran) {
             return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
+        }
+
+        // Proteksi Backend 2: Cek Kehadiran Pembekalan
+        $latestPembekalan = Pembekalan::latest()->first();
+        if ($latestPembekalan) {
+            $cekPresensi = PembekalanPresensi::where('pembekalan_id', $latestPembekalan->id)
+                ->where('user_id', $user->id)
+                ->where('is_hadir', true)
+                ->exists();
+                
+            if (!$cekPresensi) {
+                return redirect()->back()->with('error', 'Akses Ditolak. Anda wajib melakukan konfirmasi kehadiran pada menu Pembekalan Magang terlebih dahulu.');
+            }
         }
 
         $request->validate([

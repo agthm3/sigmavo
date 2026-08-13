@@ -20,25 +20,41 @@
             <div class="max-w-7xl mx-auto w-full flex-1 space-y-6">
                 
                 @if(isset($isLocked) && $isLocked)
-                    <!-- STATE TERKUNCI: BELUM DITERIMA MAGANG -->
-                    <div class="bg-white rounded-2xl p-8 md:p-12 border border-amber-200 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-4">
-                        <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto text-2xl border border-amber-200 shadow-sm">
-                            <i class="fas fa-lock"></i>
+                    
+                    @if(isset($sudahPembekalan) && !$sudahPembekalan)
+                        <!-- STATE TERKUNCI: SUDAH DITERIMA TAPI BELUM PEMBEKALAN -->
+                        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center max-w-2xl mx-auto my-12 shadow-sm text-amber-900">
+                            <i class="fas fa-exclamation-triangle text-5xl mb-4 text-amber-500"></i>
+                            <h3 class="font-bold text-lg mb-2 text-gray-800">Akses Logbook Terkunci</h3>
+                            <p class="text-sm text-gray-700">Anda telah diterima magang, namun Anda belum melakukan Konfirmasi Kehadiran pada acara Pembekalan Magang. Silakan menuju ke menu <strong>Pembekalan Magang</strong> untuk mengonfirmasi kehadiran Anda terlebih dahulu.</p>
+                            <div class="mt-5">
+                                <a href="{{ route('dashboard-mahasiswa-pembekalan-magang') }}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-sm transition-colors inline-block">
+                                    <i class="fas fa-arrow-right mr-1.5"></i> Buka Menu Pembekalan
+                                </a>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-800">Akses Logbook Belum Terbuka</h3>
-                        <p class="text-sm text-gray-500 leading-relaxed">
-                            Fitur pengisian <strong>Logbook Kegiatan Harian</strong> hanya dapat digunakan oleh mahasiswa yang telah <strong>diterima secara resmi</strong> pada program magang industri.
-                        </p>
-                        <div class="p-4 bg-amber-50/60 rounded-xl text-xs text-amber-800 border border-amber-200 font-medium text-left flex items-start gap-2.5">
-                            <i class="fas fa-info-circle text-amber-600 text-base shrink-0 mt-0.5"></i>
-                            <p>
-                                Jika Anda sudah mengajukan magang, silakan pantau perkembangan verifikasi berkas dan penerbitan surat pada menu 
-                                <a href="{{ route('dashboard-mahasiswa-status-pengajuan') }}" class="underline font-bold text-amber-900 hover:text-amber-700">Status Pengajuan Magang</a>.
+                    @else
+                        <!-- STATE TERKUNCI: BELUM DITERIMA MAGANG -->
+                        <div class="bg-white rounded-2xl p-8 md:p-12 border border-amber-200 shadow-sm text-center max-w-2xl mx-auto my-8 space-y-4">
+                            <div class="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto text-2xl border border-amber-200 shadow-sm">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">Akses Logbook Belum Terbuka</h3>
+                            <p class="text-sm text-gray-500 leading-relaxed">
+                                Fitur pengisian <strong>Logbook Kegiatan Harian</strong> hanya dapat digunakan oleh mahasiswa yang telah <strong>diterima secara resmi</strong> pada program magang industri.
                             </p>
+                            <div class="p-4 bg-amber-50/60 rounded-xl text-xs text-amber-800 border border-amber-200 font-medium text-left flex items-start gap-2.5">
+                                <i class="fas fa-info-circle text-amber-600 text-base shrink-0 mt-0.5"></i>
+                                <p>
+                                    Jika Anda sudah mengajukan magang, silakan pantau perkembangan verifikasi berkas dan penerbitan surat pada menu 
+                                    <a href="{{ route('dashboard-mahasiswa-status-pengajuan') }}" class="underline font-bold text-amber-900 hover:text-amber-700">Status Pengajuan Magang</a>.
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    @endif
+
                 @else
-                    <!-- STATE NORMAL: SUDAH DITERIMA MAGANG -->
+                    <!-- STATE NORMAL: SUDAH DITERIMA MAGANG & SUDAH PEMBEKALAN -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">Logbook Harian Magang</h2>
