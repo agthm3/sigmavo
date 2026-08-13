@@ -84,11 +84,11 @@
                         <textarea id="keterangan" x-model="keterangan" rows="2" placeholder="Catatan tambahan untuk DPL..." class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20 focus:border-vokasi-primary transition-colors resize-none"></textarea>
                     </div>
 
-                    <!-- DRAG & DROP FILE UPLOAD AREA (ELEMEN DILUAR TAG FORM INPUT UNTUK MENCEGAH TERKIRIM FILE ASLI 10MB) -->
+                    <!-- DRAG & DROP FILE UPLOAD AREA -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             Lampiran File 
-                            <span class="text-vokasi-primary font-normal text-xs ml-1">(Bisa pilih s.d 10 MB, Otomatis dikompres)</span>
+                            <span class="text-vokasi-primary font-normal text-xs ml-1">(Batas Maksimal 5 MB, Otomatis dikompres)</span>
                         </label>
                         
                         <div class="border-2 border-dashed border-gray-300 hover:border-vokasi-primary rounded-2xl p-6 text-center bg-gray-50/50 hover:bg-vokasi-primary/5 transition-all cursor-pointer relative group">
@@ -102,7 +102,7 @@
                                 <div class="text-sm font-semibold text-gray-700">
                                     <span class="text-vokasi-primary">Klik untuk memilih file</span> atau tarik & lepas di sini
                                 </div>
-                                <p class="text-xs text-gray-400">PDF, JPG, PNG, WEBP (Maksimal 10 MB)</p>
+                                <p class="text-xs text-gray-400">PDF, JPG, PNG, WEBP (Maksimal 5 MB)</p>
                             </div>
                         </div>
 
@@ -280,6 +280,7 @@
                 const file = picker.files[0];
                 if (!file) return;
 
+                // Batas file awal sebelum kompresi: 10MB
                 if (file.size > 10 * 1024 * 1024) {
                     alert('Ukuran file awal melebihi batas maksimal 10 MB!');
                     picker.value = '';
@@ -294,7 +295,7 @@
 
                 const self = this;
 
-                // Kompresi Berkas
+                // Kompresi Berkas Offline di Browser
                 compressDokumenOffline(file, function(compressedFile, err) {
                     if (err) {
                         self.isCompressing = false;
@@ -304,9 +305,21 @@
                         return;
                     }
 
+                    // Proteksi ukuran setelah kompresi: maksimal 5 MB (5120 KB)
+                    if (compressedFile.size > 5120 * 1024) {
+                        self.isCompressing = false;
+                        self.isCompressedReady = false;
+                        self.errorMessage = 'Ukuran file PDF setelah kompresi masih melebihi 5 MB (' + (compressedFile.size / (1024 * 1024)).toFixed(2) + ' MB). Harap gunakan PDF Compressor online untuk memperkecil ukuran PDF Anda.';
+                        picker.value = '';
+                        return;
+                    }
+
                     self.compressedBlobFile = compressedFile;
                     const origStr = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-                    const newStr = (compressedFile.size / 1024).toFixed(0) + ' KB';
+                    const newStr = compressedFile.size >= 1024 * 1024 
+                        ? (compressedFile.size / (1024 * 1024)).toFixed(2) + ' MB' 
+                        : (compressedFile.size / 1024).toFixed(0) + ' KB';
+
                     self.fileInfo = `Berhasil Dikompresi di Browser: ${origStr} → ${newStr}`;
                     self.isCompressing = false;
                     self.isCompressedReady = true;
@@ -321,7 +334,7 @@
 
                 this.isSubmitting = true;
 
-                // SUSUN FORMDATA DENGAN FILE TERKOMPRES (<500KB)
+                // SUSUN FORMDATA DENGAN FILE TERKOMPRES (<5MB)
                 const formData = new FormData();
                 formData.append('_token', '{{ csrf_token() }}');
                 formData.append('jenis_dokumen', this.jenisDokumen);
@@ -332,22 +345,37 @@
                 fetch('{{ route("dashboard-pelaporan-upload-dokumen-store") }}', {
                     method: 'POST',
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
                     },
                     body: formData
                 })
-                .then(response => {
+                .then(async response => {
+                    const contentType = response.headers.get('content-type');
+                    
                     if (!response.ok) {
-                        throw new Error('Gagal mengunggah berkas. Status: ' + response.status);
+                        if (response.status === 413) {
+                            throw new Error('Ukuran berkas terlalu besar untuk server (413 Payload Too Large).');
+                        }
+                        if (contentType && contentType.includes('application/json')) {
+                            const errData = await response.json();
+                            throw new Error(errData.message || 'Gagal mengunggah berkas.');
+                        } else {
+                            throw new Error('Terjadi kesalahan pada server (Status ' + response.status + ').');
+                        }
                     }
-                    return response.json();
+
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    }
+                    return { status: 'success' };
                 })
                 .then(data => {
                     window.location.reload();
                 })
                 .catch(err => {
                     this.isSubmitting = false;
-                    alert('Terjadi kesalahan saat mengunggah: ' + err.message);
+                    alert('Gagal Mengunggah Berkas: ' + err.message);
                 });
             }
         };
@@ -393,7 +421,7 @@
                             lastModified: Date.now()
                         });
                         callback(compressedFile, null);
-                    }, 'image/jpeg', 0.7);
+                    }, 'image/jpeg', 0.65);
                 };
                 img.src = e.target.result;
             };
