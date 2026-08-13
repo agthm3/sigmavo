@@ -49,7 +49,7 @@
 <body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden" 
       x-data="{ sidebarOpen: false }">
 
-        @php
+    @php
         /** @var \App\Models\User $authUser */
         $authUser = Auth::user();
     @endphp
@@ -199,7 +199,7 @@
                 </ul>
             </details>
 
-            <!-- 4. Pelaporan Magang Group -->
+            <!-- 4. Pelaporan Magang Group (Mahasiswa Only) -->
             @php
                 $isPelaporanActive = request()->routeIs('dashboard-pelaporan-download-template', 'dashboard-pelaporan-upload-dokumen', 'dashboard-mahasiswa-laporan-akhir');
             @endphp
@@ -292,7 +292,7 @@
             <details class="group" {{ $isVerifikasiActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isVerifikasiActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
                     <i class="fas fa-check-double w-5"></i>
-                    <span class="ml-2 flex-1 text-sm">Verifikasi</span>
+                    <span class="ml-2 flex-1 text-sm">Verifikasi Logbook & Absensi</span>
                     <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
                 </summary>
                 <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
@@ -317,11 +317,37 @@
                 </ul>
             </details>
 
+            <!-- Pelaporan Magang (DPL & Admin Prodi Access) -->
+            @php
+                $isPelaporanAdminActive = request()->routeIs('dashboard-mahasiswa-laporan-akhir', 'dashboard-pelaporan-download-template');
+            @endphp
+            <details class="group mt-1" {{ $isPelaporanAdminActive ? 'open' : '' }}>
+                <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isPelaporanAdminActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
+                    <i class="fas fa-file-invoice w-5"></i>
+                    <span class="ml-2 flex-1 text-sm">Pelaporan Magang</span>
+                    <i class="fas fa-chevron-down text-xs transition duration-300 group-open:-rotate-180"></i>
+                </summary>
+                <ul class="mt-1 ml-6 space-y-1 border-l-2 border-gray-200 pl-2">
+                    <li>
+                        <a href="{{ route('dashboard-mahasiswa-laporan-akhir') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-mahasiswa-laporan-akhir') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            <i class="fas fa-folder-open text-xs mr-1 text-vokasi-primary"></i> Rekap Laporan Akhir
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard-pelaporan-download-template') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-pelaporan-download-template') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
+                            Template Dokumen
+                        </a>
+                    </li>
+                </ul>
+            </details>
+
             <!-- Penilaian Group -->
             @php
                 $isPenilaianActive = request()->routeIs('dashboard-penilaian-listing-mahasiswa');
             @endphp
-            <details class="group" {{ $isPenilaianActive ? 'open' : '' }}>
+            <details class="group mt-1" {{ $isPenilaianActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isPenilaianActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
                     <i class="fas fa-star w-5"></i>
                     <span class="ml-2 flex-1 text-sm">Penilaian</span>
@@ -428,7 +454,6 @@
                             Pengajuan Magang
                         </a>
                     </li>
-                    <!-- TAMBAHAN TERBARU: MENU PEMBEKALAN MAGANG UNTUK ADMIN PRODI / ADMIN -->
                     <li>
                         <a href="{{ route('dashboard-mahasiswa-pembekalan-magang') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-mahasiswa-pembekalan-magang') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
@@ -481,7 +506,7 @@
                     <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
                 </button>
 
-@php
+                @php
                     $authUser = Auth::user();
                     $userName = $authUser->name ?? 'Pengguna';
                     $userRole = $authUser ? ($authUser->getRoleNames()->first() ?? 'Pengguna') : 'Pengguna';
@@ -519,7 +544,8 @@
         @yield('content')
 
     </div>
-@if(session('success'))
+
+    @if(session('success'))
     <script>
         Swal.fire({
             icon: 'success',
