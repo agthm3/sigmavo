@@ -107,6 +107,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/seminar-hasil/ppt', [SeminarController::class, 'destroyPpt'])->name('dashboard-mahasiswa-seminar-destroy-ppt');
             
             Route::post('/laporan-akhir', [LaporanAkhirMahasiswaController::class, 'store'])->name('dashboard-mahasiswa-laporan-akhir-store');
+            Route::middleware(['role:dosen|admin_prodi|admin|superadmin'])->group(function () {
+                Route::put('/pelaksanaan-magang/laporan-akhir/{id}/verifikasi', [LaporanAkhirMahasiswaController::class, 'verifikasi'])->name('dashboard-laporan-akhir-verifikasi');
+            });
         });
     });
 
