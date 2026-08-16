@@ -110,12 +110,12 @@
                             </span>
                         </div>
                         
-                        <!-- CARI TAG FORM STORE LOGBOOK DAN SESUAIKAN KODENYA: -->
+                        <!-- HANDLER ONSUBMIT SWEETALERT DI FORM INI -->
                         <form action="{{ route('dashboard-mahasiswa-logbook-store') }}" 
                             method="POST" 
                             enctype="multipart/form-data" 
                             class="p-6"
-                            onsubmit="showLogbookLoading(event)">
+                            onsubmit="return checkAbsensiAndSubmit(event)">
                             @csrf
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 
@@ -263,8 +263,8 @@
                             <form action="{{ route('dashboard-mahasiswa-logbook') }}" method="GET" class="flex items-center gap-2">
                                 <select name="bulan" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
                                     <option value="semua" {{ request('bulan') == 'semua' ? 'selected' : '' }}>Semua Bulan</option>
-                                    <option value="2026-08" {{ request('bulan') == '2026-08' ? 'selected' : '' }}>Agustus 2026</option>
-                                    <option value="2026-07" {{ request('bulan') == '2026-07' ? 'selected' : '' }}>Juli 2026</option>
+                                    <option value="{{ now()->format('Y-m') }}" {{ request('bulan') == now()->format('Y-m') ? 'selected' : '' }}>Bulan Ini</option>
+                                    <option value="{{ now()->subMonth()->format('Y-m') }}" {{ request('bulan') == now()->subMonth()->format('Y-m') ? 'selected' : '' }}>Bulan Lalu</option>
                                 </select>
                             </form>
                         </div>
@@ -490,27 +490,20 @@
     <script>
         /**
          * FUNGSI UTAMA PENGOMPRES FILE OTOMATIS OFFLINE DI BROWSER
-         * Target: Gambar < maxImgKb (Default 300 KB), PDF < maxPdfKb (Default 500 KB)
          */
         async function handleSmartFileCompression(file, maxImgKb = 300, maxPdfKb = 500, callback) {
             const isImage = file.type.startsWith('image/');
             const isPdf = file.type === 'application/pdf';
 
-            // Jika Gambar, kompres via HTML5 Canvas
             if (isImage) {
                 compressImageToTarget(file, maxImgKb, callback);
-            } 
-            // Jika PDF, optimalkan via PDF-Lib
-            else if (isPdf) {
+            } else if (isPdf) {
                 compressPdfToTarget(file, maxPdfKb, callback);
-            } 
-            // File tipe lain
-            else {
+            } else {
                 callback(file);
             }
         }
 
-        // 1. KOMPRESI GAMBAR (< 300 KB)
         function compressImageToTarget(file, targetKb, callback) {
             const targetBytes = targetKb * 1024;
             const reader = new FileReader();
@@ -521,7 +514,6 @@
                     let width = img.width;
                     let height = img.height;
 
-                    // Skala rasio resolusi maks 1280px
                     const maxDim = 1280;
                     if (width > maxDim || height > maxDim) {
                         if (width > height) {
@@ -548,7 +540,6 @@
                                 return;
                             }
 
-                            // Jika ukuran masih > 300KB dan kualitas > 0.3, kurangi kualitas bertahap
                             if (blob.size > targetBytes && quality > 0.35) {
                                 quality -= 0.12;
                                 attemptCompress();
@@ -569,13 +560,11 @@
             reader.readAsDataURL(file);
         }
 
-        // 2. KOMPRESI PDF (< 500 KB)
         async function compressPdfToTarget(file, targetKb, callback) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
                 const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
-                // Bersihkan metadata bawaan untuk mengurangi ukuran byte PDF
                 pdfDoc.setTitle('');
                 pdfDoc.setAuthor('');
                 pdfDoc.setSubject('');
@@ -591,7 +580,6 @@
 
                 callback(compressedFile);
             } catch (err) {
-                console.warn('Gagal mengompresi PDF secara penuh, mengirimkan file asli:', err);
                 callback(file);
             }
         }
@@ -627,19 +615,61 @@
         });
     </script>
 
+    <!-- SCRIPT HANDLER UNTUK SWEETALERT ABSENSI -->
     <script>
-    function showLogbookLoading(event) {
-        // Tampilkan SweetAlert2 Loading Pop-up
-        Swal.fire({
-            title: 'Mengunggah Logbook...',
-            html: '<p class="text-xs text-gray-600 mt-2">Mohon tunggu, berkas foto dan catatan harian Anda sedang dikirim ke server.</p>',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
+        function checkAbsensiAndSubmit(event) {
+            // Ambil data status absensi dari controller
+            const hasAbsen = {{ isset($hasAbsenHariIni) && $hasAbsenHariIni ? 'true' : 'false' }};
+            const jamTerlambat = {{ isset($jamTerlambat) ? $jamTerlambat : 0 }};
+
+            // Jika belum absen, tahan proses submit
+            if (!hasAbsen) {
+                event.preventDefault(); 
+                
+                let lateText = '';
+                if (jamTerlambat > 0) {
+                    lateText = `
+                        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs text-left">
+                            <i class="fas fa-clock mr-1"></i> Anda diperkirakan terlambat sekitar <strong>${jamTerlambat} jam</strong> dari waktu masuk kerja.<br>
+                            <span class="text-[10px] text-red-600 mt-1 block italic">*Ini hanya estimasi, bukan waktu pasti dari tempat perusahaan Anda masuk jam kerja.</span>
+                        </div>
+                    `;
+                }
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Belum Mengisi Absensi!',
+                    html: `Anda harus mengisi absensi kedatangan terlebih dahulu sebelum dapat mengirim logbook aktivitas harian.${lateText}`,
+                    confirmButtonText: '<i class="fas fa-sign-in-alt mr-1"></i> Isi Absensi Sekarang',
+                    confirmButtonColor: '#0D9488',
+                    showCancelButton: true,
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ route('dashboard-mahasiswa-absensi') }}";
+                    }
+                });
+                
+                return false;
             }
-        });
-    }
-</script>
+
+            // Jika sudah absen, jalankan submit dengan animasi loading
+            showLogbookLoading(event);
+            return true;
+        }
+
+        function showLogbookLoading(event) {
+            Swal.fire({
+                title: 'Mengunggah Logbook...',
+                html: '<p class="text-xs text-gray-600 mt-2">Mohon tunggu, berkas foto dan catatan harian Anda sedang dikirim ke server.</p>',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+    </script>
 @endsection

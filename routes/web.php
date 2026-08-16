@@ -123,6 +123,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Download & Upload Dokumen Umum
     Route::get('/download-template', [DownloadTemplateController::class, 'index'])->name('dashboard-pelaporan-download-template');
+        Route::get('/download-template/{id}/file', [DownloadTemplateController::class, 'download'])->name('dashboard-pelaporan-download-template-file');
+        
+        Route::middleware(['role:admin|superadmin|admin_prodi|dosen'])->group(function () {
+            Route::post('/download-template', [DownloadTemplateController::class, 'store'])->name('dashboard-pelaporan-download-template-store');
+            Route::put('/download-template/{id}', [DownloadTemplateController::class, 'update'])->name('dashboard-pelaporan-download-template-update');
+            Route::delete('/download-template/{id}', [DownloadTemplateController::class, 'destroy'])->name('dashboard-pelaporan-download-template-destroy');
+    });
     Route::get('/upload-dokumen', [UploadDokumenController::class, 'index'])->name('dashboard-pelaporan-upload-dokumen');
     Route::post('/upload-dokumen', [UploadDokumenController::class, 'store'])->name('dashboard-pelaporan-upload-dokumen-store');
     Route::delete('/upload-dokumen/{id}', [UploadDokumenController::class, 'destroy'])->name('dashboard-pelaporan-upload-dokumen-destroy');

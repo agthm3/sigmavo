@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Cpmk;
 use App\Models\Logbook;
 use App\Models\Pendaftaran;
+use App\Models\Absensi;
 use App\Models\Setting;
 use App\Models\Pembekalan;
 use App\Models\PembekalanPresensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class LogbookController extends Controller
 {
@@ -47,7 +49,9 @@ class LogbookController extends Controller
         if ($isLocked) {
             return view('dashboard.logbook.index', [
                 'isLocked'        => true,
-                'sudahPembekalan' => $sudahPembekalan, // Pass variabel ke view
+                'sudahPembekalan' => $sudahPembekalan, 
+                'hasAbsenHariIni' => false,
+                'jamTerlambat'    => 0,
                 'logbooks'        => collect(),
                 'pendaftaran'     => $pendaftaran,
                 'daftarCpmk'      => [],
@@ -55,7 +59,24 @@ class LogbookController extends Controller
             ]);
         }
 
-        // 3. Query Logbook Mahasiswa (Jika Akses Normal)
+        // 3. Cek Absensi Hari Ini untuk Proteksi Logbook
+        $absenHariIni = Absensi::where('user_id', $user->id)
+            ->whereDate('tanggal', Carbon::today()->toDateString())
+            ->first();
+        
+        $hasAbsenHariIni = $absenHariIni ? true : false;
+        $jamTerlambat = 0;
+
+        // Jika belum absen, hitung estimasi jam keterlambatan (asumsi masuk 08:00)
+        if (!$hasAbsenHariIni) {
+            $jamMulai = 8; // Asumsi waktu standar masuk jam 8 pagi
+            $jamSekarang = (int) Carbon::now()->format('H');
+            if ($jamSekarang > $jamMulai) {
+                $jamTerlambat = $jamSekarang - $jamMulai;
+            }
+        }
+
+        // 4. Query Logbook Mahasiswa (Jika Akses Normal)
         $query = Logbook::where('user_id', $user->id);
 
         if ($request->filled('bulan') && $request->bulan !== 'semua') {
@@ -68,7 +89,7 @@ class LogbookController extends Controller
 
         $logbooks = $query->orderBy('tanggal', 'desc')->paginate(10)->withQueryString();
 
-        // 4. AMBIL DATA CPMK BERDASARKAN PRODI MAHASISWA
+        // 5. AMBIL DATA CPMK BERDASARKAN PRODI MAHASISWA
         $mahasiswaProdiId = $user->mahasiswaProfile?->prodi_id;
 
         if ($mahasiswaProdiId) {
@@ -96,6 +117,8 @@ class LogbookController extends Controller
         return view('dashboard.logbook.index', [
             'isLocked'        => false,
             'sudahPembekalan' => true,
+            'hasAbsenHariIni' => $hasAbsenHariIni,
+            'jamTerlambat'    => $jamTerlambat,
             'logbooks'        => $logbooks,
             'pendaftaran'     => $pendaftaran,
             'daftarCpmk'      => $daftarCpmk,
@@ -131,6 +154,15 @@ class LogbookController extends Controller
             if (!$cekPresensi) {
                 return redirect()->back()->with('error', 'Akses Ditolak. Anda wajib melakukan konfirmasi kehadiran pada menu Pembekalan Magang terlebih dahulu.');
             }
+        }
+
+        // Proteksi Backend 3: WAJIB ABSEN HARI INI
+        $absenHariIni = Absensi::where('user_id', $user->id)
+            ->whereDate('tanggal', Carbon::today()->toDateString())
+            ->first();
+
+        if (!$absenHariIni) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum mengisi absen kehadiran hari ini.');
         }
 
         $request->validate([
@@ -249,7 +281,6 @@ class LogbookController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Proteksi Backend: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->where('status_seleksi', 'diterima')
             ->latest()
@@ -259,12 +290,10 @@ class LogbookController extends Controller
             return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
         }
 
-        // 1. Bersihkan output buffer
         while (ob_get_level()) {
             ob_end_clean();
         }
 
-        // 2. Ambil Logbook Mahasiswa
         $logbooks = Logbook::where('user_id', $user->id)
             ->orderBy('tanggal', 'asc')
             ->get();
@@ -273,7 +302,6 @@ class LogbookController extends Controller
             return redirect()->back()->with('error', 'Belum ada data logbook untuk di-export.');
         }
 
-        // 3. Pre-processing Gambar ke Format Base64
         foreach ($logbooks as $logbook) {
             $logbook->foto_base64 = null;
 
@@ -293,14 +321,10 @@ class LogbookController extends Controller
             }
         }
 
-        // 4. Render HTML View khusus Word
         $htmlContent = view('dashboard.logbook.word-export', compact('user', 'pendaftaran', 'logbooks'))->render();
-
-        // 5. Nama File Download
         $cleanName = preg_replace('/[^A-Za-z0-9\-]/', '_', $user->name);
         $fileName = 'Logbook_Magang_' . $cleanName . '.doc';
 
-        // 6. Stream Response langsung sebagai Dokumen Word
         return response($htmlContent, 200, [
             'Content-Type'        => 'application/msword; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
