@@ -11,7 +11,13 @@ class ListingProgramController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Lowongan::with(['perusahaan', 'prodi']);
+        $query = Lowongan::with(['perusahaan', 'prodi'])
+            ->withCount([
+                'pendaftarans as total_pelamar',
+                'pendaftarans as total_diterima' => function ($q) {
+                    $q->where('status_seleksi', 'diterima');
+                }
+            ]);
 
         // Filter Pencarian
         if ($request->filled('search')) {
@@ -68,7 +74,7 @@ class ListingProgramController extends Controller
             'prodi_id'          => $request->prodi_id === 'all' ? null : $request->prodi_id,
             'judul_posisi'      => $request->judul_posisi,
             'mode_kerja'        => $request->mode_kerja,
-            'kuota'             => $request->kuota,
+            'kuota'             => $request->kuota, // Kuota Penerimaan
             'batas_pendaftaran' => $request->batas_pendaftaran,
             'durasi'            => $request->durasi ?? '6 Bulan',
             'deskripsi'         => $request->deskripsi,
@@ -99,7 +105,7 @@ class ListingProgramController extends Controller
             'prodi_id'          => $request->prodi_id === 'all' ? null : $request->prodi_id,
             'judul_posisi'      => $request->judul_posisi,
             'mode_kerja'        => $request->mode_kerja,
-            'kuota'             => $request->kuota,
+            'kuota'             => $request->kuota, // Kuota Penerimaan
             'batas_pendaftaran' => $request->batas_pendaftaran,
             'durasi'            => $request->durasi ?? '6 Bulan',
             'deskripsi'         => $request->deskripsi,

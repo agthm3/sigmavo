@@ -82,12 +82,24 @@ class PengajuanMagangController extends Controller
  
     public function verifikasiSuratBalasan(Request $request, $id)
     {
-        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran = Pendaftaran::with('lowongan')->findOrFail($id);
 
         $request->validate([
             'status_seleksi'  => 'required|in:diterima,ditolak',
             'catatan_seleksi' => 'nullable|string|max:255',
         ]);
+
+        // Cek Kuota Penerimaan jika admin memilih 'diterima'
+        if ($request->status_seleksi === 'diterima' && $pendaftaran->lowongan_id) {
+            $lowongan = $pendaftaran->lowongan;
+            $jumlahDiterima = Pendaftaran::where('lowongan_id', $lowongan->id)
+                ->where('status_seleksi', 'diterima')
+                ->count();
+
+            if ($jumlahDiterima >= $lowongan->kuota) {
+                return redirect()->back()->with('error', "Gagal menerima: Kuota penerimaan untuk lowongan '{$lowongan->judul_posisi}' sudah penuh ({$lowongan->kuota} Mahasiswa).");
+            }
+        }
 
         $pendaftaran->update([
             'status_seleksi'  => $request->status_seleksi,
@@ -98,5 +110,21 @@ class PengajuanMagangController extends Controller
         $namaMhs = $pendaftaran->user?->name ?? 'Mahasiswa';
 
         return redirect()->back()->with('success', "Berhasil memperbarui status pendaftaran {$namaMhs} menjadi {$statusText}.");
+    }
+
+    public function selesaikanMagang(Request $request, $id)
+    {
+        $pendaftaran = Pendaftaran::findOrFail($id);
+
+        $pendaftaran->update([
+            'status_seleksi'     => 'selesai',
+            'tgl_selesai_magang' => now()->toDateString(),
+            'catatan_seleksi'    => $request->catatan ?? 'Telah menyelesaikan periode magang / stase poli.',
+        ]);
+
+        $namaMhs = $pendaftaran->user?->name ?? 'Mahasiswa';
+        $posisi = $pendaftaran->lowongan?->judul_posisi ?? 'Magang';
+
+        return redirect()->back()->with('success', "Periode magang ({$posisi}) untuk {$namaMhs} telah diselesaikan. Mahasiswa kini dapat mendaftar ke stase/poli berikutnya.");
     }
 }

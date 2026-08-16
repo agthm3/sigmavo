@@ -17,7 +17,7 @@ class StatusPengajuanController extends Controller
         $query = Pendaftaran::with(['lowongan.perusahaan', 'dosen'])
             ->where('user_id', $userId);
 
-        // Filter Status Seleksi
+        // Filter Status Seleksi (menunggu, diterima, selesai, ditolak)
         if ($request->filled('status') && $request->status !== 'semua') {
             $query->where('status_seleksi', $request->status);
         }
@@ -36,7 +36,7 @@ class StatusPengajuanController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        if ($pendaftaran->status_seleksi !== 'menunggu') {
+        if ($pendaftaran->status_seleksi !== 'menunggu' && $pendaftaran->status_seleksi !== 'pending') {
             return redirect()->back()->with('error', 'Pengajuan ini tidak dapat dibatalkan karena sudah dalam proses seleksi/selesai.');
         }
 

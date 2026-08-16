@@ -11,7 +11,7 @@
                 <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Status Pengajuan Magang</h2>
-                        <p class="text-sm text-gray-500 mt-1">Pantau perkembangan seleksi, unduh surat pengantar, dan unggah surat balasan perusahaan.</p>
+                        <p class="text-sm text-gray-500 mt-1">Pantau perkembangan seleksi, unduh surat pengantar, dan riwayat stase/magang Anda.</p>
                     </div>
                     
                     <!-- Filter Form -->
@@ -19,7 +19,8 @@
                         <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary focus:border-vokasi-primary block p-2 outline-none shadow-sm">
                             <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
                             <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Sedang Diproses (Menunggu)</option>
-                            <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Diterima</option>
+                            <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Aktif Magang</option>
+                            <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai Magang / Stase</option>
                             <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                         </select>
                     </form>
@@ -68,18 +69,20 @@
 
                         <!-- KARTU PENGAJUAN -->
                         <div class="bg-white rounded-xl shadow-sm border transition-all overflow-hidden
-                            {{ $item->status_seleksi == 'diterima' ? 'border-green-200' : '' }}
+                            {{ $item->status_seleksi == 'diterima' ? 'border-emerald-200' : '' }}
+                            {{ $item->status_seleksi == 'selesai' ? 'border-blue-200 bg-blue-50/10' : '' }}
                             {{ $item->status_seleksi == 'ditolak' ? 'border-red-200 bg-red-50/10' : '' }}
-                            {{ $item->status_seleksi == 'menunggu' ? 'border-gray-200 hover:border-vokasi-primary' : '' }}">
+                            {{ ($item->status_seleksi == 'menunggu' || $item->status_seleksi == 'pending') ? 'border-gray-200 hover:border-vokasi-primary' : '' }}">
                             
                             <div class="p-5 lg:p-6">
                                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
                                     <div class="flex items-start gap-4">
                                         <div class="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shrink-0
-                                            {{ $item->status_seleksi == 'diterima' ? 'bg-green-50 text-green-600 border border-green-200' : '' }}
+                                            {{ $item->status_seleksi == 'diterima' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : '' }}
+                                            {{ $item->status_seleksi == 'selesai' ? 'bg-blue-50 text-blue-600 border border-blue-200' : '' }}
                                             {{ $item->status_seleksi == 'ditolak' ? 'bg-red-50 text-red-500 border border-red-200' : '' }}
-                                            {{ $item->status_seleksi == 'menunggu' ? 'bg-orange-50 text-orange-500 border border-orange-100' : '' }}">
-                                            <i class="{{ $item->status_seleksi == 'diterima' ? 'fas fa-check-circle' : ($item->status_seleksi == 'ditolak' ? 'fas fa-times-circle' : 'fas fa-building') }}"></i>
+                                            {{ ($item->status_seleksi == 'menunggu' || $item->status_seleksi == 'pending') ? 'bg-orange-50 text-orange-500 border border-orange-100' : '' }}">
+                                            <i class="{{ $item->status_seleksi == 'diterima' ? 'fas fa-check-circle' : ($item->status_seleksi == 'selesai' ? 'fas fa-flag-checkered' : ($item->status_seleksi == 'ditolak' ? 'fas fa-times-circle' : 'fas fa-building')) }}"></i>
                                         </div>
                                         <div>
                                             <div class="flex items-center gap-2 mb-1">
@@ -98,8 +101,12 @@
 
                                     <div class="text-right">
                                         @if($item->status_seleksi == 'diterima')
-                                            <span class="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full border border-green-200 shadow-sm">
-                                                <i class="fas fa-check-circle mr-1"></i> Diterima Magang
+                                            <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200 shadow-sm">
+                                                <i class="fas fa-check-circle mr-1"></i> Diterima (Aktif Magang)
+                                            </span>
+                                        @elseif($item->status_seleksi == 'selesai')
+                                            <span class="inline-block bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full border border-blue-200 shadow-sm">
+                                                <i class="fas fa-flag-checkered mr-1"></i> Selesai Magang / Stase
                                             </span>
                                         @elseif($item->status_seleksi == 'ditolak')
                                             <span class="inline-block bg-red-100 text-red-700 text-xs font-bold px-3 py-1.5 rounded-full border border-red-200">
@@ -117,7 +124,7 @@
                                 @if($item->status_seleksi !== 'ditolak')
                                 <div class="relative pt-2 mb-2">
                                     <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                                        <div class="w-full border-t-2 {{ $item->status_seleksi == 'diterima' ? 'border-green-400' : 'border-gray-200' }}"></div>
+                                        <div class="w-full border-t-2 {{ ($item->status_seleksi == 'diterima' || $item->status_seleksi == 'selesai') ? 'border-emerald-400' : 'border-gray-200' }}"></div>
                                     </div>
                                     <div class="relative flex justify-between">
                                         <!-- Step 1: Diajukan -->
@@ -146,10 +153,12 @@
 
                                         <!-- Step 4: Keputusan Akhir -->
                                         <div class="flex flex-col items-center">
-                                            <div class="h-8 w-8 rounded-full {{ $item->status_seleksi == 'diterima' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400' }} flex items-center justify-center ring-4 ring-white z-10">
-                                                <i class="fas fa-flag-checkered text-sm"></i>
+                                            <div class="h-8 w-8 rounded-full {{ $item->status_seleksi == 'selesai' ? 'bg-blue-600 text-white' : ($item->status_seleksi == 'diterima' ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400') }} flex items-center justify-center ring-4 ring-white z-10">
+                                                <i class="{{ $item->status_seleksi == 'selesai' ? 'fas fa-flag-checkered' : 'fas fa-check-double' }} text-sm"></i>
                                             </div>
-                                            <span class="text-xs font-medium {{ $item->status_seleksi == 'diterima' ? 'text-green-700 font-bold' : 'text-gray-400' }} mt-2">Keputusan Akhir</span>
+                                            <span class="text-xs font-medium {{ $item->status_seleksi == 'selesai' ? 'text-blue-700 font-bold' : ($item->status_seleksi == 'diterima' ? 'text-emerald-700 font-bold' : 'text-gray-400') }} mt-2">
+                                                {{ $item->status_seleksi == 'selesai' ? 'Selesai Magang' : ($item->status_seleksi == 'diterima' ? 'Diterima' : 'Keputusan Akhir') }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -157,7 +166,7 @@
 
                                 @if($item->catatan_seleksi)
                                 <div class="mt-4 p-3 rounded-lg text-xs border
-                                    {{ $item->status_seleksi == 'ditolak' ? 'bg-red-50 text-red-800 border-red-100' : 'bg-gray-50 text-gray-700 border-gray-200' }}">
+                                    {{ $item->status_seleksi == 'ditolak' ? 'bg-red-50 text-red-800 border-red-100' : ($item->status_seleksi == 'selesai' ? 'bg-blue-50 text-blue-800 border-blue-100' : 'bg-gray-50 text-gray-700 border-gray-200') }}">
                                     <strong>Catatan Pengelola:</strong> {{ $item->catatan_seleksi }}
                                 </div>
                                 @endif
@@ -182,7 +191,7 @@
                                     @endif
 
                                     <!-- 2. Tombol Upload / Lihat Surat Balasan Perusahaan -->
-                                    @if($item->status_surat == 'terbit' && $item->status_seleksi == 'menunggu')
+                                    @if($item->status_surat == 'terbit' && ($item->status_seleksi == 'menunggu' || $item->status_seleksi == 'pending'))
                                         @if(!empty($item->surat_balasan))
                                             <a href="{{ asset('storage/' . $item->surat_balasan) }}" target="_blank" class="bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 text-xs font-bold py-2 px-3.5 rounded-xl transition-colors flex items-center gap-2">
                                                 <i class="fas fa-file-alt"></i> Surat Balasan Terunggah
@@ -203,7 +212,11 @@
                                         <a href="{{ route('dashboard-mahasiswa-program-magang') }}" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors shadow-sm">
                                             Buka Dashboard Magang
                                         </a>
-                                    @elseif($item->status_seleksi == 'menunggu')
+                                    @elseif($item->status_seleksi == 'selesai')
+                                        <a href="{{ route('dashboard-mahasiswa-daftar-lowongan') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors shadow-sm flex items-center gap-1.5">
+                                            <i class="fas fa-plus"></i> Ambil Stase / Lowongan Baru
+                                        </a>
+                                    @elseif($item->status_seleksi == 'menunggu' || $item->status_seleksi == 'pending')
                                         <form action="{{ route('dashboard-mahasiswa-status-pengajuan-cancel', $item->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini?')">
                                             @csrf
                                             @method('DELETE')
@@ -233,7 +246,7 @@
 
         </main>
 
-        <!-- MODAL UPLOAD SURAT BALASAN (WAJIB enctype="multipart/form-data") -->
+        <!-- MODAL UPLOAD SURAT BALASAN -->
         <div x-show="openUploadModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div @click.away="openUploadModal = false" class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden">
                 <div class="bg-purple-600 px-6 py-4 text-white flex justify-between items-center">
@@ -241,7 +254,6 @@
                     <button type="button" @click="openUploadModal = false" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
                 </div>
 
-                <!-- DIPERBAIKI: Menambahkan enctype="multipart/form-data" -->
                 <form :action="activeUrl" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
                     @csrf
                     <p class="text-xs text-gray-600">Unggah berkas resmi Surat Balasan / Jawaban dari instansi/perusahaan tujuan magang Anda (Format: PDF/JPG/PNG, Maks. 3MB).</p>

@@ -3,7 +3,7 @@
 @section('content')
 
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50"
-         x-data="{ openModal: false, openVerifikasiModal: false, activeData: null, activeUrl: '', autoNomor: '' }">
+         x-data="{ openModal: false, openVerifikasiModal: false, openSelesaikanModal: false, activeData: null, activeUrl: '', autoNomor: '' }">
 
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
             
@@ -13,7 +13,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Pengajuan Magang & Penerbitan Surat</h2>
-                        <p class="text-sm text-gray-500 mt-1">Verifikasi permohonan pengajuan magang, terbitkan Surat Pengantar, dan validasi Surat Balasan Perusahaan.</p>
+                        <p class="text-sm text-gray-500 mt-1">Verifikasi permohonan pengajuan magang, terbitkan Surat Pengantar, validasi Surat Balasan, dan kelola stase/penyelesaian magang.</p>
                     </div>
                 </div>
 
@@ -104,6 +104,13 @@
                                 <option value="menunggu" {{ request('status_surat') == 'menunggu' ? 'selected' : '' }}>Menunggu Penerbitan</option>
                                 <option value="terbit" {{ request('status_surat') == 'terbit' ? 'selected' : '' }}>Terbit (Siap Ambil)</option>
                             </select>
+
+                            <select name="status_seleksi" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
+                                <option value="semua" {{ request('status_seleksi') == 'semua' ? 'selected' : '' }}>Semua Status Magang</option>
+                                <option value="diterima" {{ request('status_seleksi') == 'diterima' ? 'selected' : '' }}>Aktif Magang</option>
+                                <option value="selesai" {{ request('status_seleksi') == 'selesai' ? 'selected' : '' }}>Selesai Magang / Stase</option>
+                                <option value="ditolak" {{ request('status_seleksi') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                            </select>
                         </div>
                     </form>
 
@@ -114,11 +121,11 @@
                                 <tr class="bg-gray-100/60 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     <th class="p-4 w-12 text-center">No</th>
                                     <th class="p-4 w-56">Mahasiswa Pemohon</th>
-                                    <th class="p-4 w-44">Instansi Tujuan</th>
-                                    <th class="p-4 w-32 text-center">Surat Pengantar</th>
-                                    <th class="p-4 w-40 text-center">Surat Balasan (Mhs)</th>
-                                    <th class="p-4 w-32 text-center">Status Akhir</th>
-                                    <th class="p-4 w-44 text-center">Aksi</th>
+                                    <th class="p-4 w-44">Instansi & Stase/Posisi</th>
+                                    <th class="p-4 w-28 text-center">Surat Pengantar</th>
+                                    <th class="p-4 w-36 text-center">Surat Balasan</th>
+                                    <th class="p-4 w-32 text-center">Status Magang</th>
+                                    <th class="p-4 w-52 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-gray-100">
@@ -157,11 +164,11 @@
                                         @endif
                                     </td>
                                     
-                                    <!-- KOLOM TERBARU: FILE SURAT BALASAN PERUSAHAAN -->
+                                    <!-- FILE SURAT BALASAN PERUSAHAAN -->
                                     <td class="p-4 text-center">
                                         @if(!empty($item->surat_balasan))
-                                            <a href="{{ asset('storage/' . $item->surat_balasan) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold rounded-xl border border-purple-300 shadow-sm transition-colors">
-                                                <i class="fas fa-file-pdf text-purple-600"></i> Lihat PDF
+                                            <a href="{{ asset('storage/' . $item->surat_balasan) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold rounded-lg border border-purple-300 shadow-sm transition-colors">
+                                                <i class="fas fa-file-pdf text-purple-600"></i> PDF
                                             </a>
                                         @else
                                             <span class="text-xs text-gray-400 italic">Belum Diunggah</span>
@@ -171,7 +178,11 @@
                                     <td class="p-4 text-center">
                                         @if($item->status_seleksi == 'diterima')
                                             <span class="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
-                                                <i class="fas fa-check-circle mr-1"></i> Diterima
+                                                <i class="fas fa-running mr-1"></i> Aktif Magang
+                                            </span>
+                                        @elseif($item->status_seleksi == 'selesai')
+                                            <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">
+                                                <i class="fas fa-flag-checkered mr-1"></i> Selesai Stase
                                             </span>
                                         @elseif($item->status_seleksi == 'ditolak')
                                             <span class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200">
@@ -183,8 +194,9 @@
                                             </span>
                                         @endif
                                     </td>
+                                    
                                     <td class="p-4 text-center">
-                                        <div class="flex items-center justify-center gap-1.5">
+                                        <div class="flex items-center justify-center gap-1">
                                             <!-- Tombol Terbit / Edit Surat Pengantar -->
                                             <button type="button" 
                                                     @click="
@@ -193,22 +205,36 @@
                                                         autoNomor = '{{ rand(1000, 9999) }}/UN4.15/TU.02/{{ date('Y') }}'; 
                                                         openModal = true;
                                                     " 
-                                                    class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-[11px] font-bold py-1.5 px-2.5 rounded-lg shadow-sm transition-colors flex items-center gap-1" 
+                                                    class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-[11px] font-bold py-1.5 px-2 rounded-lg shadow-sm transition-colors flex items-center gap-1" 
                                                     title="Terbit / Edit Surat Pengantar">
-                                                <i class="fas fa-envelope-open-text"></i> Surat
+                                                <i class="fas fa-envelope"></i> Surat
                                             </button>
 
                                             <!-- Tombol Verifikasi Balasan Perusahaan -->
-                                            @if($item->status_surat == 'terbit')
+                                            @if($item->status_surat == 'terbit' && $item->status_seleksi != 'selesai')
                                             <button type="button" 
                                                     @click="
                                                         activeData = {{ json_encode($item) }}; 
                                                         activeUrl = '{{ route('dashboard-daftar-lowongan-pengajuan-magang-verifikasi-balasan', $item->id) }}'; 
                                                         openVerifikasiModal = true;
                                                     " 
-                                                    class="bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold py-1.5 px-2.5 rounded-lg shadow-sm transition-colors flex items-center gap-1" 
-                                                    title="Verifikasi Keputusan Akhir">
-                                                <i class="fas fa-user-check"></i> Verifikasi
+                                                    class="bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg shadow-sm transition-colors flex items-center gap-1" 
+                                                    title="Verifikasi Balasan Mitra">
+                                                <i class="fas fa-user-check"></i> Status
+                                            </button>
+                                            @endif
+
+                                            <!-- TOMBOL SELESAIKAN MAGANG (KHUSUS MAHASISWA AKTIF / PINDAH STASE) -->
+                                            @if($item->status_seleksi == 'diterima')
+                                            <button type="button" 
+                                                    @click="
+                                                        activeData = {{ json_encode($item) }}; 
+                                                        activeUrl = '{{ route('dashboard-daftar-lowongan-pengajuan-magang-selesaikan', $item->id) }}'; 
+                                                        openSelesaikanModal = true;
+                                                    " 
+                                                    class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg shadow-sm transition-colors flex items-center gap-1" 
+                                                    title="Selesaikan Periode Magang/Stase Ini">
+                                                <i class="fas fa-flag-checkered"></i> Selesaikan
                                             </button>
                                             @endif
                                         </div>
@@ -314,7 +340,6 @@
                         <p class="text-sm font-bold text-gray-800" x-text="activeData?.user?.name || '-'"></p>
                     </div>
 
-                    <!-- PRATINJAU BERKAS SURAT BALASAN MAHASISWA DI DALAM MODAL -->
                     <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex justify-between items-center">
                         <div>
                             <p class="font-bold text-purple-950">Berkas Surat Balasan Mahasiswa:</p>
@@ -344,6 +369,48 @@
                         <button type="button" @click="openVerifikasiModal = false" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 bg-white font-bold text-xs">Batal</button>
                         <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-2">
                             <i class="fas fa-save"></i> Simpan Status
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL POPUP 3: SELESAIKAN MAGANG / PINDAH STASE -->
+        <div x-show="openSelesaikanModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div @click.away="openSelesaikanModal = false" class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md overflow-hidden" x-if="activeData">
+                <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-base"><i class="fas fa-flag-checkered mr-2"></i> Selesaikan Magang / Stase Poli</h3>
+                    <button type="button" @click="openSelesaikanModal = false" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+                </div>
+
+                <form :action="activeUrl" method="POST" class="p-6 space-y-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
+                        <p class="font-bold"><i class="fas fa-info-circle mr-1"></i> Konfirmasi Penyelesaian:</p>
+                        <p>Tindakan ini akan menandai status magang mahasiswa di unit/poli ini sebagai <strong>Selesai</strong> dan membuka akses bagi mahasiswa untuk mendaftar ke stase/poli berikutnya.</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[11px] text-gray-500 uppercase font-bold">Mahasiswa</p>
+                        <p class="text-sm font-bold text-gray-800" x-text="activeData?.user?.name || '-'"></p>
+                    </div>
+
+                    <div>
+                        <p class="text-[11px] text-gray-500 uppercase font-bold">Stase / Posisi Saat Ini</p>
+                        <p class="text-sm font-semibold text-blue-600" x-text="activeData?.jalur_magang === 'mandiri' ? activeData?.nama_instansi_mandiri : (activeData?.lowongan?.judul_posisi + ' - ' + activeData?.lowongan?.perusahaan?.nama_perusahaan)"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Catatan Penyelesaian (Opsional)</label>
+                        <textarea name="catatan" rows="2" placeholder="Contoh: Telah menyelesaikan stase Poli Bedah Mulut dengan baik..." class="w-full px-3.5 py-2 text-xs bg-gray-50 border border-gray-300 rounded-xl focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                        <button type="button" @click="openSelesaikanModal = false" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 bg-white font-bold text-xs">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-2">
+                            <i class="fas fa-check"></i> Selesaikan Sekarang
                         </button>
                     </div>
                 </form>

@@ -9,15 +9,15 @@
             <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h3 class="text-2xl font-bold text-gray-800">Riwayat Program Magang</h3>
-                    <p class="text-sm text-gray-500 mt-1">Pantau status pengajuan dan histori magang yang pernah Anda ikuti.</p>
+                    <p class="text-sm text-gray-500 mt-1">Pantau status pengajuan dan histori seluruh stase/magang yang pernah Anda ikuti.</p>
                 </div>
                 
                 <!-- Filter Status -->
                 <form action="{{ route('dashboard-mahasiswa-riwayat-magang') }}" method="GET" class="flex items-center space-x-2">
-                    <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-vokasi-primary focus:border-vokasi-primary block p-2 outline-none shadow-sm">
+                    <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary focus:border-vokasi-primary block p-2.5 outline-none shadow-sm font-semibold">
                         <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
-                        <option value="berjalan" {{ request('status') == 'berjalan' ? 'selected' : '' }}>Sedang Berjalan</option>
-                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                        <option value="berjalan" {{ request('status') == 'berjalan' ? 'selected' : '' }}>Sedang Berjalan (Aktif)</option>
+                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai Magang / Stase</option>
                         <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu Diterima</option>
                         <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                     </select>
@@ -34,9 +34,10 @@
                         $judulPosisi = $isMandiri ? ($item->divisi_mandiri ?? 'Pengajuan Mandiri') : ($item->lowongan->judul_posisi ?? '-');
                         $alamat = $isMandiri ? '-' : ($item->lowongan->perusahaan->alamat ?? '-');
                         
-                        // Menentukan status magang
-                        $isSelesai = $item->status_seleksi === 'diterima' && $item->tgl_selesai_magang && \Carbon\Carbon::parse($item->tgl_selesai_magang)->isPast();
-                        $isBerjalan = $item->status_seleksi === 'diterima' && (!$item->tgl_selesai_magang || \Carbon\Carbon::parse($item->tgl_selesai_magang)->isFuture() || \Carbon\Carbon::parse($item->tgl_selesai_magang)->isToday());
+                        // Menentukan status magang akurat
+                        $isSelesai = ($item->status_seleksi === 'selesai') || ($item->status_seleksi === 'diterima' && $item->tgl_selesai_magang && \Carbon\Carbon::parse($item->tgl_selesai_magang)->isPast());
+                        $isBerjalan = ($item->status_seleksi === 'diterima') && (!$item->tgl_selesai_magang || \Carbon\Carbon::parse($item->tgl_selesai_magang)->isFuture() || \Carbon\Carbon::parse($item->tgl_selesai_magang)->isToday());
+                        $isMenunggu = in_array($item->status_seleksi, ['menunggu', 'pending']);
                     @endphp
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:border-vokasi-primary transition-all flex flex-col">
@@ -47,14 +48,14 @@
                                 </div>
 
                                 @if($isBerjalan)
-                                    <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full border border-green-200 flex items-center gap-1.5">
-                                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Sedang Berjalan
+                                    <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-sm">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sedang Berjalan
                                     </span>
                                 @elseif($isSelesai)
-                                    <span class="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
-                                        Selesai
+                                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1 shadow-sm">
+                                        <i class="fas fa-flag-checkered text-[10px]"></i> Selesai
                                     </span>
-                                @elseif($item->status_seleksi === 'menunggu')
+                                @elseif($isMenunggu)
                                     <span class="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200">
                                         Menunggu Diterima
                                     </span>
@@ -73,7 +74,7 @@
                                     <i class="fas fa-calendar-alt w-5 text-gray-400"></i>
                                     <span>
                                         @if($item->tgl_mulai_magang && $item->tgl_selesai_magang)
-                                            {{ \Carbon\Carbon::parse($item->tgl_mulai_magang)->format('M Y') }} - {{ \Carbon\Carbon::parse($item->tgl_selesai_magang)->format('M Y') }}
+                                            {{ \Carbon\Carbon::parse($item->tgl_mulai_magang)->format('d M Y') }} - {{ \Carbon\Carbon::parse($item->tgl_selesai_magang)->format('d M Y') }}
                                         @else
                                             Tgl Belum Ditetapkan
                                         @endif
@@ -96,10 +97,16 @@
                                 <a href="{{ route('dashboard-mahasiswa-logbook') }}" class="text-vokasi-primary hover:text-vokasi-dark text-xs font-bold transition-colors flex items-center">
                                     Lihat Logbook <i class="fas fa-arrow-right ml-1 text-[10px]"></i>
                                 </a>
+                            @elseif($isSelesai)
+                                <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1">
+                                    <i class="fas fa-check-double"></i> Stase Selesai
+                                </span>
+                            @else
+                                <span></span>
                             @endif
 
                             <button @click="activeItem = {{ json_encode($item) }}; openDetailModal = true" 
-                                    class="bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors ml-auto">
+                                    class="bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors ml-auto shadow-sm">
                                 <i class="fas fa-file-alt mr-1"></i> Detail
                             </button>
                         </div>
@@ -152,7 +159,9 @@
                         </div>
                         <div>
                             <span class="text-gray-400 block uppercase font-bold text-[10px]">Status Seleksi</span>
-                            <span class="font-bold text-gray-800" x-text="activeItem?.status_seleksi"></span>
+                            <span class="font-bold uppercase" 
+                                  :class="activeItem?.status_seleksi === 'selesai' ? 'text-blue-600' : (activeItem?.status_seleksi === 'diterima' ? 'text-emerald-600' : 'text-gray-800')" 
+                                  x-text="activeItem?.status_seleksi === 'selesai' ? 'SELESAI MAGANG / STASE' : activeItem?.status_seleksi"></span>
                         </div>
                         <div>
                             <span class="text-gray-400 block uppercase font-bold text-[10px]">Nomor Surat Pengantar</span>
@@ -166,14 +175,14 @@
 
                     <template x-if="activeItem?.catatan_seleksi">
                         <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-900">
-                            <strong>Catatan Pengelola:</strong>
+                            <strong>Catatan Pengelola / Admin:</strong>
                             <p class="mt-1" x-text="activeItem?.catatan_seleksi"></p>
                         </div>
                     </template>
                 </div>
 
                 <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-                    <button type="button" @click="openDetailModal = false" class="px-5 py-2 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 font-medium transition-colors">
+                    <button type="button" @click="openDetailModal = false" class="px-5 py-2 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 font-bold transition-colors">
                         Tutup
                     </button>
                 </div>

@@ -186,6 +186,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/seleksi/{id}', [SeleksiController::class, 'updateStatus'])->name('dashboard-daftar-lowongan-seleksi-update');
             
             Route::get('/pengajuan-magang', [PengajuanMagangController::class, 'index'])->name('dashboard-daftar-lowongan-pengajuan-magang');
+            Route::patch('/pengajuan-magang/{id}/selesaikan', [PengajuanMagangController::class, 'selesaikanMagang'])->name('dashboard-daftar-lowongan-pengajuan-magang-selesaikan');
             Route::put('/pengajuan-magang/{id}/terbit-surat', [PengajuanMagangController::class, 'terbitSurat'])->name('dashboard-daftar-lowongan-pengajuan-magang-terbit');
         });
 

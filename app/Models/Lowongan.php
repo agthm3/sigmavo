@@ -36,4 +36,9 @@ class Lowongan extends Model
     {
         return $this->belongsTo(Prodi::class);
     }
+
+    public function pendaftarans()
+    {
+        return $this->hasMany(Pendaftaran::class, 'lowongan_id');
+    }
 }

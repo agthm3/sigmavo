@@ -21,11 +21,18 @@ class RiwayatMagangController extends Controller
                 $query->where('status_seleksi', 'diterima')
                       ->where(function ($q) {
                           $q->whereNull('tgl_selesai_magang')
-                            ->orWhere('tgl_selesai_magang', '>=', now());
+                            ->orWhere('tgl_selesai_magang', '>=', now()->toDateString());
                       });
             } elseif ($request->status === 'selesai') {
-                $query->where('status_seleksi', 'diterima')
-                      ->where('tgl_selesai_magang', '<', now());
+                $query->where(function ($q) {
+                    $q->where('status_seleksi', 'selesai')
+                      ->orWhere(function ($sub) {
+                          $sub->where('status_seleksi', 'diterima')
+                              ->where('tgl_selesai_magang', '<', now()->toDateString());
+                      });
+                });
+            } elseif ($request->status === 'menunggu') {
+                $query->whereIn('status_seleksi', ['menunggu', 'pending']);
             } else {
                 $query->where('status_seleksi', $request->status);
             }

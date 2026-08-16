@@ -11,7 +11,25 @@ class DaftarLowonganController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Lowongan::with(['perusahaan', 'prodi'])
+        $query = Lowongan::with([
+                'perusahaan', 
+                'prodi', 
+                'pendaftarans.user.mahasiswaProfile' => function ($q) {
+                    $q->latest();
+                }
+            ])
+            ->withCount([
+                'pendaftarans as total_pelamar',
+                'pendaftarans as total_diterima' => function ($q) {
+                    $q->where('status_seleksi', 'diterima');
+                },
+                'pendaftarans as total_ditolak' => function ($q) {
+                    $q->where('status_seleksi', 'ditolak');
+                },
+                'pendaftarans as total_menunggu' => function ($q) {
+                    $q->whereIn('status_seleksi', ['menunggu', 'pending']);
+                }
+            ])
             ->where('status', 'published'); // Hanya tampilkan lowongan yang dipublikasikan
 
         // Filter Pencarian (Posisi / Perusahaan)
@@ -33,15 +51,28 @@ class DaftarLowonganController extends Controller
 
         $lowongans = $query->latest()->paginate(8)->withQueryString();
 
-        // Ambil daftar ID lowongan yang sudah dilamar oleh mahasiswa yang sedang login
-        $userPendaftaranIds = [];
+        // 1. Ambil ID Lowongan yang SEDANG AKTIF / PROSES (menunggu, pending, diterima)
+        $activePendaftaranIds = [];
+        // 2. Ambil ID Lowongan yang SUDAH SELESAI (riwayat stase sebelumnya)
+        $completedPendaftaranIds = [];
+
         if (Auth::check()) {
-            $userPendaftaranIds = Pendaftaran::where('user_id', Auth::id())
+            $userId = Auth::id();
+
+            $activePendaftaranIds = Pendaftaran::where('user_id', $userId)
+                ->whereIn('status_seleksi', ['menunggu', 'pending', 'diterima'])
                 ->pluck('lowongan_id')
+                ->filter()
+                ->toArray();
+
+            $completedPendaftaranIds = Pendaftaran::where('user_id', $userId)
+                ->where('status_seleksi', 'selesai')
+                ->pluck('lowongan_id')
+                ->filter()
                 ->toArray();
         }
 
-        return view('dashboard.daftar-lowongan.index', compact('lowongans', 'userPendaftaranIds'));
+        return view('dashboard.daftar-lowongan.index', compact('lowongans', 'activePendaftaranIds', 'completedPendaftaranIds'));
     }
 
     /**
@@ -57,21 +88,31 @@ class DaftarLowonganController extends Controller
 
         $lowongan = Lowongan::findOrFail($id);
 
-        // Cek Kuota
-        if ($lowongan->kuota_terisi >= $lowongan->kuota) {
-            return redirect()->back()->with('error', 'Maaf, kuota untuk posisi ini sudah terpenuhi.');
+        // 1. Cek Batas Waktu Pendaftaran
+        if ($lowongan->batas_pendaftaran && \Carbon\Carbon::parse($lowongan->batas_pendaftaran)->endOfDay()->isPast()) {
+            return redirect()->back()->with('error', 'Maaf, masa pendaftaran untuk posisi ini sudah berakhir.');
         }
 
-        // Cek apakah sudah pernah melamar
-        $existing = Pendaftaran::where('user_id', $user->id)
+        // 2. Cek apakah ada pendaftaran yang sedang aktif/proses pada lowongan ini
+        $existingActive = Pendaftaran::where('user_id', $user->id)
             ->where('lowongan_id', $lowongan->id)
+            ->whereIn('status_seleksi', ['menunggu', 'pending', 'diterima'])
             ->first();
 
-        if ($existing) {
-            return redirect()->back()->with('error', 'Anda sudah pernah mengajukan lamaran untuk posisi ini.');
+        if ($existingActive) {
+            return redirect()->back()->with('error', 'Anda sudah mengajukan lamaran dan prosesnya masih aktif pada posisi ini.');
         }
 
-        // Simpan Pendaftaran Baru
+        // 3. Cek apakah mahasiswa sedang berstatus magang aktif di tempat lain yang belum diselesaikan Admin
+        $otherActive = Pendaftaran::where('user_id', $user->id)
+            ->where('status_seleksi', 'diterima')
+            ->first();
+
+        if ($otherActive) {
+            return redirect()->back()->with('error', 'Anda masih memiliki program magang aktif yang sedang berjalan. Minta Admin Prodi menyelesaikan periode stase/magang Anda saat ini sebelum mendaftar posisi baru.');
+        }
+
+        // 4. Simpan Pendaftaran Baru
         Pendaftaran::create([
             'user_id'        => $user->id,
             'lowongan_id'    => $lowongan->id,
@@ -80,6 +121,6 @@ class DaftarLowonganController extends Controller
             'status_surat'   => 'menunggu',
         ]);
 
-        return redirect()->back()->with('success', "Berhasil melamar posisi '{$lowongan->judul_posisi}'! Pantau status pendaftaran Anda di menu Status Pengajuan.");
+        return redirect()->back()->with('success', "Berhasil mendaftar posisi '{$lowongan->judul_posisi}'! Pendaftaran Anda akan diproses dan diverifikasi oleh Admin Prodi.");
     }
 }

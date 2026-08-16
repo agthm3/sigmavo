@@ -13,19 +13,19 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800">Kelola Program & Lowongan Magang</h2>
-                        <p class="text-sm text-gray-500 mt-1">Buat, publikasikan, dan atur kuota posisi magang dari mitra industri.</p>
+                        <p class="text-sm text-gray-500 mt-1">Atur kuota penerimaan mahasiswa, masa pendaftaran, dan seleksi kandidat magang industri.</p>
                     </div>
                     <div class="flex gap-2">
                         <!-- TRIGGER MODAL TAMBAH -->
-                        <button @click="isEdit = false; editData = {}; openModal = true" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center">
-                            <i class="fas fa-plus-circle mr-2"></i> Buat Lowongan Magang Baru
+                        <button @click="isEdit = false; editData = {}; openModal = true" class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-sm font-semibold py-2 px-4 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-plus-circle"></i> Buat Lowongan Baru
                         </button>
                     </div>
                 </div>
 
                 <!-- NOTIFIKASI SUKSES / ERROR -->
                 @if(session('success'))
-                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm">
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
                         <span>{{ session('success') }}</span>
@@ -35,7 +35,7 @@
                 @endif
 
                 @if($errors->any())
-                <div class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm">
+                <div class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm shadow-sm">
                     <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Gagal menyimpan data:</p>
                     <ul class="list-disc list-inside space-y-1 text-xs">
                         @foreach($errors->all() as $error)
@@ -69,11 +69,11 @@
 
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex items-center">
                         <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mr-3 shrink-0">
-                            <i class="fas fa-users-viewfinder text-lg"></i>
+                            <i class="fas fa-user-check text-lg"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-gray-500 uppercase">Total Kuota Dibuka</p>
-                            <p class="text-xl font-bold text-purple-600 leading-none mt-1">{{ $totalKuota }} Kursi</p>
+                            <p class="text-xs font-semibold text-gray-500 uppercase">Target Penerimaan</p>
+                            <p class="text-xl font-bold text-purple-600 leading-none mt-1">{{ $totalKuota }} Mahasiswa</p>
                         </div>
                     </div>
 
@@ -123,15 +123,20 @@
                                     <th class="p-4 w-12 text-center">No</th>
                                     <th class="p-4 w-60">Posisi & Perusahaan</th>
                                     <th class="p-4 w-44">Target Prodi</th>
-                                    <th class="p-4 w-36 text-center">Sisa / Total Kuota</th>
+                                    <th class="p-4 w-32 text-center">Pendaftar</th>
+                                    <th class="p-4 w-36 text-center">Kuota Diterima</th>
                                     <th class="p-4 w-36">Batas Pendaftaran</th>
-                                    <th class="p-4 w-32 text-center">Status</th>
+                                    <th class="p-4 w-28 text-center">Status</th>
                                     <th class="p-4 w-36 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-gray-100">
                                 
                                 @forelse($lowongans as $index => $item)
+                                @php
+                                    $diterima = $item->total_diterima ?? 0;
+                                    $pelamar = $item->total_pelamar ?? 0;
+                                @endphp
                                 <tr class="hover:bg-gray-50 transition-colors {{ $item->status == 'draft' ? 'bg-gray-50/50' : '' }}">
                                     <td class="p-4 text-center text-gray-500 font-medium">{{ $lowongans->firstItem() + $index }}</td>
                                     <td class="p-4">
@@ -150,12 +155,19 @@
                                             {{ $item->prodi?->nama_prodi ?? 'Semua Prodi Vokasi' }}
                                         </span>
                                     </td>
+                                    <!-- JUMLAH PENDAFTAR (UNLIMITED) -->
                                     <td class="p-4 text-center">
-                                        <div class="font-bold text-gray-800">{{ $item->kuota_terisi }} / {{ $item->kuota }} Kursi</div>
-                                        @if($item->kuota_terisi >= $item->kuota)
+                                        <span class="inline-flex items-center gap-1 font-bold text-gray-800 bg-gray-100 px-2.5 py-1 rounded-lg text-xs">
+                                            <i class="fas fa-users text-gray-500 text-[11px]"></i> {{ $pelamar }} Pelamar
+                                        </span>
+                                    </td>
+                                    <!-- KUOTA PENERIMAAN / DITERIMA -->
+                                    <td class="p-4 text-center">
+                                        <div class="font-bold text-gray-800">{{ $diterima }} / {{ $item->kuota }} Diterima</div>
+                                        @if($diterima >= $item->kuota)
                                             <span class="text-[10px] text-red-500 font-semibold">(Kuota Penuh)</span>
                                         @else
-                                            <span class="text-[10px] text-orange-600 font-semibold">(Tersisa {{ $item->kuota - $item->kuota_terisi }})</span>
+                                            <span class="text-[10px] text-emerald-600 font-semibold">(Sisa Kuota: {{ $item->kuota - $diterima }})</span>
                                         @endif
                                     </td>
                                     <td class="p-4">
@@ -213,7 +225,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="p-8 text-center text-gray-400">
+                                    <td colspan="8" class="p-8 text-center text-gray-400">
                                         <i class="fas fa-briefcase text-3xl mb-2 block"></i> Belum ada lowongan magang dibuat.
                                     </td>
                                 </tr>
@@ -239,16 +251,13 @@
 
         </main>
 
-        <!-- ========================================== -->
         <!-- MODAL POPUP: BUAT / EDIT LOWONGAN MAGANG -->
-        <!-- ========================================== -->
         <div x-show="openModal" 
              x-cloak 
              class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             
             <div @click.away="openModal = false" class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-3xl overflow-hidden max-h-[90vh] flex flex-col">
                 
-                <!-- Modal Header -->
                 <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center shrink-0">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-plus-circle text-lg"></i>
@@ -259,7 +268,6 @@
                     </button>
                 </div>
 
-                <!-- Modal Body / Form -->
                 <form :action="isEdit ? activeUrl : '{{ route('dashboard-daftar-lowongan-listing-program-store') }}'" method="POST" class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                     @csrf
                     <template x-if="isEdit">
@@ -268,7 +276,6 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         
-                        <!-- Pilih Perusahaan Mitra -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Perusahaan / Instansi Mitra <span class="text-red-500">*</span></label>
                             <select name="perusahaan_id" :value="isEdit ? editData.perusahaan_id : ''" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
@@ -279,13 +286,11 @@
                             </select>
                         </div>
 
-                        <!-- Judul Posisi / Lowongan -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Judul Posisi Magang <span class="text-red-500">*</span></label>
-                            <input type="text" name="judul_posisi" :value="isEdit ? editData.judul_posisi : ''" placeholder="Contoh: STEM Product Designer Intern" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Judul Posisi Magang / Stase Poli <span class="text-red-500">*</span></label>
+                            <input type="text" name="judul_posisi" :value="isEdit ? editData.judul_posisi : ''" placeholder="Contoh: Poli Bedah Mulut / IT Support Intern" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
                         </div>
 
-                        <!-- Target Prodi -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Khusus Program Studi <span class="text-red-500">*</span></label>
                             <select name="prodi_id" :value="isEdit ? (editData.prodi_id ?? 'all') : 'all'" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
@@ -296,7 +301,6 @@
                             </select>
                         </div>
 
-                        <!-- Mode Kerja -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mode Kerja <span class="text-red-500">*</span></label>
                             <select name="mode_kerja" :value="isEdit ? editData.mode_kerja : 'WFO'" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
@@ -306,31 +310,28 @@
                             </select>
                         </div>
 
-                        <!-- Kuota Mahasiswa -->
+                        <!-- KUOTA MAHASISWA DITERIMA -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Kuota Mahasiswa Diterima <span class="text-red-500">*</span></label>
                             <input type="number" name="kuota" min="1" :value="isEdit ? editData.kuota : 2" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
+                            <span class="text-[11px] text-gray-400">Pendaftaran dibuka tanpa batas, hanya jumlah penerimaan yang dibatasi.</span>
                         </div>
 
-                        <!-- Batas Pendaftaran -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Batas Akhir Pendaftaran <span class="text-red-500">*</span></label>
                             <input type="date" name="batas_pendaftaran" :value="isEdit ? (editData.batas_pendaftaran ? editData.batas_pendaftaran.split('T')[0] : '') : ''" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
                         </div>
 
-                        <!-- Durasi -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Durasi Program</label>
                             <input type="text" name="durasi" :value="isEdit ? editData.durasi : '6 Bulan'" placeholder="Contoh: 6 Bulan / 900 Jam" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors">
                         </div>
 
-                        <!-- Deskripsi & Jobdesc -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Pekerjaan & Tanggung Jawab <span class="text-red-500">*</span></label>
                             <textarea name="deskripsi" x-text="isEdit ? editData.deskripsi : ''" rows="4" placeholder="Tuliskan tugas utama dan kualifikasi yang dibutuhkan..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors resize-none" required></textarea>
                         </div>
 
-                        <!-- Status Publikasi -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Status Publikasi Lowongan</label>
                             <div class="flex gap-4 mt-1">
@@ -351,7 +352,6 @@
 
                     </div>
 
-                    <!-- Modal Footer -->
                     <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-6 shrink-0">
                         <button type="button" @click="openModal = false" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 font-medium text-sm transition-colors">
                             Batal
@@ -366,4 +366,4 @@
         </div>
 
     </div>
-@endsection 
+@endsection
