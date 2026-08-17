@@ -29,19 +29,44 @@ class PerluVerifikasiController extends Controller
         ]);
 
         if ($user->hasRole('spv')) {
-            // SPV LAPANGAN: Filter logbook PENDING berdasarkan Prodi & Perusahaan Mitra
+            // SPV LAPANGAN: Mendukung Jalur Reguler & Jalur Mandiri
             $spvProdiId = $user->spvProfile?->prodi_id;
             $spvPerusahaanId = $user->spvProfile?->perusahaan_id;
+            $namaPerusahaanSpv = $user->spvProfile?->perusahaan?->nama_perusahaan;
 
             $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv'])
-                ->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $spvProdiId))
-                ->whereHas('pendaftaran.lowongan', fn($l) => $l->where('perusahaan_id', $spvPerusahaanId));
+                ->whereHas('user.mahasiswaProfile', function($m) use ($spvProdiId) {
+                    if ($spvProdiId) {
+                        $m->where('prodi_id', $spvProdiId);
+                    }
+                })
+                ->whereHas('pendaftaran', function($p) use ($spvPerusahaanId, $namaPerusahaanSpv, $user) {
+                    $p->where(function($q) use ($spvPerusahaanId, $namaPerusahaanSpv, $user) {
+                        // Jalur Reguler (melalui Lowongan)
+                        if ($spvPerusahaanId) {
+                            $q->whereHas('lowongan', fn($l) => $l->where('perusahaan_id', $spvPerusahaanId));
+                        }
+
+                        // Jalur Mandiri (Berdasarkan nama instansi atau kecocokan link pembimbing/spv)
+                        if ($namaPerusahaanSpv) {
+                            $q->orWhere('nama_instansi_mandiri', 'like', "%{$namaPerusahaanSpv}%");
+                        }
+                    });
+                });
 
         } elseif ($user->hasRole('dosen')) {
-            // DOSEN PEMBIMBING: Hanya tampilkan logbook yang SUDAH DI-APPROVE SPV ('approved_spv')
+            // DOSEN PEMBIMBING: Tampilkan logbook bimbingan yang SUDAH DI-APPROVE SPV ('approved_spv')
             $queryLogbooks->where('status_asistensi', 'approved_spv')
                 ->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $user->id));
 
+        } elseif ($user->hasRole('admin_prodi')) {
+            $adminProdiId = $user->adminProdiProfile?->prodi_id;
+            $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv', 'approved_spv'])
+                ->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
+                    if ($adminProdiId) {
+                        $m->where('prodi_id', $adminProdiId);
+                    }
+                });
         } else {
             // Admin / Superadmin: Tampilkan seluruh antrean yang butuh verifikasi
             $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv', 'approved_spv']);
@@ -60,12 +85,33 @@ class PerluVerifikasiController extends Controller
         if ($user->hasRole('spv')) {
             $spvProdiId = $user->spvProfile?->prodi_id;
             $spvPerusahaanId = $user->spvProfile?->perusahaan_id;
+            $namaPerusahaanSpv = $user->spvProfile?->perusahaan?->nama_perusahaan;
 
-            $queryAbsensis->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $spvProdiId))
-                ->whereHas('pendaftaran.lowongan', fn($l) => $l->where('perusahaan_id', $spvPerusahaanId));
+            $queryAbsensis->whereHas('user.mahasiswaProfile', function($m) use ($spvProdiId) {
+                if ($spvProdiId) {
+                    $m->where('prodi_id', $spvProdiId);
+                }
+            })
+            ->whereHas('pendaftaran', function($p) use ($spvPerusahaanId, $namaPerusahaanSpv) {
+                $p->where(function($q) use ($spvPerusahaanId, $namaPerusahaanSpv) {
+                    if ($spvPerusahaanId) {
+                        $q->whereHas('lowongan', fn($l) => $l->where('perusahaan_id', $spvPerusahaanId));
+                    }
+                    if ($namaPerusahaanSpv) {
+                        $q->orWhere('nama_instansi_mandiri', 'like', "%{$namaPerusahaanSpv}%");
+                    }
+                });
+            });
 
         } elseif ($user->hasRole('dosen')) {
             $queryAbsensis->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $user->id));
+        } elseif ($user->hasRole('admin_prodi')) {
+            $adminProdiId = $user->adminProdiProfile?->prodi_id;
+            $queryAbsensis->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
+                if ($adminProdiId) {
+                    $m->where('prodi_id', $adminProdiId);
+                }
+            });
         }
 
         $pendingAbsensis = $queryAbsensis->latest()->get();
@@ -73,15 +119,11 @@ class PerluVerifikasiController extends Controller
         return view('dashboard.perlu-verifikasi.index', compact('pendingLogbooks', 'pendingAbsensis', 'user'));
     }
 
-/**
+    /**
      * Verification Action untuk LOGBOOK (Dosen & SPV)
      */
     public function verifyLogbook(Request $request, $id)
     {
-        // =========================================================================
-        // TODO: PRODUCTION REVERT
-        // Ubah variabel di bawah ini menjadi 'false' jika sudah masuk masa LAUNCHING/PRODUKSI
-        // =========================================================================
         $isTestingMode = true;
 
         if ($isTestingMode) {
@@ -130,9 +172,11 @@ class PerluVerifikasiController extends Controller
                 ->whereDate('tanggal', $tglLogbook)
                 ->first();
 
-            // TESTING TOLERANSI: Cukup pastikan mahasiswa sudah pernah membuat entri presensi di hari tsb
-            if (!$absensi) {
-                return redirect()->back()->with('error', "[TESTING] Gagal Approve! Mahasiswa '{$logbook->user->name}' belum melengkapi presensi pada tanggal " . \Carbon\Carbon::parse($logbook->tanggal)->format('d M Y') . ".");
+            // Kunci Kuota 8 Jam pada Absensi jika ada
+            if ($absensi) {
+                $absensi->jam_diperoleh     = 8;
+                $absensi->status_verifikasi = 'approved';
+                $absensi->save();
             }
 
             // Set Status Logbook Final
@@ -141,11 +185,6 @@ class PerluVerifikasiController extends Controller
             $logbook->verifikator_id   = $user->id;
             $logbook->waktu_verifikasi = now();
             $logbook->save();
-
-            // Kunci Kuota 8 Jam pada Absensi
-            $absensi->jam_diperoleh     = 8;
-            $absensi->status_verifikasi = 'approved';
-            $absensi->save();
 
             return redirect()->back()->with('success', "[TESTING] Logbook '{$logbook->user->name}' berhasil di-approve Dosen. Jam magang bertambah +8 Jam.");
         } else {
@@ -160,7 +199,7 @@ class PerluVerifikasiController extends Controller
     }
 
     /**
-     * 2. MODE PRODUCTION: Ketat (Mengecek Record Presensi Terisi)
+     * 2. MODE PRODUCTION: Ketat
      */
     private function verifyLogbookProduction(Request $request, $id)
     {
@@ -173,7 +212,6 @@ class PerluVerifikasiController extends Controller
             'catatan_dosen' => 'nullable|string',
         ]);
 
-        // JIKA USER ADALAH SPV LAPANGAN MITRA
         if ($user->hasRole('spv')) {
             if ($request->action === 'approve') {
                 $logbook->status_asistensi = 'approved_spv';
@@ -190,7 +228,6 @@ class PerluVerifikasiController extends Controller
             }
         }
 
-        // JIKA USER ADALAH DOSEN PEMBIMBING / ADMIN
         if ($request->action === 'approve') {
             $tglLogbook = \Carbon\Carbon::parse($logbook->tanggal)->format('Y-m-d');
 
@@ -198,19 +235,16 @@ class PerluVerifikasiController extends Controller
                 ->whereDate('tanggal', $tglLogbook)
                 ->first();
 
-            // PRODUKSI CHECK: Mahasiswa WAJIB memiliki record absensi terdaftar
             if (!$absensi) {
                 return redirect()->back()->with('error', "Gagal Approve! Mahasiswa '{$logbook->user->name}' belum melengkapi Absen Datang & Absen Pulang pada tanggal " . \Carbon\Carbon::parse($logbook->tanggal)->format('d M Y') . ".");
             }
 
-            // Set Status Logbook Final
             $logbook->status_asistensi = 'approved';
             $logbook->catatan_dosen    = $request->catatan_dosen ?? 'Telah disetujui Dosen Pembimbing.';
             $logbook->verifikator_id   = $user->id;
             $logbook->waktu_verifikasi = now();
             $logbook->save();
 
-            // Sahkan Absensi & Potong/Berikan 8 Jam Magang
             $absensi->jam_diperoleh     = 8;
             $absensi->status_verifikasi = 'approved';
             $absensi->save();
@@ -241,14 +275,9 @@ class PerluVerifikasiController extends Controller
 
         if ($request->action === 'approve') {
             $absensi->status_verifikasi = 'approved';
-
-            if ($absensi->tipe_kehadiran === 'hadir') {
-                $absensi->jam_diperoleh = 8;
-            } else {
-                $absensi->jam_diperoleh = 0;
-            }
-
+            $absensi->jam_diperoleh = ($absensi->tipe_kehadiran === 'hadir') ? 8 : 0;
             $absensi->save();
+
             $message = "Pengajuan absensi/izin '{$absensi->user->name}' disetujui.";
         } else {
             $absensi->status_verifikasi = 'rejected';
