@@ -212,6 +212,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Aktivasi User & Import Massal
             Route::get('/aktivasi-user', [AktivasiUserController::class, 'index'])->name('dashboard-manajemen-aktivasi-user');
             Route::post('/aktivasi-user', [AktivasiUserController::class, 'store'])->name('dashboard-manajemen-aktivasi-store');
+            Route::put('/aktivasi-user/{id}/update-profile', [AktivasiUserController::class, 'updateProfile'])->name('dashboard-manajemen-aktivasi-update-profile');
             Route::patch('/aktivasi-user/{id}/toggle', [AktivasiUserController::class, 'toggleStatus'])->name('dashboard-manajemen-aktivasi-toggle');
             Route::patch('/manajemen-akun/aktivasi-user/{id}/reset-password', [AktivasiUserController::class, 'resetPassword'])->name('dashboard-manajemen-aktivasi-reset-password');
             

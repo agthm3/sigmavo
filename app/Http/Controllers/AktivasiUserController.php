@@ -30,10 +30,10 @@ class AktivasiUserController extends Controller
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
 
-        // PENTING: Gunakan masterProdi untuk mahasiswa agar tidak bentrok
         $query = User::with([
             'roles', 
             'mahasiswaProfile.masterProdi', 
+            'mahasiswaProfile.prodi',
             'dosenProfile.prodi', 
             'adminProdiProfile.prodi',
             'spvProfile.prodi',
@@ -81,8 +81,8 @@ class AktivasiUserController extends Controller
         }
 
         $users = $query->latest()->paginate(10)->withQueryString();
-        $prodis = Prodi::all();
-        $perusahaans = Perusahaan::all();
+        $prodis = Prodi::orderBy('nama_prodi', 'asc')->get();
+        $perusahaans = Perusahaan::orderBy('nama_perusahaan', 'asc')->get();
 
         return view('dashboard.manajemen-akun.aktivasi-user', compact('users', 'prodis', 'perusahaans', 'currentUser'));
     }
@@ -112,7 +112,6 @@ class AktivasiUserController extends Controller
             return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menambah user.');
         }
 
-        // PERBAIKAN: Jika yang login Admin Prodi, suntikkan prodi_id miliknya sebelum validasi!
         if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi'])) {
             $adminProdiId = $currentUser->adminProdiProfile?->prodi_id;
             if ($adminProdiId) {
@@ -145,7 +144,7 @@ class AktivasiUserController extends Controller
             'name'          => $request->name,
             'email'         => $request->email,
             'password'      => Hash::make($request->password),
-            'temp_password' => $request->password, // Simpan password sementara untuk modal
+            'temp_password' => $request->password,
             'is_active'     => true,
         ]);
 
@@ -197,8 +196,95 @@ class AktivasiUserController extends Controller
     }
 
     /**
-     * 1. DOWNLOAD TEMPLATE EXCEL
+     * UPDATE PROFIL USER (EDIT PROFIL LENGKAP)
      */
+    public function updateProfile(Request $request, $id)
+    {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = Auth::user();
+
+        if (!$currentUser->hasAnyRole(['admin', 'superadmin', 'admin_prodi', 'admin-prodi'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengedit user.');
+        }
+
+        $user = User::findOrFail($id);
+
+        if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi']) && ($user->hasRole('admin') || $user->hasRole('superadmin'))) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki wewenang mengubah akun ini.');
+        }
+
+        $request->validate([
+            'name'          => 'required|string|max:255',
+            'email'         => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role'          => 'required|string|exists:roles,name',
+            'prodi_id'      => 'nullable|exists:prodis,id',
+            'perusahaan_id' => 'nullable|exists:perusahaans,id',
+            'nim'           => 'nullable|string',
+            'angkatan'      => 'nullable|string|max:4',
+            'nip_nidn'      => 'nullable|string',
+            'jabatan'       => 'nullable|string',
+            'no_hp'         => 'nullable|string',
+        ]);
+
+        $prodiId = $request->prodi_id;
+        if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi'])) {
+            $prodiId = $currentUser->adminProdiProfile?->prodi_id ?? $prodiId;
+        }
+
+        // 1. Update data User Utama
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->save();
+
+        // 2. Sync Role jika role diubah
+        if (!$user->hasRole($request->role)) {
+            $user->syncRoles([$request->role]);
+        }
+
+        // 3. Update / Create Profil Terkait
+        switch ($request->role) {
+            case 'mahasiswa':
+                $mhs = $user->mahasiswaProfile ?? new MahasiswaProfile(['user_id' => $user->id]);
+                if ($prodiId) $mhs->prodi_id = $prodiId;
+                if ($request->filled('nim')) $mhs->nim = $request->nim;
+                if ($request->filled('angkatan')) $mhs->angkatan = $request->angkatan;
+                $mhs->no_hp = $request->no_hp;
+                $mhs->save();
+                break;
+
+            case 'dosen':
+                $dsn = $user->dosenProfile ?? new DosenProfile(['user_id' => $user->id]);
+                if ($prodiId) {
+                    $dsn->prodi_id = $prodiId;
+                    $prodiObj = Prodi::find($prodiId);
+                    $dsn->departemen = $prodiObj?->nama_prodi ?? 'Vokasi';
+                }
+                if ($request->filled('nip_nidn')) $dsn->nip_nidn = $request->nip_nidn;
+                $dsn->no_hp = $request->no_hp;
+                $dsn->save();
+                break;
+
+            case 'admin_prodi':
+            case 'admin-prodi':
+                $adm = $user->adminProdiProfile ?? new AdminProdiProfile(['user_id' => $user->id]);
+                if ($prodiId) $adm->prodi_id = $prodiId;
+                if ($request->filled('nip_nidn')) $adm->nip_nidn = $request->nip_nidn;
+                $adm->save();
+                break;
+
+            case 'spv':
+                $spv = $user->spvProfile ?? new SpvProfile(['user_id' => $user->id]);
+                if ($prodiId) $spv->prodi_id = $prodiId;
+                if ($request->filled('perusahaan_id')) $spv->perusahaan_id = $request->perusahaan_id;
+                $spv->jabatan = $request->jabatan ?? 'Supervisor Lapangan';
+                $spv->no_hp = $request->no_hp;
+                $spv->save();
+                break;
+        }
+
+        return redirect()->back()->with('success', "Profil pengguna ({$user->name}) berhasil diperbarui.");
+    }
+
     public function downloadTemplateExcel()
     {
         $spreadsheet = new Spreadsheet();
@@ -242,9 +328,6 @@ class AktivasiUserController extends Controller
         exit;
     }
 
-    /**
-     * 2. PREVIEW EXCEL UNTUK DIPILIHKAN PRODI
-     */
     public function previewImport(Request $request)
     {
         $request->validate([
@@ -260,7 +343,7 @@ class AktivasiUserController extends Controller
         $worksheet = $spreadsheet->getActiveSheet();
         $rows = $worksheet->toArray();
 
-        array_shift($rows); // Hapus Header
+        array_shift($rows);
 
         $parsedData = [];
         foreach ($rows as $row) {
@@ -285,27 +368,20 @@ class AktivasiUserController extends Controller
 
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
-        
-        // Ambil daftar Master Program Studi untuk dipilih di halaman preview
         $prodis = Prodi::orderBy('nama_prodi', 'asc')->get(); 
 
         return view('dashboard.manajemen-akun.preview-import', compact('parsedData', 'currentUser', 'prodis'));
     }
 
-    /**
-     * 3. PENYIMPANAN FINAL MASS IMPORT (PRODI PASTI LENGKET)
-     */
     public function storeImport(Request $request)
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
 
-        // 1. Ambil prodi_id dari request atau profil admin prodi
         $prodiId = null;
 
         if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi'])) {
             $prodiId = $currentUser->adminProdiProfile?->prodi_id ?? $currentUser->prodi_id;
-            // Fallback hidden input jika profil kosong
             if (!$prodiId && $request->has('prodi_id')) {
                 $prodiId = $request->input('prodi_id');
             }
@@ -319,7 +395,7 @@ class AktivasiUserController extends Controller
             $prodiId = $request->input('prodi_id');
         }
 
-        $prodiId = (int) $prodiId; // Cast to integer
+        $prodiId = (int) $prodiId;
 
         if (!$prodiId || $prodiId === 0) {
             return redirect()->route('dashboard-manajemen-aktivasi-user')
@@ -348,7 +424,6 @@ class AktivasiUserController extends Controller
                     continue; 
                 }
 
-                // 2. Buat Akun User Utama
                 $user = new User();
                 $user->name      = trim($u['nama']);
                 $user->email     = $email;
@@ -356,7 +431,6 @@ class AktivasiUserController extends Controller
                 $user->is_active = true;
                 $user->save();
 
-                // 3. Normalisasi & Assign Role
                 $rawRole = strtolower(trim($u['role'] ?? 'mahasiswa'));
                 if (in_array($rawRole, ['mhs', 'mahasiswa'])) {
                     $roleName = 'mahasiswa';
@@ -372,7 +446,6 @@ class AktivasiUserController extends Controller
                 
                 $user->assignRole($roleName);
 
-                // 4. SIMPAN PROFILE SECARA NATIVE AGAR MYSQL MEMAKSA FILL PRODI_ID (Tanpa $fillable restrictions)
                 if ($roleName === 'mahasiswa') {
                     $mhs = new MahasiswaProfile();
                     $mhs->user_id  = $user->id;
@@ -410,10 +483,7 @@ class AktivasiUserController extends Controller
         }
     }
 
-    /**
-     * Reset Password User oleh Admin / Admin Prodi
-     */
- public function resetPassword(Request $request, $id)
+    public function resetPassword(Request $request, $id)
     {
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
@@ -432,7 +502,7 @@ class AktivasiUserController extends Controller
         ]);
 
         $user->password      = Hash::make($request->new_password);
-        $user->temp_password = $request->new_password; // Update temp_password agar dapat dikontrol kembali oleh admin
+        $user->temp_password = $request->new_password;
         $user->save();
 
         return redirect()->back()->with('success', "Password untuk akun {$user->name} berhasil diperbarui.");
