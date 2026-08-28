@@ -93,8 +93,13 @@ class PenilaianListingMahasiswaController extends Controller
         /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user();
         
-        if (!$currentUser->hasAnyRole(['dosen', 'admin', 'superadmin', 'admin_prodi'])) {
-            return redirect()->back()->with('error', 'Akses ditolak. Hanya Dosen atau Admin yang berhak memberikan nilai.');
+        // Admin Prodi diblokir dari aksi input/edit nilai
+        if ($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi'])) {
+            return redirect()->back()->with('error', 'Akses ditolak. Input dan edit nilai hanya dapat dilakukan oleh Dosen Pembimbing terkait.');
+        }
+
+        if (!$currentUser->hasAnyRole(['dosen', 'admin', 'superadmin'])) {
+            return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki wewenang untuk memberikan nilai.');
         }
 
         $request->validate([

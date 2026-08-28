@@ -7,7 +7,7 @@
             openExportModal: false, 
             activeMahasiswa: '', 
             activeUrl: '',
-            formScores: {} 
+            formScores: {}
          }">
          
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
@@ -90,7 +90,6 @@
                 <!-- TABLE SECTION WITH FILTER TOOLBAR -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     
-                    <!-- FORM FILTER MULTI-SELEKSI UNTUK TABEL AKSI LOKAL -->
                     <form action="{{ route('dashboard-penilaian-listing-mahasiswa') }}" method="GET" class="p-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between lg:items-center gap-4 bg-gray-50/50">
                         <div class="relative w-full lg:w-80">
                             <i class="fas fa-search absolute left-3.5 top-3 text-gray-400 text-xs"></i>
@@ -99,6 +98,7 @@
 
                         <div class="flex flex-wrap items-center gap-2">
                             <!-- Filter Prodi -->
+                            @if(!$currentUser->hasRole('admin_prodi'))
                             <select name="prodi_id" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
                                 <option value="semua">Semua Program Studi</option>
                                 @foreach($prodis as $prodi)
@@ -107,6 +107,7 @@
                                     </option>
                                 @endforeach
                             </select>
+                            @endif
 
                             <!-- Filter Status Penilaian -->
                             <select name="status_nilai" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
@@ -221,22 +222,31 @@
                                         @endif
                                     </td>
                                     <td class="p-4 text-center">
-                                        @if($currentUser->hasAnyRole(['dosen', 'admin', 'superadmin', 'admin_prodi']))
-                                        <button type="button" 
-                                                data-id="{{ $item->id }}"
-                                                data-nama="{{ addslashes($item->user->name) }}"
-                                                data-scores="{{ json_encode($existingScores) }}"
-                                                @click="
-                                                    activeUrl = '{{ url('/penilaian/listing-mahasiswa') }}/' + $event.currentTarget.dataset.id + '/store';
-                                                    activeMahasiswa = $event.currentTarget.dataset.nama;
-                                                    formScores = JSON.parse($event.currentTarget.dataset.scores || '{}');
-                                                    openModal = true;
-                                                "
-                                                class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors shadow-sm">
-                                            <i class="fas fa-edit mr-1"></i> Input / Edit
-                                        </button>
+                                        @if($currentUser->hasAnyRole(['admin_prodi', 'admin-prodi']))
+                                            <!-- Tombol Dinonaktifkan Khusus Admin Prodi dengan Handler Javascript -->
+                                            <button type="button" 
+                                                    onclick="handleAdminProdiClick()"
+                                                    class="bg-gray-100 hover:bg-gray-200 text-gray-400 border border-gray-300 text-xs font-bold py-1.5 px-3 rounded-xl transition-colors cursor-not-allowed flex items-center justify-center gap-1 mx-auto"
+                                                    title="Hanya Dosen Pembimbing yang berhak menginput nilai">
+                                                <i class="fas fa-lock text-[10px]"></i> Input / Edit
+                                            </button>
+                                        @elseif($currentUser->hasAnyRole(['dosen', 'admin', 'superadmin']))
+                                            <!-- Tombol Aktif untuk Dosen Pembimbing & Admin -->
+                                            <button type="button" 
+                                                    data-id="{{ $item->id }}"
+                                                    data-nama="{{ addslashes($item->user->name) }}"
+                                                    data-scores="{{ json_encode($existingScores) }}"
+                                                    @click="
+                                                        activeUrl = '{{ url('/penilaian/listing-mahasiswa') }}/' + $event.currentTarget.dataset.id + '/store';
+                                                        activeMahasiswa = $event.currentTarget.dataset.nama;
+                                                        formScores = JSON.parse($event.currentTarget.dataset.scores || '{}');
+                                                        openModal = true;
+                                                    "
+                                                    class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors shadow-sm">
+                                                <i class="fas fa-edit mr-1"></i> Input / Edit
+                                            </button>
                                         @else
-                                        <span class="text-[10px] text-gray-400 italic">Hak Akses Dosen</span>
+                                            <span class="text-[10px] text-gray-400 italic">Hak Akses Dosen</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -327,8 +337,6 @@
                     </div>
 
                     <form action="{{ route('dashboard-penilaian-listing-mahasiswa-export') }}" method="GET" target="_blank" class="p-6 space-y-4">
-                        
-                        <!-- Meneruskan Pencarian Teks dari Halaman Utama -->
                         <input type="hidden" name="search" value="{{ request('search') }}">
 
                         <div>
@@ -372,4 +380,20 @@
             </div>
         </main>
     </div>
+
+    <!-- SCRIPT POPUP KHUSUS ADMIN PRODI -->
+    <script>
+        function handleAdminProdiClick() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Akses Dibatasi',
+                html: '<p class="text-xs text-gray-600 mt-1">Input dan perbaikan nilai akhir hanya dapat dilakukan oleh <strong>Dosen Pembimbing terkait</strong>.<br><br>Akun <strong>Admin Prodi</strong> hanya memiliki hak akses untuk memantau rekapitulasi dan mengunduh berkas laporan.</p>',
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#0D9488',
+                customClass: {
+                    popup: 'rounded-2xl shadow-xl border border-gray-100'
+                }
+            });
+        }
+    </script>
 @endsection
