@@ -58,7 +58,7 @@
         </div>
     </div>
 
-    <!-- FLASH MESSAGES -->
+    <!-- FLASH MESSAGES / NOTIFIKASI -->
     @if(session('success'))
     <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between text-sm shadow-sm">
         <div class="flex items-center gap-2">
@@ -66,6 +66,21 @@
             <span>{{ session('success') }}</span>
         </div>
         <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+    </div>
+    @endif
+
+    <!-- NOTIFIKASI KHUSUS JIKA ADA DATA EXCEL GANDA YANG DILEWATI -->
+    @if(session('warning_import'))
+    <div class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm shadow-sm flex items-start gap-3">
+        <i class="fas fa-exclamation-triangle text-amber-600 text-lg mt-1 shrink-0"></i>
+        <div class="flex-1">
+            <p class="font-bold mb-1 text-amber-900">Laporan Beberapa Data Dilewati (Tidak Diimpor):</p>
+            <p class="text-xs text-amber-700 mb-2">Sistem otomatis mencegah kegagalan. Data di bawah ini tidak dimasukkan karena duplikasi:</p>
+            <ul class="text-xs space-y-1 font-medium bg-white/60 p-3 rounded-lg border border-amber-100">
+                {!! session('warning_import') !!}
+            </ul>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-amber-600 hover:text-amber-900"><i class="fas fa-times"></i></button>
     </div>
     @endif
 
@@ -348,7 +363,7 @@
                     </select>
                 </div>
 
-                <!-- PILIH PROGRAM STUDI: Tampil untuk role mahasiswa, dosen, admin_prodi, spv -->
+                <!-- PILIH PROGRAM STUDI -->
                 @if(!$currentUser->hasRole('admin_prodi'))
                 <div>
                     <label class="block font-bold text-gray-700 uppercase mb-1">Program Studi Terdaftar</label>

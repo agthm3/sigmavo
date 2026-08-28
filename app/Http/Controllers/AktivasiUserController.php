@@ -140,64 +140,70 @@ class AktivasiUserController extends Controller
 
         $prodiId = $request->prodi_id;
 
-        $user = User::create([
-            'name'          => $request->name,
-            'email'         => $request->email,
-            'password'      => Hash::make($request->password),
-            'temp_password' => $request->password,
-            'is_active'     => true,
-        ]);
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'name'          => $request->name,
+                'email'         => $request->email,
+                'password'      => Hash::make($request->password),
+                'temp_password' => $request->password,
+                'is_active'     => true,
+            ]);
 
-        $user->assignRole($request->role);
+            $user->assignRole($request->role);
 
-        switch ($request->role) {
-            case 'mahasiswa':
-                $mhs = new MahasiswaProfile();
-                $mhs->user_id = $user->id;
-                $mhs->prodi_id = $prodiId;
-                $mhs->nim = $request->nim;
-                $mhs->angkatan = $request->angkatan ?? date('Y');
-                $mhs->no_hp = $request->no_hp;
-                $mhs->save();
-                break;
+            switch ($request->role) {
+                case 'mahasiswa':
+                    $mhs = new MahasiswaProfile();
+                    $mhs->user_id = $user->id;
+                    $mhs->prodi_id = $prodiId;
+                    $mhs->nim = $request->nim;
+                    $mhs->angkatan = $request->angkatan ?? date('Y');
+                    $mhs->no_hp = $request->no_hp;
+                    $mhs->save();
+                    break;
 
-            case 'dosen':
-                $prodiObj = Prodi::find($prodiId);
-                $dsn = new DosenProfile();
-                $dsn->user_id = $user->id;
-                $dsn->prodi_id = $prodiId;
-                $dsn->nip_nidn = $request->nip_nidn;
-                $dsn->departemen = $prodiObj?->nama_prodi ?? 'Vokasi';
-                $dsn->no_hp = $request->no_hp;
-                $dsn->save();
-                break;
+                case 'dosen':
+                    $prodiObj = Prodi::find($prodiId);
+                    $dsn = new DosenProfile();
+                    $dsn->user_id = $user->id;
+                    $dsn->prodi_id = $prodiId;
+                    $dsn->nip_nidn = $request->nip_nidn;
+                    $dsn->departemen = $prodiObj?->nama_prodi ?? 'Vokasi';
+                    $dsn->no_hp = $request->no_hp;
+                    $dsn->save();
+                    break;
 
-            case 'admin_prodi':
-            case 'admin-prodi':
-                $adm = new AdminProdiProfile();
-                $adm->user_id = $user->id;
-                $adm->prodi_id = $prodiId;
-                $adm->nip_nidn = $request->nip_nidn;
-                $adm->save();
-                break;
+                case 'admin_prodi':
+                case 'admin-prodi':
+                    $adm = new AdminProdiProfile();
+                    $adm->user_id = $user->id;
+                    $adm->prodi_id = $prodiId;
+                    $adm->nip_nidn = $request->nip_nidn;
+                    $adm->save();
+                    break;
 
-            case 'spv':
-                $spv = new SpvProfile();
-                $spv->user_id = $user->id;
-                $spv->prodi_id = $prodiId;
-                $spv->perusahaan_id = $request->perusahaan_id;
-                $spv->jabatan = $request->jabatan ?? 'Supervisor Lapangan';
-                $spv->no_hp = $request->no_hp;
-                $spv->save();
-                break;
+                case 'spv':
+                    $spv = new SpvProfile();
+                    $spv->user_id = $user->id;
+                    $spv->prodi_id = $prodiId;
+                    $spv->perusahaan_id = $request->perusahaan_id;
+                    $spv->jabatan = $request->jabatan ?? 'Supervisor Lapangan';
+                    $spv->no_hp = $request->no_hp;
+                    $spv->save();
+                    break;
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', "User baru ({$user->name}) berkategori " . strtoupper($request->role) . " berhasil ditambahkan.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal Tambah Manual: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menambahkan user. Pastikan data seperti Email atau NIM belum terdaftar di sistem.');
         }
-
-        return redirect()->back()->with('success', "User baru ({$user->name}) berkategori " . strtoupper($request->role) . " berhasil ditambahkan.");
     }
 
-    /**
-     * UPDATE PROFIL USER (EDIT PROFIL LENGKAP)
-     */
     public function updateProfile(Request $request, $id)
     {
         /** @var \App\Models\User $currentUser */
@@ -231,58 +237,64 @@ class AktivasiUserController extends Controller
             $prodiId = $currentUser->adminProdiProfile?->prodi_id ?? $prodiId;
         }
 
-        // 1. Update data User Utama
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->save();
+        DB::beginTransaction();
+        try {
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->save();
 
-        // 2. Sync Role jika role diubah
-        if (!$user->hasRole($request->role)) {
-            $user->syncRoles([$request->role]);
+            if (!$user->hasRole($request->role)) {
+                $user->syncRoles([$request->role]);
+            }
+
+            switch ($request->role) {
+                case 'mahasiswa':
+                    $mhs = $user->mahasiswaProfile ?? new MahasiswaProfile(['user_id' => $user->id]);
+                    if ($prodiId) $mhs->prodi_id = $prodiId;
+                    if ($request->filled('nim')) $mhs->nim = $request->nim;
+                    if ($request->filled('angkatan')) $mhs->angkatan = $request->angkatan;
+                    $mhs->no_hp = $request->no_hp;
+                    $mhs->save();
+                    break;
+
+                case 'dosen':
+                    $dsn = $user->dosenProfile ?? new DosenProfile(['user_id' => $user->id]);
+                    if ($prodiId) {
+                        $dsn->prodi_id = $prodiId;
+                        $prodiObj = Prodi::find($prodiId);
+                        $dsn->departemen = $prodiObj?->nama_prodi ?? 'Vokasi';
+                    }
+                    if ($request->filled('nip_nidn')) $dsn->nip_nidn = $request->nip_nidn;
+                    $dsn->no_hp = $request->no_hp;
+                    $dsn->save();
+                    break;
+
+                case 'admin_prodi':
+                case 'admin-prodi':
+                    $adm = $user->adminProdiProfile ?? new AdminProdiProfile(['user_id' => $user->id]);
+                    if ($prodiId) $adm->prodi_id = $prodiId;
+                    if ($request->filled('nip_nidn')) $adm->nip_nidn = $request->nip_nidn;
+                    $adm->save();
+                    break;
+
+                case 'spv':
+                    $spv = $user->spvProfile ?? new SpvProfile(['user_id' => $user->id]);
+                    if ($prodiId) $spv->prodi_id = $prodiId;
+                    if ($request->filled('perusahaan_id')) $spv->perusahaan_id = $request->perusahaan_id;
+                    $spv->jabatan = $request->jabatan ?? 'Supervisor Lapangan';
+                    $spv->no_hp = $request->no_hp;
+                    $spv->save();
+                    break;
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', "Profil pengguna ({$user->name}) berhasil diperbarui.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal Update Profil: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memperbarui profil. Kemungkinan NIM atau Email sudah terpakai oleh pengguna lain.');
         }
-
-        // 3. Update / Create Profil Terkait
-        switch ($request->role) {
-            case 'mahasiswa':
-                $mhs = $user->mahasiswaProfile ?? new MahasiswaProfile(['user_id' => $user->id]);
-                if ($prodiId) $mhs->prodi_id = $prodiId;
-                if ($request->filled('nim')) $mhs->nim = $request->nim;
-                if ($request->filled('angkatan')) $mhs->angkatan = $request->angkatan;
-                $mhs->no_hp = $request->no_hp;
-                $mhs->save();
-                break;
-
-            case 'dosen':
-                $dsn = $user->dosenProfile ?? new DosenProfile(['user_id' => $user->id]);
-                if ($prodiId) {
-                    $dsn->prodi_id = $prodiId;
-                    $prodiObj = Prodi::find($prodiId);
-                    $dsn->departemen = $prodiObj?->nama_prodi ?? 'Vokasi';
-                }
-                if ($request->filled('nip_nidn')) $dsn->nip_nidn = $request->nip_nidn;
-                $dsn->no_hp = $request->no_hp;
-                $dsn->save();
-                break;
-
-            case 'admin_prodi':
-            case 'admin-prodi':
-                $adm = $user->adminProdiProfile ?? new AdminProdiProfile(['user_id' => $user->id]);
-                if ($prodiId) $adm->prodi_id = $prodiId;
-                if ($request->filled('nip_nidn')) $adm->nip_nidn = $request->nip_nidn;
-                $adm->save();
-                break;
-
-            case 'spv':
-                $spv = $user->spvProfile ?? new SpvProfile(['user_id' => $user->id]);
-                if ($prodiId) $spv->prodi_id = $prodiId;
-                if ($request->filled('perusahaan_id')) $spv->perusahaan_id = $request->perusahaan_id;
-                $spv->jabatan = $request->jabatan ?? 'Supervisor Lapangan';
-                $spv->no_hp = $request->no_hp;
-                $spv->save();
-                break;
-        }
-
-        return redirect()->back()->with('success', "Profil pengguna ({$user->name}) berhasil diperbarui.");
     }
 
     public function downloadTemplateExcel()
@@ -413,24 +425,35 @@ class AktivasiUserController extends Controller
 
         $berhasil = 0;
         $gagal = 0;
+        $detailGagal = []; // Variabel untuk menyimpan rincian error
+
+        // Pengecekan Cache agar identitas antar baris di excel tidak saling duplikat
+        $processedEmails = [];
+        $processedIdentitas = [];
 
         DB::beginTransaction();
         try {
             foreach ($usersData as $u) {
+                $nama = trim($u['nama'] ?? 'Tanpa Nama');
                 $email = strtolower(trim($u['email'] ?? ''));
+                $nimNip = trim($u['nim_nip'] ?? '');
 
-                if (empty($email) || User::where('email', $email)->exists()) {
+                // 1. Cek Kekosongan Email
+                if (empty($email)) {
                     $gagal++;
+                    $detailGagal[] = "Baris {$nama} dilewati karena kolom Email kosong.";
                     continue; 
                 }
 
-                $user = new User();
-                $user->name      = trim($u['nama']);
-                $user->email     = $email;
-                $user->password  = Hash::make(trim($u['password'] ?? 'vokasi123'));
-                $user->is_active = true;
-                $user->save();
+                // 2. Cek Duplikasi Email di Excel maupun DB
+                if (in_array($email, $processedEmails) || User::where('email', $email)->exists()) {
+                    $gagal++;
+                    $detailGagal[] = "{$nama} dilewati: Email ({$email}) sudah terdaftar/terdeteksi ganda.";
+                    continue; 
+                }
+                $processedEmails[] = $email;
 
+                // Identifikasi Role
                 $rawRole = strtolower(trim($u['role'] ?? 'mahasiswa'));
                 if (in_array($rawRole, ['mhs', 'mahasiswa'])) {
                     $roleName = 'mahasiswa';
@@ -443,6 +466,34 @@ class AktivasiUserController extends Controller
                 } else {
                     $roleName = 'mahasiswa';
                 }
+
+                // 3. Cek Duplikasi NIM/NIP (Identitas Akademik)
+                if (!empty($nimNip)) {
+                    if (in_array($nimNip, $processedIdentitas)) {
+                        $gagal++;
+                        $detailGagal[] = "{$nama} dilewati: NIM/NIP ({$nimNip}) sudah terisi berulang di Excel.";
+                        continue;
+                    }
+                    if ($roleName === 'mahasiswa' && MahasiswaProfile::where('nim', $nimNip)->exists()) {
+                        $gagal++;
+                        $detailGagal[] = "{$nama} dilewati: NIM ({$nimNip}) sudah dimiliki mahasiswa lain di database.";
+                        continue;
+                    }
+                    if ($roleName === 'dosen' && DosenProfile::where('nip_nidn', $nimNip)->exists()) {
+                        $gagal++;
+                        $detailGagal[] = "{$nama} dilewati: NIP/NIDN ({$nimNip}) sudah dimiliki dosen lain di database.";
+                        continue;
+                    }
+                    $processedIdentitas[] = $nimNip;
+                }
+
+                // 4. Lolos Filter -> Lakukan Simpan Data
+                $user = new User();
+                $user->name      = $nama;
+                $user->email     = $email;
+                $user->password  = Hash::make(trim($u['password'] ?? 'vokasi123'));
+                $user->is_active = true;
+                $user->save();
                 
                 $user->assignRole($roleName);
 
@@ -450,21 +501,21 @@ class AktivasiUserController extends Controller
                     $mhs = new MahasiswaProfile();
                     $mhs->user_id  = $user->id;
                     $mhs->prodi_id = $prodiId;
-                    $mhs->nim      = trim($u['nim_nip'] ?? '');
+                    $mhs->nim      = $nimNip;
                     $mhs->angkatan = trim($u['angkatan'] ?? '') ?: date('Y');
                     $mhs->save();
                 } elseif ($roleName === 'dosen') {
                     $dsn = new DosenProfile();
                     $dsn->user_id    = $user->id;
                     $dsn->prodi_id   = $prodiId;
-                    $dsn->nip_nidn   = trim($u['nim_nip'] ?? '');
+                    $dsn->nip_nidn   = $nimNip;
                     $dsn->departemen = $namaProdi;
                     $dsn->save();
                 } elseif ($roleName === 'admin_prodi') {
                     $adm = new AdminProdiProfile();
                     $adm->user_id  = $user->id;
                     $adm->prodi_id = $prodiId;
-                    $adm->nip_nidn = trim($u['nim_nip'] ?? '');
+                    $adm->nip_nidn = $nimNip;
                     $adm->save();
                 }
                 
@@ -472,14 +523,32 @@ class AktivasiUserController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('dashboard-manajemen-aktivasi-user')
-                ->with('success', "$berhasil User berhasil ditambahkan ke Program Studi {$namaProdi}!");
+
+            // Skenario Output Notifikasi:
+            $redirect = redirect()->route('dashboard-manajemen-aktivasi-user');
+            
+            if ($gagal > 0) {
+                // Rangkum pesan error maksimal 5 baris agar tidak kepanjangan
+                $msgWarning = "";
+                foreach(array_slice($detailGagal, 0, 5) as $errInfo) {
+                    $msgWarning .= "<li>- {$errInfo}</li>";
+                }
+                if(count($detailGagal) > 5) {
+                    $msgWarning .= "<li>- ... dan " . (count($detailGagal) - 5) . " masalah lainnya.</li>";
+                }
+
+                return $redirect
+                    ->with('success', "Proses import selesai. {$berhasil} Data valid berhasil masuk.")
+                    ->with('warning_import', $msgWarning);
+            }
+
+            return $redirect->with('success', "Sempurna! {$berhasil} User berhasil ditambahkan ke Program Studi {$namaProdi} tanpa ada error duplikasi.");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error saat Mass Import: ' . $e->getMessage());
+            Log::error('Error Fatal saat Mass Import: ' . $e->getMessage());
             return redirect()->route('dashboard-manajemen-aktivasi-user')
-                ->with('error', 'Terjadi kesalahan sistem saat menyimpan data: ' . $e->getMessage());
+                ->with('error', 'Mohon maaf, format berkas Excel Anda merusak struktur sistem. Pastikan format tabel tidak diubah-ubah.');
         }
     }
 

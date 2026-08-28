@@ -29,7 +29,7 @@ class PerluVerifikasiController extends Controller
         ]);
 
         if ($user->hasRole('spv')) {
-            // SPV LAPANGAN: Mendukung Jalur Reguler & Jalur Mandiri
+            // SPV LAPANGAN: Filter logbook PENDING (Mendukung Jalur Reguler & Mandiri)
             $spvProdiId = $user->spvProfile?->prodi_id;
             $spvPerusahaanId = $user->spvProfile?->perusahaan_id;
             $namaPerusahaanSpv = $user->spvProfile?->perusahaan?->nama_perusahaan;
@@ -40,14 +40,11 @@ class PerluVerifikasiController extends Controller
                         $m->where('prodi_id', $spvProdiId);
                     }
                 })
-                ->whereHas('pendaftaran', function($p) use ($spvPerusahaanId, $namaPerusahaanSpv, $user) {
-                    $p->where(function($q) use ($spvPerusahaanId, $namaPerusahaanSpv, $user) {
-                        // Jalur Reguler (melalui Lowongan)
+                ->whereHas('pendaftaran', function($p) use ($spvPerusahaanId, $namaPerusahaanSpv) {
+                    $p->where(function($q) use ($spvPerusahaanId, $namaPerusahaanSpv) {
                         if ($spvPerusahaanId) {
                             $q->whereHas('lowongan', fn($l) => $l->where('perusahaan_id', $spvPerusahaanId));
                         }
-
-                        // Jalur Mandiri (Berdasarkan nama instansi atau kecocokan link pembimbing/spv)
                         if ($namaPerusahaanSpv) {
                             $q->orWhere('nama_instansi_mandiri', 'like', "%{$namaPerusahaanSpv}%");
                         }
@@ -55,11 +52,12 @@ class PerluVerifikasiController extends Controller
                 });
 
         } elseif ($user->hasRole('dosen')) {
-            // DOSEN PEMBIMBING: Tampilkan logbook bimbingan yang SUDAH DI-APPROVE SPV ('approved_spv')
+            // DOSEN PEMBIMBING: Hanya tampilkan logbook bimbingan yang SUDAH DI-APPROVE SPV ('approved_spv')
             $queryLogbooks->where('status_asistensi', 'approved_spv')
                 ->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $user->id));
 
         } elseif ($user->hasRole('admin_prodi')) {
+            // ADMIN PRODI: Tampilkan logbook di lingkup program studinya
             $adminProdiId = $user->adminProdiProfile?->prodi_id;
             $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv', 'approved_spv'])
                 ->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
@@ -68,19 +66,22 @@ class PerluVerifikasiController extends Controller
                     }
                 });
         } else {
-            // Admin / Superadmin: Tampilkan seluruh antrean yang butuh verifikasi
+            // ADMIN / SUPERADMIN: Tampilkan seluruh antrean logbook yang membutuhkan verifikasi
             $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv', 'approved_spv']);
         }
 
         $pendingLogbooks = $queryLogbooks->latest()->get();
 
         // ==========================================
-        // 3. ANTREAN VERIFIKASI ABSENSI / IZIN
+        // 3. ANTREAN VERIFIKASI ABSENSI / IZIN / SAKIT
         // ==========================================
+        // Hanya memunculkan pengajuan berstatus 'pending' DAN bertipe 'izin' atau 'sakit'
         $queryAbsensis = Absensi::with([
             'user.mahasiswaProfile.prodi', 
             'pendaftaran.lowongan.perusahaan'
-        ])->where('status_verifikasi', 'pending');
+        ])
+        ->where('status_verifikasi', 'pending')
+        ->whereIn('tipe_kehadiran', ['izin', 'sakit']); // <-- Presensi hadir rutin tidak akan masuk antrean ini
 
         if ($user->hasRole('spv')) {
             $spvProdiId = $user->spvProfile?->prodi_id;
@@ -104,8 +105,11 @@ class PerluVerifikasiController extends Controller
             });
 
         } elseif ($user->hasRole('dosen')) {
+            // Dosen Pembimbing hanya menerima pengajuan izin/sakit mahasiswa bimbingannya
             $queryAbsensis->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $user->id));
+
         } elseif ($user->hasRole('admin_prodi')) {
+            // Admin Prodi menerima pengajuan izin/sakit mahasiswa di program studinya
             $adminProdiId = $user->adminProdiProfile?->prodi_id;
             $queryAbsensis->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
                 if ($adminProdiId) {
