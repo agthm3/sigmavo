@@ -18,13 +18,11 @@
             
             <!-- Table Controls & Search Form -->
             <form action="{{ route('dashboard-verifikasi-daftar-mahasiswa-terverifikasi') }}" method="GET" class="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gray-50/50">
-                <!-- Search Box -->
                 <div class="relative w-full md:w-80">
                     <i class="fas fa-search absolute left-3.5 top-3 text-gray-400 text-xs"></i>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama mahasiswa / NIM..." class="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20">
                 </div>
                 
-                <!-- Filters -->
                 <div class="flex flex-wrap items-center gap-2">
                     <select name="jenis" onchange="this.form.submit()" class="bg-white border border-gray-200 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-semibold">
                         <option value="semua" {{ request('jenis') == 'semua' ? 'selected' : '' }}>Semua Jenis Laporan</option>
@@ -95,7 +93,7 @@
                                 @endif
                             </td>
                             <td class="p-4 text-center pr-6">
-                                <button type="button" @click="activeDetail = {{ json_encode($row) }}; openDetailModal = true" class="text-gray-600 hover:text-vokasi-primary bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors text-xs font-bold" title="Lihat Detail">
+                                <button type="button" @click="activeDetail = @js($row); openDetailModal = true" class="text-gray-600 hover:text-vokasi-primary bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors text-xs font-bold" title="Lihat Detail">
                                     <i class="fas fa-eye mr-1"></i> Detail
                                 </button>
                             </td>
@@ -112,7 +110,6 @@
                 </table>
             </div>
             
-            <!-- Pagination Controls -->
             <div class="p-4 border-t border-gray-100 bg-white">
                 {{ $riwayats->links() }}
             </div>
@@ -123,25 +120,81 @@
 
     <!-- MODAL POPUP: DETAIL LAPORAN TERVERIFIKASI -->
     <div x-show="openDetailModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div @click.away="openDetailModal = false" class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg overflow-hidden" x-if="activeDetail">
+        <div @click.away="openDetailModal = false" class="bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]" x-if="activeDetail">
             
-            <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-sm"><i class="fas fa-info-circle mr-2"></i> Detail Laporan Terverifikasi</h3>
-                <button type="button" @click="openDetailModal = false" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+            <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fas fa-info-circle text-base"></i> Detail Laporan Terverifikasi
+                </h3>
+                <button type="button" @click="openDetailModal = false" class="text-white/80 hover:text-white text-lg"><i class="fas fa-times"></i></button>
             </div>
 
-            <div class="p-6 space-y-4 text-xs">
-                <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1">
-                    <p class="font-bold text-gray-800 text-sm" x-text="activeDetail?.user?.name"></p>
-                    <p class="text-gray-500">NIM: <span x-text="activeDetail?.user?.mahasiswa_profile?.nim || '-'"></span></p>
-                    <p class="text-gray-500">Jenis: <span class="font-bold text-vokasi-primary" x-text="activeDetail?.jenis_laporan"></span></p>
+            <div class="p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
+                <!-- 1. IDENTITAS MAHASISWA & INSTANSI -->
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm" x-text="activeDetail?.user?.name"></p>
+                            <p class="text-gray-500 font-mono">NIM: <span x-text="activeDetail?.user?.mahasiswa_profile?.nim || '-'"></span></p>
+                            <p class="text-vokasi-primary font-semibold text-[11px]" x-text="activeDetail?.user?.mahasiswa_profile?.prodi?.nama_prodi || '-'"></p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase" 
+                              :class="activeDetail?.tipe_data === 'logbook' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'"
+                              x-text="activeDetail?.jenis_laporan">
+                        </span>
+                    </div>
+                    
+                    <div class="pt-2 border-t border-gray-200/60 flex items-center gap-2 text-gray-700">
+                        <i class="fas fa-building text-vokasi-primary"></i>
+                        <span class="font-bold" x-text="activeDetail?.nama_perusahaan"></span>
+                    </div>
                 </div>
 
+                <!-- 2. DETAIL KHUSUS PRESENSI HADIR (WAKTU & KOORDINAT GPS) -->
+                <template x-if="activeDetail?.tipe_data === 'absensi' && activeDetail?.jenis_laporan === 'Presensi Hadir'">
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Absen Masuk -->
+                            <div class="p-3.5 bg-teal-50/60 border border-teal-200 rounded-xl space-y-1">
+                                <span class="text-[10px] uppercase font-bold text-teal-800 block"><i class="fas fa-sign-in-alt mr-1"></i> Absen Masuk</span>
+                                <p class="font-mono font-bold text-gray-800 text-xs" x-text="activeDetail?.waktu_masuk ? activeDetail?.waktu_masuk + ' WITA' : '-'"></p>
+                                <div class="text-[10px] text-gray-500 font-mono pt-1">
+                                    <i class="fas fa-map-marker-alt text-teal-600 mr-1"></i>
+                                    <span x-text="(activeDetail?.latitude_masuk || '-') + ', ' + (activeDetail?.longitude_masuk || '-')"></span>
+                                </div>
+                            </div>
+
+                            <!-- Absen Pulang -->
+                            <div class="p-3.5 bg-orange-50/60 border border-orange-200 rounded-xl space-y-1">
+                                <span class="text-[10px] uppercase font-bold text-orange-800 block"><i class="fas fa-sign-out-alt mr-1"></i> Absen Pulang</span>
+                                <p class="font-mono font-bold text-gray-800 text-xs" x-text="activeDetail?.waktu_pulang ? activeDetail?.waktu_pulang + ' WITA' : 'Belum Absen Pulang'"></p>
+                                <div class="text-[10px] text-gray-500 font-mono pt-1">
+                                    <i class="fas fa-map-marker-alt text-orange-600 mr-1"></i>
+                                    <span x-text="(activeDetail?.latitude_pulang || '-') + ', ' + (activeDetail?.longitude_pulang || '-')"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Link Google Maps Lokasi Masuk -->
+                        <template x-if="activeDetail?.latitude_masuk && activeDetail?.longitude_masuk">
+                            <div class="text-right">
+                                <a :href="'https://www.google.com/maps?q=' + activeDetail?.latitude_masuk + ',' + activeDetail?.longitude_masuk" 
+                                   target="_blank" 
+                                   class="text-[11px] font-bold text-vokasi-primary hover:underline inline-flex items-center gap-1">
+                                    <i class="fas fa-external-link-alt"></i> Buka Lokasi Masuk di Google Maps
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- 3. RINCIAN LAPORAN / ALASAN -->
                 <div>
-                    <label class="block font-bold text-gray-700 uppercase mb-1">Rincian Laporan:</label>
-                    <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl leading-relaxed text-gray-800 whitespace-pre-line" x-text="activeDetail?.uraian"></div>
+                    <label class="block font-bold text-gray-700 uppercase mb-1">Rincian Laporan / Uraian:</label>
+                    <div class="p-3.5 bg-gray-50 border border-gray-200 rounded-xl leading-relaxed text-gray-800 whitespace-pre-line" x-text="activeDetail?.uraian"></div>
                 </div>
 
+                <!-- 4. CATATAN DOSEN -->
                 <template x-if="activeDetail?.catatan">
                     <div>
                         <label class="block font-bold text-gray-700 uppercase mb-1">Catatan Verifikator:</label>
@@ -149,17 +202,36 @@
                     </div>
                 </template>
 
-                <template x-if="activeDetail?.foto">
+                <!-- 5. FOTO DOKUMENTASI / SELFIE / SURAT -->
+                <template x-if="activeDetail?.foto || activeDetail?.foto_pulang">
                     <div>
-                        <label class="block font-bold text-gray-700 uppercase mb-1">Lampiran Dokumen / Foto:</label>
-                        <div class="w-full h-48 rounded-xl overflow-hidden border border-gray-200 bg-black/90 flex items-center justify-center">
-                            <img :src="'{{ asset('storage') }}/' + activeDetail?.foto" class="max-h-full max-w-full object-contain">
+                        <label class="block font-bold text-gray-700 uppercase mb-1">Lampiran Foto Dokumentasi / Bukti:</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <template x-if="activeDetail?.foto">
+                                <div class="space-y-1">
+                                    <span class="text-[10px] text-gray-500 font-bold block" x-text="activeDetail?.tipe_data === 'absensi' ? 'Foto Masuk / Surat' : 'Foto Kegiatan'"></span>
+                                    <div class="h-36 rounded-xl overflow-hidden border border-gray-200 bg-black/90 flex items-center justify-center">
+                                        <img :src="'{{ asset('storage') }}/' + activeDetail?.foto" class="max-h-full max-w-full object-contain">
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-if="activeDetail?.foto_pulang">
+                                <div class="space-y-1">
+                                    <span class="text-[10px] text-gray-500 font-bold block">Foto Pulang</span>
+                                    <div class="h-36 rounded-xl overflow-hidden border border-gray-200 bg-black/90 flex items-center justify-center">
+                                        <img :src="'{{ asset('storage') }}/' + activeDetail?.foto_pulang" class="max-h-full max-w-full object-contain">
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </template>
 
-                <div class="flex justify-end pt-2">
-                    <button type="button" @click="openDetailModal = false" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold">Tutup</button>
+                <div class="flex justify-end pt-2 border-t border-gray-100 shrink-0">
+                    <button type="button" @click="openDetailModal = false" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-colors">
+                        Tutup
+                    </button>
                 </div>
             </div>
 

@@ -24,10 +24,8 @@ class TerverifikasiController extends Controller
                 $mahasiswaIds = \App\Models\MahasiswaProfile::where('prodi_id', $prodiId)->pluck('user_id')->toArray();
             }
         } elseif ($currentUser->hasRole('dosen')) {
-            // Mengambil mahasiswa yang dibimbing dosen ini
             $mahasiswaIds = \App\Models\Pendaftaran::where('dosen_id', $currentUser->id)->pluck('user_id')->toArray();
             
-            // Fallback: Jika belum di-assign, ambil mahasiswa di prodi yang sama
             if (empty($mahasiswaIds)) {
                 $prodiId = $currentUser->dosenProfile?->prodi_id;
                 if ($prodiId) {
@@ -36,8 +34,8 @@ class TerverifikasiController extends Controller
             }
         }
 
-        // --- QUERY 1: LOGBOOK TERVERIFIKASI (Approved / Revisi) ---
-        $logbookQuery = Logbook::with(['user.mahasiswaProfile'])
+        // --- QUERY 1: LOGBOOK TERVERIFIKASI ---
+        $logbookQuery = Logbook::with(['user.mahasiswaProfile.prodi', 'pendaftaran.lowongan.perusahaan'])
             ->whereIn('status_asistensi', ['approved', 'revisi']);
 
         if (!empty($mahasiswaIds)) {
@@ -45,21 +43,33 @@ class TerverifikasiController extends Controller
         }
 
         $logbooks = $logbookQuery->get()->map(function ($item) {
+            $namaPerusahaan = $item->pendaftaran?->lowongan?->perusahaan?->nama_perusahaan 
+                ?? $item->pendaftaran?->nama_instansi_mandiri 
+                ?? '-';
+
             return (object) [
-                'id'               => 'logbook_' . $item->id,
-                'user'             => $item->user,
-                'jenis_laporan'    => 'Logbook Harian',
-                'tanggal'          => $item->tanggal,
-                'uraian'           => $item->uraian_kegiatan,
-                'catatan'          => $item->catatan_dosen,
-                'status_verifikasi'=> $item->status_asistensi, // approved / revisi
-                'foto'             => $item->foto_dokumentasi,
-                'tipe_data'        => 'logbook',
+                'id'                => 'logbook_' . $item->id,
+                'user'              => $item->user,
+                'nama_perusahaan'   => $namaPerusahaan,
+                'jenis_laporan'     => 'Logbook Harian',
+                'tanggal'           => $item->tanggal,
+                'uraian'            => $item->uraian_kegiatan,
+                'catatan'           => $item->catatan_dosen,
+                'status_verifikasi' => $item->status_asistensi,
+                'foto'              => $item->foto_dokumentasi,
+                'foto_pulang'       => null,
+                'tipe_data'         => 'logbook',
+                'waktu_masuk'       => null,
+                'waktu_pulang'      => null,
+                'latitude_masuk'    => null,
+                'longitude_masuk'   => null,
+                'latitude_pulang'   => null,
+                'longitude_pulang'  => null,
             ];
         });
 
         // --- QUERY 2: ABSENSI & IZIN TERVERIFIKASI ---
-        $absensiQuery = Absensi::with(['user.mahasiswaProfile'])
+        $absensiQuery = Absensi::with(['user.mahasiswaProfile.prodi', 'pendaftaran.lowongan.perusahaan'])
             ->where('status_verifikasi', '!=', 'pending');
 
         if (!empty($mahasiswaIds)) {
@@ -74,23 +84,35 @@ class TerverifikasiController extends Controller
                 $jenis = 'Izin Tidak Hadir';
             }
 
+            $namaPerusahaan = $item->pendaftaran?->lowongan?->perusahaan?->nama_perusahaan 
+                ?? $item->pendaftaran?->nama_instansi_mandiri 
+                ?? '-';
+
             return (object) [
-                'id'               => 'absensi_' . $item->id,
-                'user'             => $item->user,
-                'jenis_laporan'    => $jenis,
-                'tanggal'          => $item->tanggal,
-                'uraian'           => $item->alasan_izin ?: "Presensi Masuk: {$item->waktu_masuk} | Pulang: " . ($item->waktu_pulang ?: '-'),
-                'catatan'          => null,
-                'status_verifikasi'=> $item->status_verifikasi, // approved / rejected
-                'foto'             => $item->surat_izin ?: $item->foto_masuk,
-                'tipe_data'        => 'absensi',
+                'id'                => 'absensi_' . $item->id,
+                'user'              => $item->user,
+                'nama_perusahaan'   => $namaPerusahaan,
+                'jenis_laporan'     => $jenis,
+                'tanggal'           => $item->tanggal,
+                'uraian'            => $item->alasan_izin ?: "Presensi Kehadiran Rutin Magang",
+                'catatan'           => null,
+                'status_verifikasi' => $item->status_verifikasi,
+                'foto'              => $item->surat_izin ?: $item->foto_masuk,
+                'foto_pulang'       => $item->foto_pulang,
+                'tipe_data'         => 'absensi',
+                'waktu_masuk'       => $item->waktu_masuk,
+                'waktu_pulang'      => $item->waktu_pulang,
+                'latitude_masuk'    => $item->latitude_masuk,
+                'longitude_masuk'   => $item->longitude_masuk,
+                'latitude_pulang'   => $item->latitude_pulang,
+                'longitude_pulang'  => $item->longitude_pulang,
             ];
         });
 
         // --- COMBINE & SORT DATA ---
         $allCollection = $logbooks->concat($absensis)->sortByDesc('tanggal');
 
-        // Filter Search (Nama / NIM)
+        // Filter Search
         if ($request->filled('search')) {
             $search = strtolower($request->search);
             $allCollection = $allCollection->filter(function ($item) use ($search) {
@@ -100,7 +122,7 @@ class TerverifikasiController extends Controller
             });
         }
 
-        // Filter Jenis Laporan
+        // Filter Jenis
         if ($request->filled('jenis') && $request->jenis !== 'semua') {
             $jenis = $request->jenis;
             $allCollection = $allCollection->filter(function ($item) use ($jenis) {
@@ -111,7 +133,7 @@ class TerverifikasiController extends Controller
             });
         }
 
-        // Manual Pagination
+        // Pagination
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         $perPage = 10;
         $currentPageItems = $allCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
