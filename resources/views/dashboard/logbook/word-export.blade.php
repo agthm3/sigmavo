@@ -61,6 +61,16 @@
         .bg-gray {
             background-color: #f3f4f6;
         }
+        .badge-susulan {
+            color: #b91c1c;
+            font-size: 9pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 2px 4px;
+            border: 1px solid #b91c1c;
+            display: inline-block;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -105,6 +115,9 @@
         <tr class="bg-gray">
             <th colspan="2" style="text-align: left; padding: 6px 8px;">
                 No. {{ $index + 1 }} | Tanggal: {{ \Carbon\Carbon::parse($logbook->tanggal)->isoFormat('dddd, D MMMM YYYY') }}
+                @if($logbook->is_susulan)
+                    <br><span class="badge-susulan">Terkirim via Jalur Susulan</span>
+                @endif
             </th>
         </tr>
         <tr>
@@ -125,6 +138,15 @@
             </td>
         </tr>
         @endif
+        <tr>
+            <td style="font-weight: bold;">Status Evaluasi</td>
+            <td>
+                {{ strtoupper(str_replace('_', ' ', $logbook->status_asistensi)) }}
+                @if($logbook->catatan_dosen)
+                    <br><span style="font-style: italic; color: #4a5568; font-size: 10pt;">Catatan: {{ $logbook->catatan_dosen }}</span>
+                @endif
+            </td>
+        </tr>
     </table>
     @endforeach
 

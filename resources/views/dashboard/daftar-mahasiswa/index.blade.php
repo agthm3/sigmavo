@@ -38,6 +38,27 @@
                     </div>
                 </div>
 
+                <!-- FLASH MESSAGES -->
+                @if(session('success'))
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+                </div>
+                @endif
+
+                @if(session('error'))
+                <div class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-red-600 text-lg"></i>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-900"><i class="fas fa-times"></i></button>
+                </div>
+                @endif
+
                 <!-- TABEL MAHASISWA -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     
@@ -292,10 +313,25 @@
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end shrink-0">
-                    <button type="button" @click="openDetailModal = false" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-100 font-bold text-xs transition-colors">
+                <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-between items-center shrink-0 gap-3">
+                    <button type="button" @click="openDetailModal = false" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-100 font-bold text-xs transition-colors shadow-sm">
                         Tutup
                     </button>
+
+                    <div class="flex items-center gap-2">
+                        <!-- TOMBOL SAKLAR LOGBOOK SUSULAN -->
+                        <form :action="'{{ url('/dashboard-dosen/mahasiswa-bimbingan') }}/' + activeMhs?.id + '/toggle-susulan'" method="POST" class="inline-block">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" 
+                                    class="px-4 py-2.5 border text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1.5"
+                                    :class="activeMhs?.allow_logbook_susulan ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'"
+                                    :title="activeMhs?.allow_logbook_susulan ? 'Tutup Akses Logbook Terlewat' : 'Buka Akses Logbook Terlewat (Susulan) untuk mahasiswa ini'">
+                                <i class="fas" :class="activeMhs?.allow_logbook_susulan ? 'fa-lock' : 'fa-unlock-alt'"></i>
+                                <span x-text="activeMhs?.allow_logbook_susulan ? 'Tutup Akses Susulan' : 'Buka Izin Logbook Terlewat'"></span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
             </div>

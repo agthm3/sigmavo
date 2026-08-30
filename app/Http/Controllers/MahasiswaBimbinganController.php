@@ -119,4 +119,19 @@ class MahasiswaBimbinganController extends Controller
             'siapAsistensi'
         ));
     }
+    public function toggleSusulan($id)
+    {
+        $user = Auth::user();
+        if (!$user->hasAnyRole(['dosen', 'admin_prodi', 'admin', 'superadmin'])) {
+            abort(403);
+        }
+
+        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran->allow_logbook_susulan = !$pendaftaran->allow_logbook_susulan;
+        $pendaftaran->save();
+
+        $status = $pendaftaran->allow_logbook_susulan ? 'diaktifkan' : 'dinonaktifkan (ditutup)';
+
+        return redirect()->back()->with('success', "Akses pengisian Logbook Terlewat untuk mahasiswa {$pendaftaran->user->name} berhasil {$status}.");
+    }
 }

@@ -164,6 +164,7 @@
             <!-- 3. Pelaksanaan Magang Group -->
             @php
                 $isPelaksanaanActive = request()->routeIs('dashboard-mahasiswa-pembekalan-magang', 'dashboard-mahasiswa-absensi', 'dashboard-mahasiswa-logbook', 'dashboard-mahasiswa-seminar');
+                $isPelaksanaanActive = request()->routeIs('dashboard-mahasiswa-pembekalan-magang', 'dashboard-mahasiswa-absensi', 'dashboard-mahasiswa-logbook', 'dashboard-mahasiswa-logbook-terlewat', 'dashboard-mahasiswa-seminar');
             @endphp
             <details class="group" {{ $isPelaksanaanActive ? 'open' : '' }}>
                 <summary class="flex items-center px-3 py-2 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-vokasi-primary font-medium transition-colors {{ $isPelaksanaanActive ? 'text-vokasi-primary font-bold bg-[#e6f4f5]' : '' }}">
@@ -188,6 +189,12 @@
                         <a href="{{ route('dashboard-mahasiswa-logbook') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-mahasiswa-logbook') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-gray-600 hover:text-vokasi-primary' }}">
                             Logbook
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard-mahasiswa-logbook-terlewat') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('dashboard-mahasiswa-logbook-terlewat') ? 'text-vokasi-primary font-bold bg-gray-100' : 'text-red-500 font-medium hover:text-vokasi-primary' }}">
+                            <i class="fas fa-history text-[10px] mr-1"></i> Logbook Susulan
                         </a>
                     </li>
                     <li>

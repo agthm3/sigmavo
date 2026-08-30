@@ -21,12 +21,14 @@ class Logbook extends Model
         'catatan_dosen',
         'verifikator_id',
         'waktu_verifikasi',
+        'is_susulan',
     ];
 
     protected $casts = [
         'tanggal'          => 'date',
         'mata_kuliah'      => 'array',
         'waktu_verifikasi' => 'datetime',
+        'is_susulan'       => 'boolean',
     ];
 
     public function user(): BelongsTo

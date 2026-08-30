@@ -67,6 +67,22 @@
                         </div>
                     </div>
                     
+                    <!-- PEMBERITAHUAN SUSULAN (JIKA DOSEN MEMBUKA AKSES) -->
+                    @if(isset($pendaftaran) && $pendaftaran->allow_logbook_susulan)
+                        <div class="bg-red-50 border border-red-200 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-red-800 text-xs shadow-sm">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-info-circle text-red-600 text-base mt-0.5 shrink-0"></i>
+                                <div>
+                                    <strong class="block mb-1 text-sm text-red-900">Akses Pengisian Logbook Susulan Terbuka!</strong>
+                                    <p>Dosen pembimbing Anda memberikan akses untuk mengisi logbook di tanggal-tanggal lampau yang terlewat.</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('dashboard-mahasiswa-logbook-terlewat') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-xl transition-colors shadow-sm whitespace-nowrap shrink-0 flex items-center gap-2">
+                                <i class="fas fa-history"></i> Buka Form Susulan
+                            </a>
+                        </div>
+                    @endif
+                    
                     <!-- NOTIFIKASI SUKSES / ERROR -->
                     @if(session('success'))
                     <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-sm shadow-sm">
@@ -287,10 +303,18 @@
                                     @forelse($logbooks as $index => $item)
                                     <tr class="hover:bg-gray-50 transition-colors {{ $item->status_asistensi == 'revisi' ? 'bg-red-50/20' : '' }}">
                                         <td class="p-4 text-center text-gray-500 font-medium">{{ $logbooks->firstItem() + $index }}</td>
+                                        
+                                        <!-- BADGE TANGGAL DAN PENANDA SUSULAN -->
                                         <td class="p-4 whitespace-nowrap">
                                             <p class="font-bold text-gray-800">{{ $item->tanggal->format('d M Y') }}</p>
                                             <p class="text-xs text-gray-500">{{ $item->tanggal->isoFormat('dddd') }}</p>
+                                            @if($item->is_susulan)
+                                                <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-700 border border-red-200 uppercase">
+                                                    Susulan
+                                                </span>
+                                            @endif
                                         </td>
+
                                         <td class="p-4 text-gray-700 leading-relaxed">
                                             <p class="mb-2 text-justify">{{ $item->uraian_kegiatan }}</p>
 

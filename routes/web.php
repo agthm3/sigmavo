@@ -14,6 +14,7 @@ use App\Http\Controllers\JenisRoleController;
 use App\Http\Controllers\LaporanAkhirMahasiswaController;
 use App\Http\Controllers\ListingProgramController;
 use App\Http\Controllers\LogbookController;
+use App\Http\Controllers\LogbookSusulanController; // <-- IMPORT BARU
 use App\Http\Controllers\MahasiswaBimbinganController;
 use App\Http\Controllers\PembekalanMagangController;
 use App\Http\Controllers\PengajuanMagangController;
@@ -98,10 +99,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/absensi', [AbsensiController::class, 'storeAbsensi'])->name('dashboard-mahasiswa-absensi-store');
             Route::post('/absensi/izin', [AbsensiController::class, 'storeIzin'])->name('dashboard-mahasiswa-absensi-izin-store');
 
+            // Logbook Reguler
             Route::post('/logbook', [LogbookController::class, 'store'])->name('dashboard-mahasiswa-logbook-store');
             Route::put('/logbook/{id}', [LogbookController::class, 'update'])->name('dashboard-mahasiswa-logbook-update');
             Route::delete('/logbook/{id}', [LogbookController::class, 'destroy'])->name('dashboard-mahasiswa-logbook-destroy');
-            Route::get('/logbook/export-word', [LogbookController::class, 'exportWord'])->name('dashboard-mahasiswa-logbook-export-word'); // Note: Perbaikan path agar konsisten
+            Route::get('/logbook/export-word', [LogbookController::class, 'exportWord'])->name('dashboard-mahasiswa-logbook-export-word'); 
+            
+            // --> LOGBOOK SUSULAN (TERLEWAT) KHUSUS MAHASISWA
+            Route::get('/logbook-terlewat', [LogbookSusulanController::class, 'index'])->name('dashboard-mahasiswa-logbook-terlewat');
+            Route::post('/logbook-terlewat', [LogbookSusulanController::class, 'store'])->name('dashboard-mahasiswa-logbook-terlewat-store');
 
             Route::post('/seminar-hasil', [SeminarController::class, 'storeOrUpdate'])->name('dashboard-mahasiswa-seminar-store');
             Route::delete('/seminar-hasil/ppt', [SeminarController::class, 'destroyPpt'])->name('dashboard-mahasiswa-seminar-destroy-ppt');
@@ -144,6 +150,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         Route::prefix('dashboard-dosen')->group(function () {
             Route::get('/mahasiswa-bimbingan', [MahasiswaBimbinganController::class, 'index'])->name('dashboard-dosen-mahasiswa-bimbingan');
+            // --> SAKLAR LOGBOOK SUSULAN (DOSEN/ADMIN PRODI)
+            Route::patch('/mahasiswa-bimbingan/{id}/toggle-susulan', [MahasiswaBimbinganController::class, 'toggleSusulan'])->name('dashboard-dosen-toggle-susulan');
+            
             Route::get('/daftar-mahasiswa', [DaftarMahasiswaController::class, 'index'])->name('dashboard-dosen-daftar-mahasiswa');
         });
 

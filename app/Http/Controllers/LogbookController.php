@@ -22,9 +22,9 @@ class LogbookController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // 1. Ambil pendaftaran magang aktif mahasiswa (status 'diterima')
+        // 1. Ambil pendaftaran magang aktif mahasiswa (status 'diterima' atau 'selesai')
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
+            ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
             ->first();
 
@@ -59,7 +59,7 @@ class LogbookController extends Controller
             ]);
         }
 
-        // 3. Cek Absensi Hari Ini untuk Proteksi Logbook
+        // 3. Cek Absensi Hari Ini untuk Proteksi Logbook Reguler
         $absenHariIni = Absensi::where('user_id', $user->id)
             ->whereDate('tanggal', Carbon::today()->toDateString())
             ->first();
@@ -69,14 +69,14 @@ class LogbookController extends Controller
 
         // Jika belum absen, hitung estimasi jam keterlambatan (asumsi masuk 08:00)
         if (!$hasAbsenHariIni) {
-            $jamMulai = 8; // Asumsi waktu standar masuk jam 8 pagi
+            $jamMulai = 8;
             $jamSekarang = (int) Carbon::now()->format('H');
             if ($jamSekarang > $jamMulai) {
                 $jamTerlambat = $jamSekarang - $jamMulai;
             }
         }
 
-        // 4. Query Logbook Mahasiswa (Jika Akses Normal)
+        // 4. Query Logbook Mahasiswa (Menampilkan semua logbook: reguler + susulan)
         $query = Logbook::where('user_id', $user->id);
 
         if ($request->filled('bulan') && $request->bulan !== 'semua') {
@@ -98,13 +98,11 @@ class LogbookController extends Controller
                 ->map(fn($item) => "{$item->kode_cpmk} - {$item->deskripsi_cpmk}")
                 ->toArray();
         } else {
-            // Fallback: Jika prodi_id belum diset, ambil seluruh CPMK
             $daftarCpmk = Cpmk::all()
                 ->map(fn($item) => "{$item->kode_cpmk} - {$item->deskripsi_cpmk}")
                 ->toArray();
         }
 
-        // Fallback sampel jika DB CPMK masih kosong
         if (empty($daftarCpmk)) {
             $daftarCpmk = [
                 'CPMK-01 - Mampu menerapkan analisis kriteria proyek industri',
@@ -127,7 +125,7 @@ class LogbookController extends Controller
     }
 
     /**
-     * Menyimpan entry logbook harian baru
+     * Menyimpan entry logbook harian reguler
      */
     public function store(Request $request)
     {
@@ -135,7 +133,7 @@ class LogbookController extends Controller
 
         // Proteksi Backend 1: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
+            ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
             ->first();
 
@@ -166,12 +164,11 @@ class LogbookController extends Controller
         }
 
         $request->validate([
-            'uraian_kegiatan'  => 'required|string',
+            'uraian_kegiatan'  => 'required|string|min:10',
             'mata_kuliah'      => 'nullable|array',
             'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
 
-        // Simpan Gambar
         $fotoPath = null;
         if ($request->hasFile('foto_dokumentasi')) {
             $fotoPath = $request->file('foto_dokumentasi')->store('logbook_dokumentasi', 'public');
@@ -185,21 +182,21 @@ class LogbookController extends Controller
             'mata_kuliah'      => $request->mata_kuliah ?? [],
             'foto_dokumentasi' => $fotoPath,
             'status_asistensi' => 'pending',
+            'is_susulan'       => false,
         ]);
 
         return redirect()->back()->with('success', 'Logbook harian berhasil disimpan beserta keterkaitan CPMK.');
     }
 
     /**
-     * Memperbarui entri logbook (Edit / Perbaikan Revisi)
+     * Memperbarui entri logbook
      */
     public function update(Request $request, $id)
     {
         $user = Auth::user();
 
-        // Proteksi Backend: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
+            ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
             ->first();
 
@@ -216,7 +213,7 @@ class LogbookController extends Controller
         }
 
         $request->validate([
-            'uraian_kegiatan'  => 'required|string',
+            'uraian_kegiatan'  => 'required|string|min:10',
             'mata_kuliah'      => 'nullable|array',
             'foto_dokumentasi' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
@@ -246,9 +243,8 @@ class LogbookController extends Controller
     {
         $user = Auth::user();
 
-        // Proteksi Backend: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
+            ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
             ->first();
 
@@ -282,7 +278,7 @@ class LogbookController extends Controller
         $user = Auth::user();
 
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
-            ->where('status_seleksi', 'diterima')
+            ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
             ->first();
 
@@ -294,6 +290,7 @@ class LogbookController extends Controller
             ob_end_clean();
         }
 
+        // Ambil semua logbook (termasuk yang susulan) berurutan dari tanggal paling awal
         $logbooks = Logbook::where('user_id', $user->id)
             ->orderBy('tanggal', 'asc')
             ->get();
@@ -306,12 +303,13 @@ class LogbookController extends Controller
             $logbook->foto_base64 = null;
 
             if (!empty($logbook->foto_dokumentasi)) {
-                if (Storage::disk('public')->exists($logbook->foto_dokumentasi)) {
-                    $fileData = Storage::disk('public')->get($logbook->foto_dokumentasi);
-                    $mimeType = Storage::disk('public')->mimeType($logbook->foto_dokumentasi);
+                $path = $logbook->foto_dokumentasi;
+                if (Storage::disk('public')->exists($path)) {
+                    $fileData = Storage::disk('public')->get($path);
+                    $mimeType = Storage::disk('public')->mimeType($path);
                     $logbook->foto_base64 = 'data:' . $mimeType . ';base64,' . base64_encode($fileData);
                 } else {
-                    $localPath = storage_path('app/public/' . ltrim($logbook->foto_dokumentasi, '/'));
+                    $localPath = storage_path('app/public/' . ltrim($path, '/'));
                     if (file_exists($localPath) && !is_dir($localPath)) {
                         $fileData = file_get_contents($localPath);
                         $mimeType = mime_content_type($localPath);

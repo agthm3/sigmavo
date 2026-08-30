@@ -28,11 +28,13 @@ class Pendaftaran extends Model
         'file_transkrip',
         'catatan_seleksi',
         'surat_balasan',
+        'allow_logbook_susulan',
     ];
 
     protected $casts = [
         'tgl_mulai_magang' => 'date',
         'tgl_selesai_magang' => 'date',
+        'allow_logbook_susulan' => 'boolean',
     ];
 
     /**
