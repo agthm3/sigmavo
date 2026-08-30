@@ -69,7 +69,6 @@
     </div>
     @endif
 
-    <!-- NOTIFIKASI KHUSUS JIKA ADA DATA EXCEL GANDA YANG DILEWATI -->
     @if(session('warning_import'))
     <div class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm shadow-sm flex items-start gap-3">
         <i class="fas fa-exclamation-triangle text-amber-600 text-lg mt-1 shrink-0"></i>
@@ -94,43 +93,133 @@
     </div>
     @endif
 
-    @if($errors->any())
-    <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs shadow-sm">
-        <p class="font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i> Terjadi Kesalahan:</p>
-        <ul class="list-disc list-inside space-y-1">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
     <!-- FILTER BAR -->
     <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-4 mb-6">
         <form action="{{ route('dashboard-manajemen-aktivasi-user') }}" method="GET" class="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                
+                <!-- Filter Prodi Searchable -->
                 @if(!$currentUser->hasRole('admin_prodi'))
-                <select name="prodi_id" onchange="this.form.submit()" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20">
-                    <option value="semua" {{ request('prodi_id') == 'semua' ? 'selected' : '' }}>Semua Program Studi</option>
-                    @foreach($prodis as $p)
-                        <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_prodi }}</option>
-                    @endforeach
-                </select>
+                <div x-data="{
+                        search: '',
+                        open: false,
+                        selected: '{{ request('prodi_id', 'semua') }}',
+                        options: [
+                            { id: 'semua', text: 'Semua Program Studi' },
+                            @foreach($prodis as $p) { id: '{{ $p->id }}', text: '{{ addslashes($p->nama_prodi) }}' }, @endforeach
+                        ],
+                        get filtered() {
+                            if (this.search === '') return this.options;
+                            return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                        },
+                        get selectedText() {
+                            let st = this.options.find(i => i.id == this.selected);
+                            return st ? st.text : 'Semua Program Studi';
+                        }
+                    }" class="relative w-full sm:w-56 z-30" @click.away="open = false">
+                    
+                    <input type="hidden" name="prodi_id" x-model="selected" x-ref="filterProdi">
+                    
+                    <div @click="open = !open" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20 cursor-pointer flex justify-between items-center transition-colors">
+                        <span x-text="selectedText" class="text-gray-700 truncate"></span>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs ml-2"></i>
+                    </div>
+
+                    <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                        <div class="p-2 border-b border-gray-100 shrink-0">
+                            <input type="text" x-model="search" placeholder="Cari prodi..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                        </div>
+                        <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                            <template x-for="opt in filtered" :key="opt.id">
+                                <li @click="selected = opt.id; open = false; $nextTick(() => $refs.filterProdi.form.submit())" 
+                                    class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors truncate" 
+                                    :class="selected == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                    x-text="opt.text"></li>
+                            </template>
+                            <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                        </ul>
+                    </div>
+                </div>
                 @endif
 
-                <select name="role" onchange="this.form.submit()" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20">
-                    <option value="semua" {{ request('role') == 'semua' ? 'selected' : '' }}>Semua Role</option>
-                    <option value="mahasiswa" {{ request('role') == 'mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
-                    <option value="dosen" {{ request('role') == 'dosen' ? 'selected' : '' }}>Dosen</option>
-                    <option value="spv" {{ request('role') == 'spv' ? 'selected' : '' }}>SPV Mitra Lapangan</option>
-                    <option value="admin_prodi" {{ request('role') == 'admin_prodi' ? 'selected' : '' }}>Admin Prodi</option>
-                </select>
+                <!-- Filter Role Searchable -->
+                <div x-data="{
+                        search: '',
+                        open: false,
+                        selected: '{{ request('role', 'semua') }}',
+                        options: [
+                            { id: 'semua', text: 'Semua Role' },
+                            { id: 'mahasiswa', text: 'Mahasiswa' },
+                            { id: 'dosen', text: 'Dosen' },
+                            { id: 'spv', text: 'SPV Mitra Lapangan' },
+                            { id: 'admin_prodi', text: 'Admin Prodi' }
+                        ],
+                        get filtered() {
+                            if (this.search === '') return this.options;
+                            return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                        },
+                        get selectedText() {
+                            let st = this.options.find(i => i.id == this.selected);
+                            return st ? st.text : 'Semua Role';
+                        }
+                    }" class="relative w-full sm:w-48 z-20" @click.away="open = false">
+                    <input type="hidden" name="role" x-model="selected" x-ref="filterRole">
+                    <div @click="open = !open" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20 cursor-pointer flex justify-between items-center transition-colors">
+                        <span x-text="selectedText" class="text-gray-700 truncate"></span>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs ml-2"></i>
+                    </div>
+                    <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                        <div class="p-2 border-b border-gray-100 shrink-0">
+                            <input type="text" x-model="search" placeholder="Cari role..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                        </div>
+                        <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                            <template x-for="opt in filtered" :key="opt.id">
+                                <li @click="selected = opt.id; open = false; $nextTick(() => $refs.filterRole.form.submit())" 
+                                    class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors truncate" 
+                                    :class="selected == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                    x-text="opt.text"></li>
+                            </template>
+                            <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                        </ul>
+                    </div>
+                </div>
 
-                <select name="status" onchange="this.form.submit()" class="w-full sm:w-auto px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20">
-                    <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
-                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Non-Aktif / Pending</option>
-                    <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-                </select>
+                <!-- Filter Status Searchable -->
+                <div x-data="{
+                        search: '',
+                        open: false,
+                        selected: '{{ request('status', 'semua') }}',
+                        options: [
+                            { id: 'semua', text: 'Semua Status' },
+                            { id: 'pending', text: 'Non-Aktif / Pending' },
+                            { id: 'aktif', text: 'Aktif' }
+                        ],
+                        get filtered() {
+                            if (this.search === '') return this.options;
+                            return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                        },
+                        get selectedText() {
+                            let st = this.options.find(i => i.id == this.selected);
+                            return st ? st.text : 'Semua Status';
+                        }
+                    }" class="relative w-full sm:w-44 z-10" @click.away="open = false">
+                    <input type="hidden" name="status" x-model="selected" x-ref="filterStatus">
+                    <div @click="open = !open" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20 cursor-pointer flex justify-between items-center transition-colors">
+                        <span x-text="selectedText" class="text-gray-700 truncate"></span>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs ml-2"></i>
+                    </div>
+                    <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                        <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                            <template x-for="opt in filtered" :key="opt.id">
+                                <li @click="selected = opt.id; open = false; $nextTick(() => $refs.filterStatus.form.submit())" 
+                                    class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors truncate" 
+                                    :class="selected == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                    x-text="opt.text"></li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
 
             <div class="relative w-full md:w-72">
@@ -324,7 +413,7 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL POPUP: EDIT PROFIL PENGGUNA (BARU) -->
+    <!-- MODAL POPUP: EDIT PROFIL PENGGUNA -->
     <!-- ========================================================================= -->
     <div x-show="openEditModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div @click.away="openEditModal = false" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
@@ -350,42 +439,144 @@
                     <input type="email" name="email" :value="editUser.email" required placeholder="Email Resmi" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none">
                 </div>
 
-                <div>
+                <!-- EDIT ROLE (Searchable) -->
+                <div class="relative z-40">
                     <label class="block font-bold text-gray-700 uppercase mb-1">Peran / Role <span class="text-red-500">*</span></label>
-                    <select name="role" x-model="editRole" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium">
-                        <option value="mahasiswa">Mahasiswa</option>
-                        <option value="dosen">Dosen Pembimbing</option>
-                        <option value="spv">SPV (Supervisor Mitra Lapangan)</option>
-                        @if(!$currentUser->hasRole('admin_prodi'))
-                            <option value="admin_prodi">Admin Prodi</option>
-                            <option value="admin">Admin</option>
-                        @endif
-                    </select>
+                    <div x-data="{
+                            search: '',
+                            open: false,
+                            options: [
+                                { id: 'mahasiswa', text: 'Mahasiswa' },
+                                { id: 'dosen', text: 'Dosen Pembimbing' },
+                                { id: 'spv', text: 'SPV (Supervisor Mitra Lapangan)' }
+                                @if(!$currentUser->hasRole('admin_prodi'))
+                                ,{ id: 'admin_prodi', text: 'Admin Prodi' }
+                                ,{ id: 'admin', text: 'Admin' }
+                                @endif
+                            ],
+                            get filtered() {
+                                if (this.search === '') return this.options;
+                                return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            get selectedText() {
+                                let st = this.options.find(i => i.id == editRole);
+                                return st ? st.text : '-- Pilih Role --';
+                            }
+                        }" class="relative" @click.away="open = false">
+                        
+                        <input type="hidden" name="role" x-model="editRole" required>
+                        
+                        <div @click="open = !open" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium flex justify-between items-center cursor-pointer">
+                            <span x-text="selectedText" :class="editRole ? 'text-gray-800' : 'text-gray-400'"></span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                        
+                        <div x-show="open" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                            <div class="p-2 border-b border-gray-100 shrink-0">
+                                <input type="text" x-model="search" placeholder="Cari role..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                            </div>
+                            <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                <template x-for="opt in filtered" :key="opt.id">
+                                    <li @click="editRole = opt.id; open = false; search = ''" 
+                                        class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors" 
+                                        :class="editRole == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                        x-text="opt.text"></li>
+                                </template>
+                                <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- PILIH PROGRAM STUDI -->
+                <!-- EDIT PROGRAM STUDI (Searchable) -->
                 @if(!$currentUser->hasRole('admin_prodi'))
-                <div>
+                <div class="relative z-30">
                     <label class="block font-bold text-gray-700 uppercase mb-1">Program Studi Terdaftar</label>
-                    <select name="prodi_id" :value="editUser.prodi_id" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium">
-                        <option value="">-- Pilih Program Studi --</option>
-                        @foreach($prodis as $p)
-                            <option value="{{ $p->id }}">{{ $p->nama_prodi }}</option>
-                        @endforeach
-                    </select>
+                    <div x-data="{
+                            search: '',
+                            open: false,
+                            options: [
+                                @foreach($prodis as $p) { id: '{{ $p->id }}', text: '{{ addslashes($p->nama_prodi) }}' }, @endforeach
+                            ],
+                            get filtered() {
+                                if (this.search === '') return this.options;
+                                return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            get selectedText() {
+                                let st = this.options.find(i => i.id == editUser.prodi_id);
+                                return st ? st.text : '-- Pilih Program Studi --';
+                            }
+                         }" 
+                         class="relative" @click.away="open = false">
+                         
+                        <input type="hidden" name="prodi_id" x-model="editUser.prodi_id">
+                        
+                        <div @click="open = !open" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium flex justify-between items-center cursor-pointer">
+                            <span x-text="selectedText" :class="editUser.prodi_id ? 'text-gray-800' : 'text-gray-400'"></span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                        
+                        <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                            <div class="p-2 border-b border-gray-100 shrink-0">
+                                <input type="text" x-model="search" placeholder="Cari program studi..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                            </div>
+                            <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                <template x-for="opt in filtered" :key="opt.id">
+                                    <li @click="editUser.prodi_id = opt.id; open = false; search = ''" 
+                                        class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors" 
+                                        :class="editUser.prodi_id == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                        x-text="opt.text"></li>
+                                </template>
+                                <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 @endif
 
-                <!-- KHUSUS SPV: PERUSAHAAN & JABATAN -->
-                <div x-show="editRole === 'spv'" class="space-y-3 pt-1 border-t border-gray-100">
+                <!-- KHUSUS SPV: EDIT PERUSAHAAN (Searchable) -->
+                <div x-show="editRole === 'spv'" class="space-y-3 pt-1 border-t border-gray-100 relative z-20">
                     <div>
                         <label class="block font-bold text-gray-700 uppercase mb-1">Perusahaan / Instansi Mitra</label>
-                        <select name="perusahaan_id" :value="editUser.perusahaan_id" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium">
-                            <option value="">-- Pilih Perusahaan Mitra --</option>
-                            @foreach($perusahaans as $pt)
-                                <option value="{{ $pt->id }}">{{ $pt->nama_perusahaan }}</option>
-                            @endforeach
-                        </select>
+                        <div x-data="{
+                                search: '',
+                                open: false,
+                                options: [
+                                    @foreach($perusahaans as $pt) { id: '{{ $pt->id }}', text: '{{ addslashes($pt->nama_perusahaan) }}' }, @endforeach
+                                ],
+                                get filtered() {
+                                    if (this.search === '') return this.options;
+                                    return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                                },
+                                get selectedText() {
+                                    let st = this.options.find(i => i.id == editUser.perusahaan_id);
+                                    return st ? st.text : '-- Pilih Perusahaan Mitra --';
+                                }
+                             }" 
+                             class="relative" @click.away="open = false">
+                             
+                            <input type="hidden" name="perusahaan_id" x-model="editUser.perusahaan_id">
+                            
+                            <div @click="open = !open" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium flex justify-between items-center cursor-pointer">
+                                <span x-text="selectedText" :class="editUser.perusahaan_id ? 'text-gray-800' : 'text-gray-400'"></span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </div>
+                            
+                            <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                                <div class="p-2 border-b border-gray-100 shrink-0">
+                                    <input type="text" x-model="search" placeholder="Cari perusahaan mitra..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                                </div>
+                                <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                    <template x-for="opt in filtered" :key="opt.id">
+                                        <li @click="editUser.perusahaan_id = opt.id; open = false; search = ''" 
+                                            class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors" 
+                                            :class="editUser.perusahaan_id == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                            x-text="opt.text"></li>
+                                    </template>
+                                    <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -430,16 +621,18 @@
         </div>
     </div>
 
+    <!-- ========================================================================= -->
     <!-- MODAL POPUP 1: FORM TAMBAH USER MANUAL -->
+    <!-- ========================================================================= -->
     <div x-show="openModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div @click.away="openModal = false" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <div @click.away="openModal = false" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
             
-            <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
                 <h3 class="text-base font-bold text-gray-800"><i class="fas fa-user-plus text-vokasi-primary mr-2"></i> Tambah User Baru</h3>
                 <button type="button" @click="openModal = false" class="text-gray-400 hover:text-gray-600 text-lg"><i class="fas fa-times"></i></button>
             </div>
 
-            <form action="{{ route('dashboard-manajemen-aktivasi-store') }}" method="POST" class="p-6 space-y-4 text-xs">
+            <form action="{{ route('dashboard-manajemen-aktivasi-store') }}" method="POST" class="p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
                 @csrf
 
                 @if($currentUser->hasRole('admin_prodi'))
@@ -476,38 +669,144 @@
                     </div>
                 </div>
 
-                <div>
+                <!-- TAMBAH ROLE (Searchable) -->
+                <div class="relative z-40">
                     <label class="block font-bold text-gray-700 uppercase mb-1">Peran / Role <span class="text-red-500">*</span></label>
-                    <select name="role" x-model="selectedRole" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium">
-                        <option value="mahasiswa">Mahasiswa</option>
-                        <option value="dosen">Dosen Pembimbing</option>
-                        <option value="spv">SPV (Supervisor Mitra Lapangan)</option>
-                        @if(!$currentUser->hasRole('admin_prodi'))
-                            <option value="admin_prodi">Admin Prodi</option>
-                        @endif
-                    </select>
+                    <div x-data="{
+                            search: '',
+                            open: false,
+                            options: [
+                                { id: 'mahasiswa', text: 'Mahasiswa' },
+                                { id: 'dosen', text: 'Dosen Pembimbing' },
+                                { id: 'spv', text: 'SPV (Supervisor Mitra Lapangan)' }
+                                @if(!$currentUser->hasRole('admin_prodi'))
+                                ,{ id: 'admin_prodi', text: 'Admin Prodi' }
+                                @endif
+                            ],
+                            get filtered() {
+                                if (this.search === '') return this.options;
+                                return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            get selectedText() {
+                                let st = this.options.find(i => i.id == selectedRole);
+                                return st ? st.text : '-- Pilih Role --';
+                            }
+                        }" class="relative" @click.away="open = false">
+                        
+                        <input type="hidden" name="role" x-model="selectedRole" required>
+                        
+                        <div @click="open = !open" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium flex justify-between items-center cursor-pointer">
+                            <span x-text="selectedText" class="text-gray-800"></span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                        
+                        <div x-show="open" x-cloak class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                            <div class="p-2 border-b border-gray-100 shrink-0">
+                                <input type="text" x-model="search" placeholder="Cari role..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                            </div>
+                            <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                <template x-for="opt in filtered" :key="opt.id">
+                                    <li @click="selectedRole = opt.id; open = false; search = ''" 
+                                        class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors" 
+                                        :class="selectedRole == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                        x-text="opt.text"></li>
+                                </template>
+                                <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- TAMBAH PROGRAM STUDI (Searchable) -->
                 @if(!$currentUser->hasRole('admin_prodi'))
-                <div>
+                <div class="relative z-30">
                     <label class="block font-bold text-gray-700 uppercase mb-1">Program Studi <span class="text-red-500">*</span></label>
-                    <select name="prodi_id" required class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium">
-                        <option value="" disabled selected>-- Pilih Program Studi --</option>
-                        @foreach($prodis as $p)
-                            <option value="{{ $p->id }}">{{ $p->nama_prodi }}</option>
-                        @endforeach
-                    </select>
+                    <div x-data="{
+                            formProdiId: '',
+                            search: '',
+                            open: false,
+                            options: [
+                                @foreach($prodis as $p) { id: '{{ $p->id }}', text: '{{ addslashes($p->nama_prodi) }}' }, @endforeach
+                            ],
+                            get filtered() {
+                                if (this.search === '') return this.options;
+                                return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            get selectedText() {
+                                let st = this.options.find(i => i.id == this.formProdiId);
+                                return st ? st.text : '-- Pilih Program Studi --';
+                            }
+                         }" 
+                         class="relative" @click.away="open = false">
+                         
+                        <input type="hidden" name="prodi_id" x-model="formProdiId">
+                        
+                        <div @click="open = !open" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium flex justify-between items-center cursor-pointer">
+                            <span x-text="selectedText" :class="formProdiId ? 'text-gray-800' : 'text-gray-400'"></span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                        
+                        <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                            <div class="p-2 border-b border-gray-100 shrink-0">
+                                <input type="text" x-model="search" placeholder="Cari program studi..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                            </div>
+                            <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                <template x-for="opt in filtered" :key="opt.id">
+                                    <li @click="formProdiId = opt.id; open = false; search = ''" 
+                                        class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors" 
+                                        :class="formProdiId == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                        x-text="opt.text"></li>
+                                </template>
+                                <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 @endif
 
-                <div x-show="selectedRole === 'spv'" class="pt-1 border-t border-gray-100">
+                <!-- KHUSUS SPV: TAMBAH PERUSAHAAN (Searchable) -->
+                <div x-show="selectedRole === 'spv'" class="pt-1 border-t border-gray-100 relative z-20">
                     <label class="block font-bold text-gray-700 uppercase mb-1">Perusahaan / Mitra Penempatan <span class="text-red-500">*</span></label>
-                    <select name="perusahaan_id" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium">
-                        <option value="" disabled selected>-- Pilih Perusahaan Mitra --</option>
-                        @foreach($perusahaans as $pt)
-                            <option value="{{ $pt->id }}">{{ $pt->nama_perusahaan }}</option>
-                        @endforeach
-                    </select>
+                    <div x-data="{
+                            formPerusahaanId: '',
+                            search: '',
+                            open: false,
+                            options: [
+                                @foreach($perusahaans as $pt) { id: '{{ $pt->id }}', text: '{{ addslashes($pt->nama_perusahaan) }}' }, @endforeach
+                            ],
+                            get filtered() {
+                                if (this.search === '') return this.options;
+                                return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase()));
+                            },
+                            get selectedText() {
+                                let st = this.options.find(i => i.id == this.formPerusahaanId);
+                                return st ? st.text : '-- Pilih Perusahaan Mitra --';
+                            }
+                         }" 
+                         class="relative" @click.away="open = false">
+                         
+                        <input type="hidden" name="perusahaan_id" x-model="formPerusahaanId">
+                        
+                        <div @click="open = !open" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none font-medium flex justify-between items-center cursor-pointer">
+                            <span x-text="selectedText" :class="formPerusahaanId ? 'text-gray-800' : 'text-gray-400'"></span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                        
+                        <div x-show="open" x-cloak class="absolute w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg flex flex-col overflow-hidden">
+                            <div class="p-2 border-b border-gray-100 shrink-0">
+                                <input type="text" x-model="search" placeholder="Cari perusahaan mitra..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-vokasi-primary" @click.stop>
+                            </div>
+                            <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                <template x-for="opt in filtered" :key="opt.id">
+                                    <li @click="formPerusahaanId = opt.id; open = false; search = ''" 
+                                        class="px-3 py-2 text-xs hover:bg-teal-50 hover:text-vokasi-primary cursor-pointer rounded-lg transition-colors" 
+                                        :class="formPerusahaanId == opt.id ? 'bg-teal-50 text-vokasi-primary font-bold' : 'text-gray-700'" 
+                                        x-text="opt.text"></li>
+                                </template>
+                                <li x-show="filtered.length === 0" class="px-3 py-2 text-xs text-gray-400 text-center">Data tidak ditemukan.</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
                 <div x-show="selectedRole === 'mahasiswa'" class="grid grid-cols-2 gap-3 pt-1 border-t border-gray-100">
@@ -531,7 +830,7 @@
                     <input type="text" name="no_hp" placeholder="081234567890" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-vokasi-primary outline-none">
                 </div>
 
-                <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
+                <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 shrink-0">
                     <button type="button" @click="openModal = false" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs rounded-xl transition">Batal</button>
                     <button type="submit" class="px-5 py-2 bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold text-xs rounded-xl shadow-sm transition">Simpan & Aktifkan</button>
                 </div>
