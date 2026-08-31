@@ -273,13 +273,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::get('/fix-mandiri-data', function () {
     return \Illuminate\Support\Facades\DB::transaction(function () {
+        // 1. Ambil salah satu nilai status yang sah dan pasti ada dari tabel lowongans
+        $sampleLowongan = \App\Models\Lowongan::latest()->first();
+        $validStatus = $sampleLowongan ? $sampleLowongan->status : 'buka';
+
         $pendaftarans = \App\Models\Pendaftaran::where('jalur_magang', 'mandiri')
             ->whereNull('lowongan_id')
             ->get();
 
         $fixedCount = 0;
         foreach ($pendaftarans as $p) {
-            // 1. Lengkapi semua kolom wajib tabel perusahaans
+            // 2. Buat / ambil master perusahaan
             $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $p->nama_instansi_mandiri ?? 'Instansi Mandiri'],
                 [
@@ -290,7 +294,7 @@ Route::get('/fix-mandiri-data', function () {
                 ]
             );
 
-            // 2. Lengkapi semua kolom wajib tabel lowongans
+            // 3. Buat lowongan mandiri menggunakan status valid dari database
             $lowongan = \App\Models\Lowongan::firstOrCreate(
                 [
                     'perusahaan_id' => $perusahaan->id,
@@ -301,18 +305,18 @@ Route::get('/fix-mandiri-data', function () {
                     'kualifikasi'       => 'Khusus Pengajuan Mandiri',
                     'tipe_magang'       => 'mandiri',
                     'kuota'             => 1,
-                    'status'            => 'ditutup',
+                    'status'            => $validStatus, // Menggunakan nilai ENUM asli dari DB
                     'batas_pendaftaran' => $p->tgl_selesai_magang ?? now()->addMonths(6)->toDateString(),
                 ]
             );
 
-            // 3. Sambungkan relasi
+            // 4. Hubungkan ke pendaftaran
             $p->lowongan_id = $lowongan->id;
             $p->save();
             $fixedCount++;
         }
 
-        return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri.";
+        return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri menggunakan status valid ({$validStatus}).";
     });
 });
 });
