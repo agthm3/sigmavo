@@ -279,17 +279,18 @@ Route::get('/fix-mandiri-data', function () {
 
         $fixedCount = 0;
         foreach ($pendaftarans as $p) {
-            // 1. Dapatkan atau buat data instansi
+            // 1. Lengkapi semua kolom wajib tabel perusahaans
             $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $p->nama_instansi_mandiri ?? 'Instansi Mandiri'],
                 [
                     'sektor_industri' => 'Lainnya',
                     'alamat'          => '-',
+                    'email_hrd'       => 'spv.' . \Illuminate\Support\Str::slug($p->nama_instansi_mandiri ?? 'mandiri') . '@vokasi.unhas.ac.id',
+                    'telepon'         => '-',
                 ]
             );
 
-            // 2. Buat lowongan dengan status yang sesuai ENUM tabel lowongans
-            // Catatan: ENUM lowongans di database adalah 'ditutup' (bukan 'tutup') atau 'buka'
+            // 2. Lengkapi semua kolom wajib tabel lowongans
             $lowongan = \App\Models\Lowongan::firstOrCreate(
                 [
                     'perusahaan_id' => $perusahaan->id,
@@ -300,12 +301,12 @@ Route::get('/fix-mandiri-data', function () {
                     'kualifikasi'       => 'Khusus Pengajuan Mandiri',
                     'tipe_magang'       => 'mandiri',
                     'kuota'             => 1,
-                    'status'            => 'ditutup', // Gunakan 'ditutup' sesuai ENUM standar MySQL
+                    'status'            => 'ditutup',
                     'batas_pendaftaran' => $p->tgl_selesai_magang ?? now()->addMonths(6)->toDateString(),
                 ]
             );
 
-            // 3. Hubungkan relasi
+            // 3. Sambungkan relasi
             $p->lowongan_id = $lowongan->id;
             $p->save();
             $fixedCount++;
