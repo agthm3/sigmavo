@@ -269,6 +269,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/monitoring-role', [App\Http\Controllers\MonitoringController::class, 'index'])->name('dashboard-manajemen-monitoring');
     });
+
+
+
     Route::get('/fix-mandiri-data', function () {
     $pendaftarans = \App\Models\Pendaftaran::where('jalur_magang', 'mandiri')
         ->whereNull('lowongan_id')
@@ -284,9 +287,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'judul_posisi'  => $p->divisi_mandiri ?? 'Posisi Mandiri'
                 ],
                 [
-                    'deskripsi' => 'Lowongan Mandiri (Auto Fix by System)',
-                    'kuota'     => 1,
-                    'status'    => 'tutup'
+                    'deskripsi'         => 'Lowongan Mandiri (Auto Fix by System)',
+                    'kualifikasi'       => 'Khusus Pengajuan Mandiri',
+                    'tipe_magang'       => 'mandiri',
+                    'kuota'             => 1,
+                    'status'            => 'tutup',
+                    'batas_pendaftaran' => $p->tgl_selesai_magang ?? now()->addMonths(6)->toDateString(),
                 ]
             );
             $p->lowongan_id = $lowongan->id;
@@ -295,6 +301,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
     }
 
-    return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri.";
+    return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri tanpa error constraint.";
 });
 });
