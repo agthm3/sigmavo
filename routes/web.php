@@ -266,6 +266,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/pengaturan/prodi', [PengaturanGlobalController::class, 'storeProdi'])->name('dashboard-manajemen-pengaturan-prodi-store');
         Route::put('/pengaturan/prodi/{id}', [PengaturanGlobalController::class, 'updateProdi'])->name('dashboard-manajemen-pengaturan-prodi-update');
         Route::delete('/pengaturan/prodi/{id}', [PengaturanGlobalController::class, 'destroyProdi'])->name('dashboard-manajemen-pengaturan-prodi-destroy');
+
+        Route::get('/monitoring-role', [App\Http\Controllers\MonitoringController::class, 'index'])->name('dashboard-manajemen-monitoring');
     });
 
 });

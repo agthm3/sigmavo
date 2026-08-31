@@ -423,6 +423,20 @@
                         </a>
                     </div>
                     @endif
+                    @if($authUser->hasAnyRole(['admin', 'superadmin']))
+                    <div class="space-y-1">
+                        <a href="{{ route('dashboard-manajemen-error-handling') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 {{ request()->routeIs('dashboard-manajemen-error-handling*') ? 'bg-vokasi-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-bug text-sm w-5 text-center"></i>
+                            <span>Error Handling</span>
+                        </a>
+                        <a href="{{ route('dashboard-manajemen-monitoring') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 {{ request()->routeIs('dashboard-manajemen-monitoring*') ? 'bg-vokasi-primary text-white shadow-md' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-desktop text-sm w-5 text-center"></i>
+                            <span>Monitoring Role</span>
+                        </a>
+                    </div>
+                    @endif
                 </ul>
             </details>
 

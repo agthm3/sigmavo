@@ -12,11 +12,18 @@ class PerluVerifikasiController extends Controller
 {
     public function index(Request $request)
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+        $currentUser = Auth::user();
+        $targetUser = $currentUser;
+        $isMonitoring = false;
 
-        // 1. Keamanan Hak Akses (Dosen, SPV, Admin, Admin Prodi, Superadmin)
-        if (!$user->hasAnyRole(['dosen', 'spv', 'admin', 'superadmin', 'admin_prodi'])) {
+        // 1. LOGIKA IMPERSONATE UNTUK ADMIN/SUPERADMIN
+        if ($currentUser->hasAnyRole(['admin', 'superadmin']) && $request->filled('impersonate_user_id')) {
+            $targetUser = User::findOrFail($request->impersonate_user_id);
+            $isMonitoring = true; // Flag penanda bahwa ini sedang dipantau
+        }
+
+        // Keamanan Hak Akses (Dosen, SPV, Admin, Admin Prodi, Superadmin)
+        if (!$targetUser->hasAnyRole(['dosen', 'spv', 'admin', 'superadmin', 'admin_prodi'])) {
             return redirect()->route('dashboard-analitik')->with('error', 'Anda tidak memiliki hak akses ke halaman ini.');
         }
 
@@ -28,11 +35,11 @@ class PerluVerifikasiController extends Controller
             'pendaftaran.lowongan.perusahaan'
         ]);
 
-        if ($user->hasRole('spv')) {
+        if ($targetUser->hasRole('spv')) {
             // SPV LAPANGAN: Filter logbook PENDING (Mendukung Jalur Reguler & Mandiri)
-            $spvProdiId = $user->spvProfile?->prodi_id;
-            $spvPerusahaanId = $user->spvProfile?->perusahaan_id;
-            $namaPerusahaanSpv = $user->spvProfile?->perusahaan?->nama_perusahaan;
+            $spvProdiId = $targetUser->spvProfile?->prodi_id;
+            $spvPerusahaanId = $targetUser->spvProfile?->perusahaan_id;
+            $namaPerusahaanSpv = $targetUser->spvProfile?->perusahaan?->nama_perusahaan;
 
             $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv'])
                 ->whereHas('user.mahasiswaProfile', function($m) use ($spvProdiId) {
@@ -51,14 +58,14 @@ class PerluVerifikasiController extends Controller
                     });
                 });
 
-        } elseif ($user->hasRole('dosen')) {
+        } elseif ($targetUser->hasRole('dosen')) {
             // DOSEN PEMBIMBING: Hanya tampilkan logbook bimbingan yang SUDAH DI-APPROVE SPV ('approved_spv')
             $queryLogbooks->where('status_asistensi', 'approved_spv')
-                ->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $user->id));
+                ->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $targetUser->id));
 
-        } elseif ($user->hasRole('admin_prodi')) {
+        } elseif ($targetUser->hasRole('admin_prodi')) {
             // ADMIN PRODI: Tampilkan logbook di lingkup program studinya
-            $adminProdiId = $user->adminProdiProfile?->prodi_id;
+            $adminProdiId = $targetUser->adminProdiProfile?->prodi_id;
             $queryLogbooks->whereIn('status_asistensi', ['pending', 'pending_spv', 'approved_spv'])
                 ->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
                     if ($adminProdiId) {
@@ -83,10 +90,10 @@ class PerluVerifikasiController extends Controller
         ->where('status_verifikasi', 'pending')
         ->whereIn('tipe_kehadiran', ['izin', 'sakit']); // <-- Presensi hadir rutin tidak akan masuk antrean ini
 
-        if ($user->hasRole('spv')) {
-            $spvProdiId = $user->spvProfile?->prodi_id;
-            $spvPerusahaanId = $user->spvProfile?->perusahaan_id;
-            $namaPerusahaanSpv = $user->spvProfile?->perusahaan?->nama_perusahaan;
+        if ($targetUser->hasRole('spv')) {
+            $spvProdiId = $targetUser->spvProfile?->prodi_id;
+            $spvPerusahaanId = $targetUser->spvProfile?->perusahaan_id;
+            $namaPerusahaanSpv = $targetUser->spvProfile?->perusahaan?->nama_perusahaan;
 
             $queryAbsensis->whereHas('user.mahasiswaProfile', function($m) use ($spvProdiId) {
                 if ($spvProdiId) {
@@ -104,13 +111,13 @@ class PerluVerifikasiController extends Controller
                 });
             });
 
-        } elseif ($user->hasRole('dosen')) {
+        } elseif ($targetUser->hasRole('dosen')) {
             // Dosen Pembimbing hanya menerima pengajuan izin/sakit mahasiswa bimbingannya
-            $queryAbsensis->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $user->id));
+            $queryAbsensis->whereHas('pendaftaran', fn($q) => $q->where('dosen_id', $targetUser->id));
 
-        } elseif ($user->hasRole('admin_prodi')) {
+        } elseif ($targetUser->hasRole('admin_prodi')) {
             // Admin Prodi menerima pengajuan izin/sakit mahasiswa di program studinya
-            $adminProdiId = $user->adminProdiProfile?->prodi_id;
+            $adminProdiId = $targetUser->adminProdiProfile?->prodi_id;
             $queryAbsensis->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
                 if ($adminProdiId) {
                     $m->where('prodi_id', $adminProdiId);
@@ -120,7 +127,13 @@ class PerluVerifikasiController extends Controller
 
         $pendingAbsensis = $queryAbsensis->latest()->get();
 
-        return view('dashboard.perlu-verifikasi.index', compact('pendingLogbooks', 'pendingAbsensis', 'user'));
+        // 4. PEMISAHAN VIEW: Jika sedang monitoring, alihkan ke blade Read-Only
+        if ($isMonitoring) {
+            return view('dashboard.monitoring.perlu-verifikasi', compact('pendingLogbooks', 'pendingAbsensis', 'targetUser'));
+        }
+
+        // View Default (Jika dosen/spv login normal)
+        return view('dashboard.perlu-verifikasi.index', compact('pendingLogbooks', 'pendingAbsensis', 'currentUser'));
     }
 
     /**
