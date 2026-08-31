@@ -269,5 +269,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/monitoring-role', [App\Http\Controllers\MonitoringController::class, 'index'])->name('dashboard-manajemen-monitoring');
     });
+    Route::get('/fix-mandiri-data', function () {
+    $pendaftarans = \App\Models\Pendaftaran::where('jalur_magang', 'mandiri')
+        ->whereNull('lowongan_id')
+        ->get();
 
+    $fixedCount = 0;
+    foreach ($pendaftarans as $p) {
+        $perusahaan = \App\Models\Perusahaan::where('nama_perusahaan', $p->nama_instansi_mandiri)->first();
+        if ($perusahaan) {
+            $lowongan = \App\Models\Lowongan::firstOrCreate(
+                [
+                    'perusahaan_id' => $perusahaan->id,
+                    'judul_posisi'  => $p->divisi_mandiri ?? 'Posisi Mandiri'
+                ],
+                [
+                    'deskripsi' => 'Lowongan Mandiri (Auto Fix by System)',
+                    'kuota'     => 1,
+                    'status'    => 'tutup'
+                ]
+            );
+            $p->lowongan_id = $lowongan->id;
+            $p->save();
+            $fixedCount++;
+        }
+    }
+
+    return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri.";
+});
 });

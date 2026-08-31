@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pendaftaran;
 use App\Models\Perusahaan;
+use App\Models\Lowongan; // <-- Wajib diimport
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ class AjukanMandiriController extends Controller
             ->whereIn('status_seleksi', ['menunggu', 'wawancara', 'diterima'])
             ->first();
 
-        // Cek batas maksimal pengajuan dari setting global (default 3)
+        // Cek batas maksimal pengajuan dari setting global
         $maxPengajuan = (int) Setting::getByKey('max_pengajuan', 3);
         $totalPengajuan = Pendaftaran::where('user_id', $user->id)->count();
 
@@ -44,7 +45,7 @@ class AjukanMandiriController extends Controller
                 ], 422);
             }
 
-            // 2. Proteksi Pengajuan Aktif yang Sedang Diproses
+            // 2. Proteksi Pengajuan Aktif
             $pendaftaranAktif = Pendaftaran::where('user_id', $user->id)
                 ->whereIn('status_seleksi', ['menunggu', 'wawancara', 'diterima'])
                 ->first();
@@ -72,44 +73,53 @@ class AjukanMandiriController extends Controller
                 'surat_balasan'        => 'required|file|mimes:pdf,jpg,jpeg,png,webp|max:10240',
             ]);
 
-            // 4. Simpan File Surat Balasan
             $suratPath = null;
             if ($request->hasFile('surat_balasan')) {
                 $suratPath = $request->file('surat_balasan')->store('surat_balasan', 'public');
             }
 
-            // 5. Simpan / Dapatkan Data Perusahaan Mitra
+            // 4. Simpan / Dapatkan Data Perusahaan Mitra
             $perusahaanData = [
                 'sektor_industri' => $request->sektor_industri,
                 'website'         => $request->website_instansi,
                 'alamat'          => $request->alamat_instansi,
             ];
 
-            if (Schema::hasColumn('perusahaans', 'email_hrd')) {
-                $perusahaanData['email_hrd'] = $request->email_supervisor;
-            }
-            if (Schema::hasColumn('perusahaans', 'email')) {
-                $perusahaanData['email'] = $request->email_supervisor;
-            }
-            if (Schema::hasColumn('perusahaans', 'telepon')) {
-                $perusahaanData['telepon'] = $request->no_hp_supervisor;
-            } elseif (Schema::hasColumn('perusahaans', 'no_hp')) {
-                $perusahaanData['no_hp'] = $request->no_hp_supervisor;
-            }
+            if (Schema::hasColumn('perusahaans', 'email_hrd')) $perusahaanData['email_hrd'] = $request->email_supervisor;
+            if (Schema::hasColumn('perusahaans', 'email')) $perusahaanData['email'] = $request->email_supervisor;
+            if (Schema::hasColumn('perusahaans', 'telepon')) $perusahaanData['telepon'] = $request->no_hp_supervisor;
+            elseif (Schema::hasColumn('perusahaans', 'no_hp')) $perusahaanData['no_hp'] = $request->no_hp_supervisor;
 
-            Perusahaan::firstOrCreate(
+            $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $request->nama_instansi],
                 $perusahaanData
             );
 
-            // 6. Simpan Pendaftaran Mandiri ke Tabel pendaftarans (Sesuai DDL MySQL)
+            // =========================================================================
+            // 5. SOLUSI BUG: AUTO-CREATE LOWONGAN BAYANGAN (HIDDEN)
+            // =========================================================================
+            // Ini akan mengikat Pendaftaran dengan ID Relasional yang kokoh, 
+            // sehingga SPV dijamin 100% bisa melihat logbook anak mandiri.
+            $lowonganMandiri = Lowongan::firstOrCreate(
+                [
+                    'perusahaan_id' => $perusahaan->id,
+                    'judul_posisi'  => $request->posisi,
+                ],
+                [
+                    'deskripsi'     => 'Lowongan Otomatis - Jalur Magang Mandiri',
+                    'kuota'         => 1,
+                    'status'        => 'tutup', // 'tutup' agar tidak bocor muncul di daftar mahasiswa lain
+                ]
+            );
+
+            // 6. Simpan Pendaftaran Mandiri
             Pendaftaran::create([
                 'user_id'               => $user->id,
-                'lowongan_id'           => null, // Nullable di DB
-                'jalur_magang'          => 'mandiri', // ENUM: reguler, mandiri
+                'lowongan_id'           => $lowonganMandiri->id, // <-- KUNCI PERBAIKANNYA DI SINI
+                'jalur_magang'          => 'mandiri',
                 'nama_instansi_mandiri' => $request->nama_instansi,
                 'divisi_mandiri'        => $request->posisi,
-                'status_seleksi'        => 'menunggu', // ENUM: menunggu, diterima, ditolak, wawancara
+                'status_seleksi'        => 'menunggu',
                 'tgl_mulai_magang'      => $request->tanggal_mulai,
                 'tgl_selesai_magang'    => $request->tanggal_selesai,
                 'status_surat'          => 'menunggu',
