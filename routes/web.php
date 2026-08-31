@@ -271,16 +271,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
+Route::get('/fix-mandiri-data', function () {
+    return \Illuminate\Support\Facades\DB::transaction(function () {
+        $pendaftarans = \App\Models\Pendaftaran::where('jalur_magang', 'mandiri')
+            ->whereNull('lowongan_id')
+            ->get();
 
-    Route::get('/fix-mandiri-data', function () {
-    $pendaftarans = \App\Models\Pendaftaran::where('jalur_magang', 'mandiri')
-        ->whereNull('lowongan_id')
-        ->get();
+        $fixedCount = 0;
+        foreach ($pendaftarans as $p) {
+            // 1. Dapatkan atau buat data instansi
+            $perusahaan = \App\Models\Perusahaan::firstOrCreate(
+                ['nama_perusahaan' => $p->nama_instansi_mandiri ?? 'Instansi Mandiri'],
+                [
+                    'sektor_industri' => 'Lainnya',
+                    'alamat'          => '-',
+                ]
+            );
 
-    $fixedCount = 0;
-    foreach ($pendaftarans as $p) {
-        $perusahaan = \App\Models\Perusahaan::where('nama_perusahaan', $p->nama_instansi_mandiri)->first();
-        if ($perusahaan) {
+            // 2. Buat lowongan dengan status yang sesuai ENUM tabel lowongans
+            // Catatan: ENUM lowongans di database adalah 'ditutup' (bukan 'tutup') atau 'buka'
             $lowongan = \App\Models\Lowongan::firstOrCreate(
                 [
                     'perusahaan_id' => $perusahaan->id,
@@ -291,16 +300,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'kualifikasi'       => 'Khusus Pengajuan Mandiri',
                     'tipe_magang'       => 'mandiri',
                     'kuota'             => 1,
-                    'status'            => 'tutup',
+                    'status'            => 'ditutup', // Gunakan 'ditutup' sesuai ENUM standar MySQL
                     'batas_pendaftaran' => $p->tgl_selesai_magang ?? now()->addMonths(6)->toDateString(),
                 ]
             );
+
+            // 3. Hubungkan relasi
             $p->lowongan_id = $lowongan->id;
             $p->save();
             $fixedCount++;
         }
-    }
 
-    return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri tanpa error constraint.";
+        return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri.";
+    });
 });
 });
