@@ -192,6 +192,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/daftar-perusahaan', [DaftarPerusahaanController::class, 'store'])->name('dashboard-daftar-lowongan-daftar-perusahaan-store');
             Route::put('/daftar-perusahaan/{id}', [DaftarPerusahaanController::class, 'update'])->name('dashboard-daftar-lowongan-daftar-perusahaan-update');
             Route::delete('/daftar-perusahaan/{id}', [DaftarPerusahaanController::class, 'destroy'])->name('dashboard-daftar-lowongan-daftar-perusahaan-destroy');
+
+            Route::post('/daftar-perusahaan/merge-preview', [App\Http\Controllers\DaftarPerusahaanController::class, 'previewMerge'])->name('dashboard-daftar-lowongan-daftar-perusahaan-preview');
+            Route::post('/daftar-perusahaan/merge', [App\Http\Controllers\DaftarPerusahaanController::class, 'merge'])->name('dashboard-daftar-lowongan-daftar-perusahaan-merge');
             
             // Program
             Route::get('/listing-program', [ListingProgramController::class, 'index'])->name('dashboard-daftar-lowongan-listing-program');
