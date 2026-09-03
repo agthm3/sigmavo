@@ -1,8 +1,9 @@
 @extends('layouts.dashboard')
 
 @section('content')
+    <!-- Tambahkan 'formStatus' di x-data untuk mendeteksi perubahan dropdown secara realtime -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50" 
-         x-data="{ openModal: false, activeData: null, activeUrl: '' }">
+         x-data="{ openModal: false, activeData: null, activeUrl: '', formStatus: '' }">
 
         <!-- CONTENT -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
@@ -17,14 +18,14 @@
                     </div>
                 </div>
 
-                <!-- NOTIFIKASI SUKSES / ERROR -->
+                <!-- NOTIFIKASI SUKSES / ERROR (Pesan Sukses Bisa Menampilkan Password Default) -->
                 @if(session('success'))
-                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between text-sm shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
-                        <span>{{ session('success') }}</span>
+                <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-start gap-3 text-sm shadow-sm">
+                    <i class="fas fa-check-circle text-emerald-600 text-lg mt-0.5"></i>
+                    <div class="leading-relaxed">
+                        {{ session('success') }}
                     </div>
-                    <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900"><i class="fas fa-times"></i></button>
+                    <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-900 ml-auto"><i class="fas fa-times"></i></button>
                 </div>
                 @endif
 
@@ -170,7 +171,8 @@
                                         @endif
                                     </td>
                                     <td class="p-4 text-center">
-                                        <button type="button" @click="activeData = {{ json_encode($item) }}; activeUrl = '{{ route('dashboard-daftar-lowongan-seleksi-update', $item->id) }}'; openModal = true" 
+                                        <!-- Update state Alpine.js formStatus saat tombol diklik -->
+                                        <button type="button" @click="activeData = {{ json_encode($item) }}; formStatus = '{{ $item->status_seleksi }}'; activeUrl = '{{ route('dashboard-daftar-lowongan-seleksi-update', $item->id) }}'; openModal = true" 
                                                 class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors flex items-center justify-center mx-auto">
                                             <i class="fas fa-file-signature mr-1.5"></i> Tinjau Berkas
                                         </button>
@@ -196,12 +198,6 @@
                 </div>
 
             </div>
-
-            <!-- FOOTER -->
-            <footer class="mt-8 py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
-                Created with <i class="fas fa-heart text-red-500 mx-1"></i> from <span class="font-semibold text-gray-700">lagingodingdotcom</span> collaborate with <span class="font-semibold text-gray-700">Savages</span>
-            </footer>
-
         </main>
 
         <!-- ========================================== -->
@@ -283,7 +279,7 @@
                             <template x-if="activeData?.catatan_seleksi && activeData?.catatan_seleksi.includes('Supervisor')">
                                 <div class="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-1">
                                     <h5 class="font-bold text-gray-800 text-xs uppercase mb-1"><i class="fas fa-user-tie text-vokasi-primary mr-1.5"></i> Ringkasan Supervisor & Jobdesc Mandiri:</h5>
-                                    <p class="text-gray-700 leading-relaxed font-medium" x-text="activeData?.catatan_seleksi"></p>
+                                    <p class="text-gray-700 leading-relaxed font-medium whitespace-pre-line" x-text="activeData?.catatan_seleksi"></p>
                                 </div>
                             </template>
 
@@ -291,11 +287,11 @@
                             <template x-if="activeData?.surat_balasan">
                                 <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
                                     <div>
-                                        <p class="font-bold text-emerald-900">Surat Balasan / Bukti Diterima Magang Mandiri</p>
-                                        <p class="text-[11px] text-emerald-700 mt-0.5">Lampiran resmi dari instansi mitra yang diunggah oleh mahasiswa.</p>
+                                        <p class="font-bold text-emerald-900">Surat Balasan / Bukti Diterima Magang</p>
+                                        <p class="text-[11px] text-emerald-700 mt-0.5">Lampiran resmi dari instansi mitra.</p>
                                     </div>
                                     <a :href="'{{ asset('storage') }}/' + activeData?.surat_balasan" target="_blank" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-sm flex items-center gap-1.5 shrink-0">
-                                        <i class="fas fa-download"></i> Unduh / Lihat Surat
+                                        <i class="fas fa-download"></i> Unduh Surat
                                     </a>
                                 </div>
                             </template>
@@ -345,19 +341,19 @@
                     </div>
 
                     <!-- Form Keputusan Seleksi -->
-                    <form :action="activeUrl" method="POST" class="space-y-4 pt-2">
+                    <form :action="activeUrl" method="POST" class="pt-2">
                         @csrf
                         @method('PUT')
 
-                        <h5 class="font-bold text-gray-800 text-sm border-b border-gray-100 pb-2 flex items-center">
+                        <h5 class="font-bold text-gray-800 text-sm border-b border-gray-100 pb-2 flex items-center mb-4">
                             <i class="fas fa-user-gear text-vokasi-primary mr-2"></i> Form Keputusan & Penugasan
                         </h5>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Keputusan Status -->
+                            <!-- Keputusan Status (Dilengkapi x-model) -->
                             <div>
                                 <label class="block font-bold text-gray-700 uppercase mb-1">Keputusan Seleksi <span class="text-red-500">*</span></label>
-                                <select name="status_seleksi" :value="activeData?.status_seleksi" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary" required>
+                                <select name="status_seleksi" x-model="formStatus" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary" required>
                                     <option value="menunggu">Menunggu Seleksi</option>
                                     <option value="diterima">Diterima Magang</option>
                                     <option value="ditolak">Ditolak / Tidak Lolos</option>
@@ -379,9 +375,27 @@
                             <!-- Catatan Seleksi -->
                             <div class="md:col-span-2">
                                 <label class="block font-bold text-gray-700 uppercase mb-1">Catatan Tambahan / Alasan Penolakan</label>
-                                <textarea name="catatan_seleksi" x-text="activeData?.catatan_seleksi" rows="2" placeholder="Tuliskan catatan khusus untuk mahasiswa..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary resize-none"></textarea>
+                                <!-- Kita hide form ini jika mandiri agar tidak menimpa ringkasan SPV, atau beri peringatan -->
+                                <template x-if="activeData?.jalur_magang === 'mandiri'">
+                                    <p class="text-[11px] text-amber-600 font-bold mb-1"><i class="fas fa-exclamation-triangle"></i> Hati-hati mengubah catatan ini karena berisi data SPV.</p>
+                                </template>
+                                <textarea name="catatan_seleksi" :value="activeData?.catatan_seleksi" rows="3" placeholder="Tuliskan catatan khusus untuk mahasiswa..." class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary resize-none"></textarea>
                             </div>
                         </div>
+
+                        <!-- WARNING AUTO-CREATE SPV (Muncul Secara Realtime) -->
+                        <template x-if="(activeData?.jalur_magang === 'mandiri' || activeData?.nama_instansi_mandiri) && formStatus === 'diterima' && activeData?.status_seleksi !== 'diterima'">
+                            <div class="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-3 shadow-sm">
+                                <i class="fas fa-user-shield text-purple-600 text-xl mt-0.5"></i>
+                                <div>
+                                    <h4 class="font-bold text-xs text-purple-900 uppercase">Pembuatan Akun Supervisor Otomatis</h4>
+                                    <p class="text-[11px] text-purple-800 mt-1 leading-relaxed">
+                                        Menyimpan keputusan ini akan <strong>secara otomatis membuatkan akun SPV</strong> menggunakan email yang diinput mahasiswa. 
+                                        Password default akan di-generate dan muncul di notifikasi sukses setelah Anda klik Simpan.
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
 
                         <!-- Modal Footer -->
                         <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-6 shrink-0">

@@ -206,6 +206,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Seleksi & Pengajuan
             Route::get('/seleksi', [SeleksiController::class, 'index'])->name('dashboard-daftar-lowongan-seleksi');
             Route::put('/seleksi/{id}', [SeleksiController::class, 'updateStatus'])->name('dashboard-daftar-lowongan-seleksi-update');
+            Route::get('/seleksi/berhasil-mandiri', [\App\Http\Controllers\SeleksiController::class, 'successMandiri'])->name('dashboard-seleksi-berhasil-mandiri');
             
             Route::get('/pengajuan-magang', [PengajuanMagangController::class, 'index'])->name('dashboard-daftar-lowongan-pengajuan-magang');
             Route::patch('/pengajuan-magang/{id}/selesaikan', [PengajuanMagangController::class, 'selesaikanMagang'])->name('dashboard-daftar-lowongan-pengajuan-magang-selesaikan');
