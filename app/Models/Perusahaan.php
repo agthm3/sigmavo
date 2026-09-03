@@ -29,6 +29,14 @@ class Perusahaan extends Model
         return $this->hasMany(Pendaftaran::class, 'perusahaan_id');
     }
 
+    /**
+     * Relasi ke akun-akun Supervisor (SPV) yang terdaftar di perusahaan ini
+     */
+    public function spvProfiles(): HasMany
+    {
+        return $this->hasMany(SpvProfile::class, 'perusahaan_id');
+    }
+
     // Helper singkatan logo (Contoh: PT. SmartPlay Inovasi -> SP)
     public function getInisialAttribute(): string
     {
