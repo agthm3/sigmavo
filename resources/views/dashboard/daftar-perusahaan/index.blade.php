@@ -38,8 +38,7 @@
                 </div>
                 @endif
 
-                <!-- SUMMARY CARDS & TABLE (Sama seperti sebelumnya) -->
-                <!-- [Data Table Disingkat Demi Kejelasan Code] -->
+                <!-- SUMMARY CARDS & TABLE -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <form action="{{ route('dashboard-daftar-lowongan-daftar-perusahaan') }}" method="GET" class="p-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between lg:items-center gap-4 bg-gray-50/50">
                         <div class="relative w-full lg:w-96">
@@ -94,27 +93,29 @@
         </main>
 
         <!-- ========================================== -->
-        <!-- MODAL 1: TAMBAH / EDIT PERUSAHAAN (Disingkat) -->
-        <div x-show="openModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div @click.away="openModal = false" class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-2xl overflow-hidden">
-                <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center">
+        <!-- MODAL 1: TAMBAH / EDIT PERUSAHAAN -->
+        <!-- ========================================== -->
+        <!-- FIX: z-50 dinaikkan menjadi z-[60] -->
+        <div x-show="openModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div @click.away="openModal = false" class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center shrink-0">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-building-circle-check text-lg"></i>
                         <h3 class="font-bold text-lg" x-text="isEdit ? 'Edit Data Perusahaan Mitra' : 'Tambah Perusahaan Mitra Baru'"></h3>
                     </div>
                     <button @click="openModal = false" class="text-white/80 hover:text-white"><i class="fas fa-times text-lg"></i></button>
                 </div>
-                <form :action="isEdit ? activeUrl : '{{ route('dashboard-daftar-lowongan-daftar-perusahaan-store') }}'" method="POST" class="p-6 space-y-4">
+                <form :action="isEdit ? activeUrl : '{{ route('dashboard-daftar-lowongan-daftar-perusahaan-store') }}'" method="POST" class="p-5 lg:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                     @csrf
                     <template x-if="isEdit"><input type="hidden" name="_method" value="PUT"></template>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-bold text-gray-700 mb-1">Nama Instansi <span class="text-red-500">*</span></label>
-                            <input type="text" name="nama_perusahaan" :value="isEdit ? editData.nama_perusahaan : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm" required>
+                            <input type="text" name="nama_perusahaan" :value="isEdit ? editData.nama_perusahaan : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none" required>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Sektor <span class="text-red-500">*</span></label>
-                            <select name="sektor_industri" :value="isEdit ? editData.sektor_industri : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm" required>
+                            <select name="sektor_industri" :value="isEdit ? editData.sektor_industri : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none" required>
                                 <option value="Teknologi Informasi">Teknologi Informasi</option>
                                 <option value="Pertanian">Pertanian</option>
                                 <option value="Pemerintahan">Pemerintahan</option>
@@ -124,7 +125,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Status Kerjasama</label>
-                            <select name="status_kerjasama" :value="isEdit ? editData.status_kerjasama : 'Mitra Reguler'" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                            <select name="status_kerjasama" :value="isEdit ? editData.status_kerjasama : 'Mitra Reguler'" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none">
                                 <option value="MoU Resmi">MoU / MoA Resmi UNHAS</option>
                                 <option value="Mitra Reguler">Mitra Reguler</option>
                                 <option value="Mandiri Partner">Mandiri Partner</option>
@@ -132,40 +133,42 @@
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Website</label>
-                            <input type="url" name="website" :value="isEdit ? editData.website : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                            <input type="url" name="website" :value="isEdit ? editData.website : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Email HRD <span class="text-red-500">*</span></label>
-                            <input type="email" name="email_hrd" :value="isEdit ? editData.email_hrd : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm" required>
+                            <input type="email" name="email_hrd" :value="isEdit ? editData.email_hrd : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none" required>
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-bold text-gray-700 mb-1">Alamat <span class="text-red-500">*</span></label>
-                            <textarea name="alamat" x-text="isEdit ? editData.alamat : ''" rows="2" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm" required></textarea>
+                            <textarea name="alamat" x-text="isEdit ? editData.alamat : ''" rows="2" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none resize-none" required></textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Latitude</label>
-                            <input type="text" name="latitude" :value="isEdit ? editData.latitude : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                            <input type="text" name="latitude" :value="isEdit ? editData.latitude : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Longitude</label>
-                            <input type="text" name="longitude" :value="isEdit ? editData.longitude : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
+                            <input type="text" name="longitude" :value="isEdit ? editData.longitude : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-vokasi-primary outline-none">
                         </div>
                     </div>
-                    <div class="flex justify-end gap-2 pt-4">
-                        <button type="button" @click="openModal = false" class="px-4 py-2 border rounded-lg bg-white font-medium text-sm">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-vokasi-primary text-white rounded-lg font-bold text-sm">Simpan</button>
+                    <div class="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-4 shrink-0">
+                        <button type="button" @click="openModal = false" class="px-4 py-2 border rounded-lg bg-white font-medium text-sm hover:bg-gray-50 transition">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-vokasi-primary text-white rounded-lg font-bold text-sm hover:bg-vokasi-dark transition shadow-sm">Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- ========================================== -->
-        <!-- MODAL 2: GABUNGKAN / MERGE DATA -->
+        <!-- MODAL 2: GABUNGKAN / MERGE DATA (RESPONSIVE FIX) -->
         <!-- ========================================== -->
-        <div x-show="mergeModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+        <!-- FIX: z-40 dinaikkan menjadi z-[60] -->
+        <div x-show="mergeModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div @click.away="mergeModal = false" class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
                 
-                <div class="bg-purple-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
+                <!-- HEADER MODAL -->
+                <div class="bg-purple-600 px-5 lg:px-6 py-4 text-white flex justify-between items-center shrink-0">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-object-group text-lg"></i>
                         <h3 class="font-bold text-base">Gabungkan (Merge) Instansi Duplikat</h3>
@@ -173,17 +176,17 @@
                     <button @click="mergeModal = false" class="text-white/80 hover:text-white p-1 rounded-lg"><i class="fas fa-times text-lg"></i></button>
                 </div>
 
-                <div class="flex flex-col md:flex-row flex-1 overflow-hidden bg-gray-50">
+                <!-- BODY MODAL -->
+                <div class="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gray-50 min-h-0">
                     
                     <!-- KIRI: PILIHAN TARGET & SOURCE -->
-                    <div class="w-full md:w-1/2 p-6 overflow-y-auto border-r border-gray-200 space-y-6">
+                    <div class="w-full lg:w-1/2 p-5 lg:p-6 overflow-y-auto custom-scrollbar border-b lg:border-b-0 lg:border-r border-gray-200 space-y-5">
                         
                         <!-- 1. Perusahaan Utama (SEARCHABLE DROPDOWN) -->
                         <div class="relative">
                             <label class="block text-xs font-bold text-gray-700 uppercase mb-2">1. Instansi Master (Target) <span class="text-red-500">*</span></label>
                             <p class="text-[11px] text-gray-500 mb-2">Instansi ini akan dipertahankan namanya.</p>
                             
-                            <!-- Search Input -->
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <i class="fas fa-search text-gray-400 text-xs"></i>
@@ -191,8 +194,7 @@
                                 <input type="text" x-model="searchTargetName" @focus="openTargetDropdown = true" @input="openTargetDropdown = true" placeholder="Cari & pilih instansi master..." class="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500">
                             </div>
 
-                            <!-- Dropdown Box -->
-                            <div x-show="openTargetDropdown" @click.away="openTargetDropdown = false" class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                            <div x-show="openTargetDropdown" @click.away="openTargetDropdown = false" class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto custom-scrollbar">
                                 <template x-for="p in allPerusahaan.filter(p => p.nama.toLowerCase().includes(searchTargetName.toLowerCase()))" :key="p.id">
                                     <div @click="selectTarget(p)" class="px-4 py-2.5 text-xs cursor-pointer border-b border-gray-100 hover:bg-purple-50 hover:text-purple-700 font-semibold text-gray-700 transition-colors">
                                         <i class="fas fa-building mr-1.5 text-purple-400"></i> <span x-text="p.nama"></span>
@@ -229,10 +231,9 @@
                     </div>
 
                     <!-- KANAN: PREVIEW KONFIRMASI -->
-                    <div class="w-full md:w-1/2 p-6 bg-white overflow-y-auto flex flex-col justify-between">
+                    <div class="w-full lg:w-1/2 p-5 lg:p-6 bg-white flex flex-col overflow-hidden relative">
                         
-                        <div class="space-y-4">
-                            <!-- Info SPV Master Target (Fitur Baru) -->
+                        <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4 min-h-0">
                             <template x-if="mergeTarget && !isLoadingPreview">
                                 <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl">
                                     <h5 class="text-[10px] font-bold text-purple-500 uppercase mb-1">Identitas SPV Target (Master)</h5>
@@ -240,7 +241,7 @@
                                         <div>
                                             <template x-for="spv in previewData.target_spv">
                                                 <div class="flex items-center gap-2 mb-1">
-                                                    <div class="w-6 h-6 bg-purple-200 text-purple-700 rounded-full flex justify-center items-center text-[10px]"><i class="fas fa-user-tie"></i></div>
+                                                    <div class="w-6 h-6 bg-purple-200 text-purple-700 rounded-full flex justify-center items-center text-[10px] shrink-0"><i class="fas fa-user-tie"></i></div>
                                                     <div>
                                                         <p class="text-xs font-bold text-purple-900 leading-tight" x-text="spv.name"></p>
                                                         <p class="text-[10px] text-purple-600" x-text="spv.email"></p>
@@ -259,7 +260,6 @@
                                 <i class="fas fa-satellite-dish text-purple-500 mr-1.5"></i> Data yang Akan Dipindahkan
                             </h4>
 
-                            <!-- State Kosong / Loading -->
                             <template x-if="mergeSources.length === 0 && !isLoadingPreview">
                                 <div class="text-center p-6 text-gray-400">
                                     <i class="fas fa-boxes text-3xl mb-2 opacity-50"></i>
@@ -273,13 +273,11 @@
                                 </div>
                             </template>
 
-                            <!-- State Data Ditemukan (Clickable Badge) -->
                             <template x-if="mergeSources.length > 0 && !isLoadingPreview && previewData">
                                 <div class="space-y-3">
-                                    <!-- SPV Box -->
                                     <button type="button" @click="showDetail('spv')" class="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 p-3 rounded-xl flex items-center justify-between transition text-left">
                                         <div class="flex items-center gap-2">
-                                            <i class="fas fa-user-tie text-blue-500 text-lg"></i>
+                                            <i class="fas fa-user-tie text-blue-500 text-lg w-5 text-center"></i>
                                             <div>
                                                 <span class="text-xs font-bold text-blue-900 block">Akun SPV (Duplikat)</span>
                                                 <span class="text-[10px] text-blue-600">Klik untuk melihat siapa saja</span>
@@ -288,10 +286,9 @@
                                         <span class="font-bold text-lg text-blue-700" x-text="previewData.sources.spvs.length + ' SPV'"></span>
                                     </button>
 
-                                    <!-- Mahasiswa Box -->
                                     <button type="button" @click="showDetail('pendaftar')" class="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 p-3 rounded-xl flex items-center justify-between transition text-left">
                                         <div class="flex items-center gap-2">
-                                            <i class="fas fa-users text-emerald-500 text-lg"></i>
+                                            <i class="fas fa-users text-emerald-500 text-lg w-5 text-center"></i>
                                             <div>
                                                 <span class="text-xs font-bold text-emerald-900 block">Mahasiswa & Logbook</span>
                                                 <span class="text-[10px] text-emerald-600">Klik untuk melihat daftar mahasiswa</span>
@@ -300,17 +297,16 @@
                                         <span class="font-bold text-lg text-emerald-700" x-text="previewData.sources.pendaftars.length + ' Anak'"></span>
                                     </button>
 
-                                    <!-- Lowongan Box -->
                                     <button type="button" @click="showDetail('lowongan')" class="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 p-3 rounded-xl flex items-center justify-between transition text-left">
                                         <div class="flex items-center gap-2">
-                                            <i class="fas fa-briefcase text-amber-500 text-lg"></i>
-                                            <span class="text-xs font-bold text-amber-900">Lowongan / Divisi Posisi</span>
+                                            <i class="fas fa-briefcase text-amber-500 text-lg w-5 text-center"></i>
+                                            <span class="text-xs font-bold text-amber-900">Lowongan / Posisi</span>
                                         </div>
                                         <span class="font-bold text-lg text-amber-700" x-text="previewData.sources.lowongans.length + ' Divisi'"></span>
                                     </button>
 
                                     <div class="mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg text-[10px] text-red-800 leading-relaxed font-medium flex gap-2">
-                                        <i class="fas fa-exclamation-triangle mt-0.5"></i>
+                                        <i class="fas fa-exclamation-triangle mt-0.5 shrink-0"></i>
                                         <p>Instansi duplikat (sumber) akan <strong>DIHAPUS PERMANEN</strong> setelah datanya pindah.</p>
                                     </div>
                                 </div>
@@ -318,7 +314,7 @@
                         </div>
 
                         <!-- Tombol Submit -->
-                        <div class="pt-4 mt-6 border-t border-gray-100 shrink-0">
+                        <div class="pt-4 border-t border-gray-100 shrink-0 bg-white z-10 mt-2">
                             <form action="{{ route('dashboard-daftar-lowongan-daftar-perusahaan-merge') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="target_id" :value="mergeTarget">
@@ -335,6 +331,7 @@
                                 </button>
                             </form>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -343,7 +340,8 @@
         <!-- ========================================== -->
         <!-- SUB-MODAL 3: DETAIL RINCIAN SEBELUM MERGE -->
         <!-- ========================================== -->
-        <div x-show="detailModal" x-cloak class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+        <!-- FIX: z-50 dinaikkan menjadi z-[70] agar tidak tertimpa oleh Modal 2 saat ditekan -->
+        <div x-show="detailModal" x-cloak class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4">
             <div @click.away="detailModal = false" class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
                 
                 <div class="bg-gray-800 px-5 py-3 text-white flex justify-between items-center shrink-0">
@@ -353,7 +351,6 @@
 
                 <div class="p-5 overflow-y-auto custom-scrollbar flex-1">
                     
-                    <!-- View Data SPV -->
                     <template x-if="detailType === 'spv'">
                         <div class="space-y-3">
                             <template x-for="item in previewData?.sources?.spvs" :key="item.email">
@@ -369,7 +366,6 @@
                         </div>
                     </template>
 
-                    <!-- View Data Mahasiswa -->
                     <template x-if="detailType === 'pendaftar'">
                         <div class="space-y-3">
                             <template x-for="item in previewData?.sources?.pendaftars" :key="item.nim">
@@ -387,7 +383,6 @@
                         </div>
                     </template>
 
-                    <!-- View Data Lowongan -->
                     <template x-if="detailType === 'lowongan'">
                         <div class="space-y-3">
                             <template x-for="item in previewData?.sources?.lowongans" :key="item.judul_posisi + item.asal">
@@ -402,7 +397,7 @@
                 </div>
                 
                 <div class="p-3 border-t bg-gray-50 text-right shrink-0">
-                    <button @click="detailModal = false" class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-lg">Tutup</button>
+                    <button @click="detailModal = false" class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-lg transition-colors">Tutup</button>
                 </div>
             </div>
         </div>
@@ -420,7 +415,6 @@
                 editData: {},
                 activeUrl: '',
 
-                // State Modal Merge & Dropdown Search
                 mergeModal: false,
                 openTargetDropdown: false,
                 searchTargetName: '',
@@ -428,7 +422,6 @@
                 mergeSources: [],
                 searchSource: '',
                 
-                // State Data & Detail Modal
                 previewData: null,
                 isLoadingPreview: false,
                 allPerusahaan: rawPerusahaan,
@@ -437,15 +430,13 @@
                 detailType: '',
                 detailTitle: '',
 
-                // Fungsi untuk Memilih Target dari Dropdown
                 selectTarget(perusahaan) {
                     this.mergeTarget = perusahaan.id;
                     this.searchTargetName = perusahaan.nama;
                     this.openTargetDropdown = false;
-                    this.fetchPreview(); // Langsung fetch agar data SPV Master muncul
+                    this.fetchPreview(); 
                 },
 
-                // Filter Source (Tidak menampilkan target)
                 get filteredSources() {
                     return this.allPerusahaan.filter(p => {
                         const notTarget = p.id != this.mergeTarget;
@@ -454,7 +445,6 @@
                     });
                 },
 
-                // Centang Data Source
                 toggleSource(id) {
                     const index = this.mergeSources.indexOf(id);
                     if (index > -1) {
@@ -465,7 +455,6 @@
                     this.fetchPreview();
                 },
 
-                // Ambil Data Preview Detail
                 fetchPreview() {
                     this.isLoadingPreview = true;
                     
@@ -491,7 +480,6 @@
                     });
                 },
 
-                // Fungsi Munculkan Sub-Modal Detail
                 showDetail(type) {
                     this.detailType = type;
                     if(type === 'spv') this.detailTitle = 'Rincian Akun SPV yang akan dipindah';
