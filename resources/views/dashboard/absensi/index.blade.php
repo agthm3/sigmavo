@@ -113,7 +113,7 @@
                             <!-- Watermark Informasi GPS & Waktu Real-time Lokal -->
                             <div class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[9px] p-2 rounded-lg z-20 font-mono space-y-0.5">
                                 <p><i class="fas fa-map-marker-alt text-red-400 w-3"></i> <span x-text="lat ? lat + ', ' + lng : 'Mendapatkan GPS...'"></span></p>
-                                <p><i class="fas fa-clock text-blue-400 w-3"></i> <span x-text="localTimeString"></span></p>
+                                <p><i class="fas fa-clock text-blue-400 w-3"></i> <span x-text="localTimeString + ' ' + detectedZone"></span></p>
                                 <p><i class="fas fa-user text-emerald-400 w-3"></i> {{ $user->name }}</p>
                             </div>
                         </div>
@@ -464,15 +464,32 @@
             absentType: 'masuk',
             lat: null,
             lng: null,
-            localTimeString: '', // Waktu realtime lokal perangkat
+            localTimeString: '',
             clockInterval: null,
+
+            // Hitung zona waktu secara cerdas dari koordinat Longitude GPS
+            get detectedZone() {
+                if (!this.lng) return 'WITA';
+                const lon = parseFloat(this.lng);
+                if (lon < 114.5) return 'WIB';
+                if (lon >= 114.5 && lon < 126.0) return 'WITA';
+                return 'WIT';
+            },
+
+            // Hitung offset jam relatif terhadap UTC berdasarkan Longitude GPS
+            get targetTimeZoneOffset() {
+                if (!this.lng) return 8; // default WITA (UTC+8)
+                const lon = parseFloat(this.lng);
+                if (lon < 114.5) return 7; // WIB (UTC+7)
+                if (lon >= 114.5 && lon < 126.0) return 8; // WITA (UTC+8)
+                return 9; // WIT (UTC+9)
+            },
 
             init() {
                 this.getLocation();
                 this.startClock();
             },
 
-            // Fungsi Jam Real-Time untuk Watermark
             startClock() {
                 this.updateTime();
                 this.clockInterval = setInterval(() => {
@@ -480,10 +497,21 @@
                 }, 1000);
             },
 
+            // Format jam disesuaikan otomatis dengan zona waktu GPS
             updateTime() {
                 const now = new Date();
-                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
-                this.localTimeString = now.toLocaleDateString('id-ID', options);
+                // Hitung waktu UTC lalu tambahkan offset zona GPS
+                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                const targetTime = new Date(utc + (3600000 * this.targetTimeZoneOffset));
+
+                const optionsDate = { year: 'numeric', month: 'short', day: 'numeric' };
+                const dateStr = targetTime.toLocaleDateString('id-ID', optionsDate);
+                
+                const hours = String(targetTime.getHours()).padStart(2, '0');
+                const minutes = String(targetTime.getMinutes()).padStart(2, '0');
+                const seconds = String(targetTime.getSeconds()).padStart(2, '0');
+
+                this.localTimeString = `${dateStr}, ${hours}:${minutes}:${seconds}`;
             },
 
             getLocation() {
@@ -492,16 +520,19 @@
                         (position) => {
                             this.lat = position.coords.latitude.toFixed(6);
                             this.lng = position.coords.longitude.toFixed(6);
+                            this.updateTime(); // Segera update jam & zona waktu begitu titik koordinat didapat
                         },
                         (error) => {
                             console.warn("Gagal mengambil GPS:", error.message);
                             this.lat = "-5.132200";
                             this.lng = "119.425500";
+                            this.updateTime();
                         }
                     );
                 } else {
                     this.lat = "-5.132200";
                     this.lng = "119.425500";
+                    this.updateTime();
                 }
             },
 
@@ -534,7 +565,6 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                // Mengompresi foto selfie
                 const imageData = canvas.toDataURL('image/jpeg', 0.7);
                 
                 if (!imageData || imageData === 'data:,') {
@@ -542,18 +572,21 @@
                     return;
                 }
 
-                // TANGKAP WAKTU LOKAL (Format HH:mm:ss) dari perangkat
+                // Ambil jam akurat sesuai zona GPS (bukan sekadar jam internal HP yang belum sinkron)
                 const now = new Date();
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                const targetTime = new Date(utc + (3600000 * this.targetTimeZoneOffset));
+
+                const hours = String(targetTime.getHours()).padStart(2, '0');
+                const minutes = String(targetTime.getMinutes()).padStart(2, '0');
+                const seconds = String(targetTime.getSeconds()).padStart(2, '0');
                 const localTime = `${hours}:${minutes}:${seconds}`;
 
                 this.$refs.inputTipe.value = type;
                 this.$refs.inputImage.value = imageData;
                 this.$refs.inputLat.value = this.lat || "-5.132200";
                 this.$refs.inputLng.value = this.lng || "119.425500";
-                this.$refs.inputWaktuLokal.value = localTime; // Kirim ke Backend
+                this.$refs.inputWaktuLokal.value = localTime;
 
                 this.$nextTick(() => {
                     this.$refs.formAbsen.submit();
