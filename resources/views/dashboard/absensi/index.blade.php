@@ -3,18 +3,20 @@
 @section('content')
 <!-- CDN PDF-LIB Untuk Kompresi PDF Client-Side -->
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
 @if(!$sudahPembekalan)
-    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center text-amber-900 max-w-2xl mx-auto my-12">
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center text-amber-900 max-w-2xl mx-auto my-12 shadow-sm">
         <i class="fas fa-exclamation-triangle text-5xl mb-4 text-amber-500"></i>
         <h3 class="font-bold text-lg mb-2">Akses Absensi Terkunci</h3>
         <p class="text-sm">Anda telah diterima magang, namun Anda belum melakukan Konfirmasi Kehadiran pada acara Pembekalan Magang. Silakan menuju ke menu <strong>Pembekalan Magang</strong> untuk mengonfirmasi kehadiran Anda terlebih dahulu.</p>
         <div class="mt-4">
-            <a href="{{ route('dashboard-mahasiswa-pembekalan-magang') }}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-sm transition-colors inline-block">
+            <a href="{{ route('dashboard-mahasiswa-pembekalan-magang') }}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-sm transition-colors inline-block">
                 Buka Menu Pembekalan
             </a>
         </div>
     </div>
 @endif
+
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
       x-data="absensiComponent()">
     
@@ -30,7 +32,7 @@
                 <p class="text-sm text-gray-500 leading-relaxed">
                     Fitur <strong>Presensi Kehadiran Harian</strong> hanya dapat digunakan oleh mahasiswa yang telah <strong>diterima secara resmi</strong> pada program magang industri.
                 </p>
-                <div class="p-4 bg-amber-50/60 rounded-xl text-xs text-amber-800 border border-amber-200 font-medium text-left flex items-start gap-2.5">
+                <div class="p-4 bg-amber-50/60 rounded-xl text-xs text-amber-800 border border-amber-200 font-medium text-left flex items-start gap-2.5 mt-2">
                     <i class="fas fa-info-circle text-amber-600 text-base shrink-0 mt-0.5"></i>
                     <p>
                         Jika Anda sudah mengajukan magang, silakan pantau perkembangan verifikasi berkas dan penerbitan surat pada menu 
@@ -108,21 +110,22 @@
                                 <p class="text-[10px] text-gray-400 mt-1">Izinkan akses lokasi GPS & kamera di browser Anda.</p>
                             </div>
 
-                            <!-- Watermark Informasi GPS & Waktu Real-time -->
+                            <!-- Watermark Informasi GPS & Waktu Real-time Lokal -->
                             <div class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[9px] p-2 rounded-lg z-20 font-mono space-y-0.5">
                                 <p><i class="fas fa-map-marker-alt text-red-400 w-3"></i> <span x-text="lat ? lat + ', ' + lng : 'Mendapatkan GPS...'"></span></p>
-                                <p><i class="fas fa-clock text-blue-400 w-3"></i> {{ \Carbon\Carbon::now()->isoFormat('D MMM YYYY, HH:mm:ss') }} WITA</p>
+                                <p><i class="fas fa-clock text-blue-400 w-3"></i> <span x-text="localTimeString"></span></p>
                                 <p><i class="fas fa-user text-emerald-400 w-3"></i> {{ $user->name }}</p>
                             </div>
                         </div>
 
-                        <!-- Hidden Form untuk Submit Foto & GPS -->
+                        <!-- Hidden Form untuk Submit Foto, GPS, dan Waktu Lokal -->
                         <form x-ref="formAbsen" action="{{ route('dashboard-mahasiswa-absensi-store') }}" method="POST">
                             @csrf
                             <input type="hidden" name="tipe" x-ref="inputTipe" :value="absentType">
                             <input type="hidden" name="image" x-ref="inputImage">
                             <input type="hidden" name="latitude" x-ref="inputLat" :value="lat">
                             <input type="hidden" name="longitude" x-ref="inputLng" :value="lng">
+                            <input type="hidden" name="waktu_lokal" x-ref="inputWaktuLokal">
                         </form>
 
                         <!-- Tombol Aksi Absen -->
@@ -240,15 +243,19 @@
                                         <td class="p-3.5 text-center font-mono">
                                             {{ $row->waktu_pulang ?? '-' }}
                                         </td>
+                                        
+                                        <!-- BAGIAN STATUS ABSENSI YANG DIPERBARUI -->
                                         <td class="p-3.5 text-center">
                                             @if($row->tipe_kehadiran !== 'hadir')
                                                 <span class="px-2 py-0.5 bg-purple-100 text-purple-700 font-bold rounded-full text-[10px] capitalize">{{ $row->tipe_kehadiran }}</span>
                                             @elseif($row->status_verifikasi === 'approved')
                                                 <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded-full text-[10px]"><i class="fas fa-check-double mr-1"></i> Approved</span>
                                             @else
-                                                <span class="px-2 py-0.5 bg-amber-100 text-amber-700 font-bold rounded-full text-[10px]"><i class="fas fa-spinner fa-spin mr-1"></i> Pending</span>
+                                                <span class="text-gray-400 font-medium text-xs">-</span>
                                             @endif
                                         </td>
+                                        <!-- ===================================== -->
+
                                         <td class="p-3.5 text-right font-bold {{ $row->status_verifikasi === 'approved' ? 'text-emerald-600' : 'text-gray-400' }}">
                                             + {{ $row->jam_diperoleh }} Jam
                                         </td>
@@ -447,9 +454,26 @@
             absentType: 'masuk',
             lat: null,
             lng: null,
+            localTimeString: '', // Waktu realtime lokal perangkat
+            clockInterval: null,
 
             init() {
                 this.getLocation();
+                this.startClock();
+            },
+
+            // Fungsi Jam Real-Time untuk Watermark
+            startClock() {
+                this.updateTime();
+                this.clockInterval = setInterval(() => {
+                    this.updateTime();
+                }, 1000);
+            },
+
+            updateTime() {
+                const now = new Date();
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' };
+                this.localTimeString = now.toLocaleDateString('id-ID', options);
             },
 
             getLocation() {
@@ -500,7 +524,7 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                // Mengompresi foto selfie langsung ke format JPG dengan kualitas 0.7 (di bawah 300KB)
+                // Mengompresi foto selfie
                 const imageData = canvas.toDataURL('image/jpeg', 0.7);
                 
                 if (!imageData || imageData === 'data:,') {
@@ -508,10 +532,18 @@
                     return;
                 }
 
+                // TANGKAP WAKTU LOKAL (Format HH:mm:ss) dari perangkat
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const localTime = `${hours}:${minutes}:${seconds}`;
+
                 this.$refs.inputTipe.value = type;
                 this.$refs.inputImage.value = imageData;
                 this.$refs.inputLat.value = this.lat || "-5.132200";
                 this.$refs.inputLng.value = this.lng || "119.425500";
+                this.$refs.inputWaktuLokal.value = localTime; // Kirim ke Backend
 
                 this.$nextTick(() => {
                     this.$refs.formAbsen.submit();

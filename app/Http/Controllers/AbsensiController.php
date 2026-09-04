@@ -113,10 +113,11 @@ class AbsensiController extends Controller
         $today = now()->toDateString();
 
         $request->validate([
-            'tipe'      => 'required|in:masuk,pulang',
-            'image'     => 'required|string', // String DataURL Base64
-            'latitude'  => 'nullable|string',
-            'longitude' => 'nullable|string',
+            'tipe'         => 'required|in:masuk,pulang',
+            'image'        => 'required|string', 
+            'latitude'     => 'nullable|string',
+            'longitude'    => 'nullable|string',
+            'waktu_lokal'  => 'required|string', // <-- Menangkap waktu lokal dari frontend
         ]);
 
         // Decode Base64 Image
@@ -135,8 +136,11 @@ class AbsensiController extends Controller
         // Ambil status Mode Testing dari Setting Global (Default: 'true')
         $isTestingMode = Setting::getByKey('mode_testing', 'true') === 'true';
 
+        // Gunakan Waktu Lokal yang dikirim perangkat mahasiswa
+        $waktuAbsen = $request->waktu_lokal; 
+
         if ($request->tipe === 'masuk') {
-            $absensi->waktu_masuk     = now()->toTimeString();
+            $absensi->waktu_masuk     = $waktuAbsen; // <-- Pakai waktu lokal
             $absensi->foto_masuk      = $fileName;
             $absensi->latitude_masuk  = $request->latitude;
             $absensi->longitude_masuk = $request->longitude;
@@ -148,8 +152,11 @@ class AbsensiController extends Controller
 
             // KONTROL VALIDASI MODE FINAL VS TESTING
             if (!$isTestingMode) {
-                $waktuMasuk = Carbon::parse($absensi->waktu_masuk);
-                $selisihMenit = now()->diffInMinutes($waktuMasuk);
+                // Konversi string waktu lokal menjadi objek Carbon agar bisa dihitung
+                $waktuMasukObj = Carbon::createFromFormat('H:i:s', $absensi->waktu_masuk);
+                $waktuPulangObj = Carbon::createFromFormat('H:i:s', $waktuAbsen);
+                
+                $selisihMenit = $waktuPulangObj->diffInMinutes($waktuMasukObj);
                 $selisihJam = round($selisihMenit / 60, 1);
 
                 // Di Mode Final/Produksi: Harus minimal 8 jam (480 menit) setelah absen masuk
@@ -167,7 +174,7 @@ class AbsensiController extends Controller
             }
 
             // Jika lulus validasi (atau sedang di Mode Testing)
-            $absensi->waktu_pulang     = now()->toTimeString();
+            $absensi->waktu_pulang     = $waktuAbsen; // <-- Pakai waktu lokal
             $absensi->foto_pulang      = $fileName;
             $absensi->latitude_pulang  = $request->latitude;
             $absensi->longitude_pulang = $request->longitude;
