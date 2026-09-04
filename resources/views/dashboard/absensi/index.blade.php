@@ -239,11 +239,21 @@
                                         </td>
                                         <td class="p-3.5 text-center font-mono">
                                             {{ $row->waktu_masuk ?? '-' }}
+                                            @if($row->waktu_masuk && $row->longitude_masuk)
+                                                <span class="text-[9px] text-gray-400 font-bold ml-0.5">
+                                                    {{ $row->longitude_masuk < 114.5 ? 'WIB' : ($row->longitude_masuk < 126.0 ? 'WITA' : 'WIT') }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="p-3.5 text-center font-mono">
                                             {{ $row->waktu_pulang ?? '-' }}
+                                            @if($row->waktu_pulang && $row->longitude_pulang)
+                                                <span class="text-[9px] text-gray-400 font-bold ml-0.5">
+                                                    {{ $row->longitude_pulang < 114.5 ? 'WIB' : ($row->longitude_pulang < 126.0 ? 'WITA' : 'WIT') }}
+                                                </span>
+                                            @endif
                                         </td>
-                                        
+                                                                                
                                         <!-- BAGIAN STATUS ABSENSI YANG DIPERBARUI -->
                                         <td class="p-3.5 text-center">
                                             @if($row->tipe_kehadiran !== 'hadir')
