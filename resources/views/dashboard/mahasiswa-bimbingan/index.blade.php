@@ -312,19 +312,43 @@
                         </div>
                     </div>
 
-                    <!-- 5. INFORMASI KONTAK MAHASISWA -->
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                        <h5 class="font-bold text-slate-800 text-xs uppercase flex items-center gap-1.5">
-                            <i class="fas fa-address-book text-slate-600"></i> Kontak Langsung
-                        </h5>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-envelope text-slate-400 w-4"></i>
-                                <span class="truncate">Email: <strong x-text="activeMhs?.user?.email || '-'"></strong></span>
+<!-- 5. INFORMASI KONTAK MAHASISWA & SPV LAPANGAN -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Kontak Mahasiswa -->
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                            <h5 class="font-bold text-slate-800 text-xs uppercase flex items-center gap-1.5">
+                                <i class="fas fa-user-graduate text-slate-600"></i> Kontak Mahasiswa
+                            </h5>
+                            <div class="space-y-1.5 text-slate-700 text-[11px]">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-envelope text-slate-400 w-3.5"></i>
+                                    <span class="truncate" x-text="activeMhs?.user?.email || '-'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fab fa-whatsapp text-emerald-600 w-3.5"></i>
+                                    <span x-text="activeMhs?.user?.mahasiswa_profile?.no_hp || '-'"></span>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fab fa-whatsapp text-emerald-500 w-4"></i>
-                                <span>WhatsApp: <strong x-text="activeMhs?.user?.mahasiswa_profile?.no_hp || '-'"></strong></span>
+                        </div>
+
+                        <!-- Kontak Supervisor Lapangan (SPV Mitra) -->
+                        <div class="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl space-y-2">
+                            <h5 class="font-bold text-teal-900 text-xs uppercase flex items-center gap-1.5">
+                                <i class="fas fa-user-tie text-vokasi-primary"></i> Mentor / SPV Lapangan
+                            </h5>
+                            <div class="space-y-1.5 text-teal-900 text-[11px]">
+                                <div class="font-bold flex items-center gap-2">
+                                    <i class="fas fa-id-badge text-teal-600 w-3.5"></i>
+                                    <span x-text="activeMhs?.lowongan?.spv?.name || 'Belum Ditetapkan'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-envelope text-teal-600 w-3.5"></i>
+                                    <span class="truncate" x-text="activeMhs?.lowongan?.spv?.email || '-'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fab fa-whatsapp text-emerald-600 w-3.5"></i>
+                                    <span x-text="activeMhs?.lowongan?.spv?.spv_profile?.no_hp || '-'"></span>
+                                </div>
                             </div>
                         </div>
                     </div>

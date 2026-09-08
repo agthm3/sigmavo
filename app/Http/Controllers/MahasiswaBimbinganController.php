@@ -19,7 +19,8 @@ class MahasiswaBimbinganController extends Controller
         $query = Pendaftaran::has('user')
             ->with([
                 'user.mahasiswaProfile.prodi',
-                'lowongan.perusahaan'
+                'lowongan.perusahaan',
+                'lowongan.spv.spvProfile'
             ])
             ->where('dosen_id', $dosenId)
             ->whereIn('status_seleksi', ['diterima', 'selesai']);

@@ -29,6 +29,8 @@ class SeleksiController extends Controller
         }
 
         if ($request->filled('status') && $request->status !== 'semua') {
+            // Jika filter 'diterima', kita bisa memasukkan 'selesai' juga (tergantung kebutuhan).
+            // Tapi lebih baik kita eksplisit mencari yang sesuai string.
             $query->where('status_seleksi', $request->status);
         }
 
@@ -39,11 +41,16 @@ class SeleksiController extends Controller
 
         $totalPelamar = Pendaftaran::count();
         $totalMenunggu = Pendaftaran::where('status_seleksi', 'menunggu')->count();
+        
+        // PENTING: Diterima dan Selesai adalah bagian dari kelompok yang "Sukses"
         $totalDiterima = Pendaftaran::where('status_seleksi', 'diterima')->count();
+        $totalSelesai = Pendaftaran::where('status_seleksi', 'selesai')->count();
+        
         $totalDitolak = Pendaftaran::where('status_seleksi', 'ditolak')->count();
 
+        // Tambahkan totalSelesai ke compact
         return view('dashboard.seleksi.index', compact(
-            'pendaftarans', 'lowongans', 'dosens', 'totalPelamar', 'totalMenunggu', 'totalDiterima', 'totalDitolak'
+            'pendaftarans', 'lowongans', 'dosens', 'totalPelamar', 'totalMenunggu', 'totalDiterima', 'totalSelesai', 'totalDitolak'
         ));
     }
 
@@ -51,8 +58,9 @@ class SeleksiController extends Controller
     {
         $pendaftaran = Pendaftaran::with(['lowongan.perusahaan', 'user'])->findOrFail($id);
 
+        // Tambahkan 'selesai' ke dalam in: validation rules
         $request->validate([
-            'status_seleksi'  => 'required|in:menunggu,diterima,ditolak,wawancara',
+            'status_seleksi'  => 'required|in:menunggu,diterima,ditolak,wawancara,selesai',
             'dosen_id'        => 'nullable|exists:users,id',
             'catatan_seleksi' => 'nullable|string',
         ]);
@@ -65,14 +73,13 @@ class SeleksiController extends Controller
             'catatan_seleksi' => $request->catatan_seleksi,
         ]);
 
-        // TRIGGER AUTO-CREATE SPV (Hanya saat status mandiri berubah jadi diterima)
-        if ($request->status_seleksi === 'diterima' && $statusLama !== 'diterima') {
+        // TRIGGER AUTO-CREATE SPV (Hanya saat status mandiri berubah jadi diterima dari selain diterima/selesai)
+        if ($request->status_seleksi === 'diterima' && !in_array($statusLama, ['diterima', 'selesai'])) {
             $pendaftaran->lowongan?->increment('kuota_terisi');
 
             if ($pendaftaran->jalur_magang === 'mandiri') {
                 $catatan = $pendaftaran->catatan_seleksi ?? '';
                 
-                // Regex lebih tangguh (mengabaikan spasi berlebih)
                 preg_match('/Supervisor:\s*(.*?)\s*\(/i', $catatan, $matchName);
                 preg_match('/-\s*(.*?)\s*\//', $catatan, $matchPhone);
                 preg_match('/\/\s*(.*?)\)/', $catatan, $matchEmail);
@@ -81,12 +88,10 @@ class SeleksiController extends Controller
                 $spvPhone = !empty($matchPhone[1]) ? trim($matchPhone[1]) : '-';
                 $spvEmail = !empty($matchEmail[1]) ? trim($matchEmail[1]) : null;
 
-                // Fallback jika dari catatan tidak ada, ambil dari master perusahaan
                 if (!$spvEmail && $pendaftaran->lowongan?->perusahaan) {
                     $spvEmail = $pendaftaran->lowongan->perusahaan->email_hrd;
                 }
 
-                // Jika Email Ditemukan, Eksekusi Auto-Create
                 if ($spvEmail) {
                     $existingUser = User::where('email', $spvEmail)->first();
 
@@ -98,6 +103,11 @@ class SeleksiController extends Controller
                             ['user_id' => $existingUser->id],
                             ['perusahaan_id' => $pendaftaran->lowongan->perusahaan_id, 'no_hp' => $spvPhone]
                         );
+
+                        // Kunci ke lowongan mandiri
+                        if (empty($pendaftaran->lowongan->spv_id)) {
+                            $pendaftaran->lowongan->update(['spv_id' => $existingUser->id]);
+                        }
 
                         return redirect()->route('dashboard-seleksi-berhasil-mandiri')->with('spvData', [
                             'status'    => 'linked',
@@ -112,6 +122,8 @@ class SeleksiController extends Controller
                             'name'     => $spvName,
                             'email'    => $spvEmail,
                             'password' => Hash::make($passwordRandom),
+                            'temp_password' => $passwordRandom,
+                            'is_active' => true,
                         ]);
                         $newUser->assignRole('spv');
 
@@ -120,6 +132,11 @@ class SeleksiController extends Controller
                             'perusahaan_id' => $pendaftaran->lowongan->perusahaan_id,
                             'no_hp'         => $spvPhone,
                         ]);
+
+                        // Kunci ke lowongan mandiri
+                        if (empty($pendaftaran->lowongan->spv_id)) {
+                            $pendaftaran->lowongan->update(['spv_id' => $newUser->id]);
+                        }
 
                         return redirect()->route('dashboard-seleksi-berhasil-mandiri')->with('spvData', [
                             'status'    => 'created',
@@ -131,8 +148,7 @@ class SeleksiController extends Controller
                         ]);
                     }
                 } else {
-                    // JIKA EMAIL GAGAL DITEMUKAN SAMA SEKALI
-                    return redirect()->back()->with('success', 'Keputusan berhasil disimpan. NAMUN, Akun SPV gagal dibuat karena email supervisor tidak ditemukan di catatan maupun master instansi.');
+                    return redirect()->back()->with('success', 'Keputusan berhasil disimpan. NAMUN, Akun SPV gagal dibuat karena email supervisor tidak ditemukan.');
                 }
             }
         }

@@ -56,8 +56,8 @@
                             <i class="fas fa-user-check text-lg"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-gray-500 uppercase">Diterima Magang</p>
-                            <p class="text-xl font-bold text-green-600 leading-none mt-1">{{ $totalDiterima }} Orang</p>
+                            <p class="text-xs font-semibold text-gray-500 uppercase">Diterima / Selesai</p>
+                            <p class="text-xl font-bold text-green-600 leading-none mt-1">{{ $totalDiterima + $totalSelesai }} Orang</p>
                         </div>
                     </div>
 
@@ -93,7 +93,8 @@
                             <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-semibold">
                                 <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
                                 <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu Seleksi</option>
-                                <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Diterima</option>
+                                <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Aktif Magang</option>
+                                <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai Magang</option>
                                 <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                             </select>
                         </div>
@@ -158,7 +159,11 @@
                                     <td class="p-4 text-center">
                                         @if($item->status_seleksi == 'diterima')
                                             <span class="inline-flex items-center px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
-                                                <i class="fas fa-check-circle mr-1"></i> Diterima
+                                                <i class="fas fa-running mr-1"></i> Aktif Magang
+                                            </span>
+                                        @elseif($item->status_seleksi == 'selesai')
+                                            <span class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">
+                                                <i class="fas fa-flag-checkered mr-1"></i> Selesai
                                             </span>
                                         @elseif($item->status_seleksi == 'ditolak')
                                             <span class="inline-flex items-center px-2.5 py-1 bg-red-50 text-red-700 text-[10px] font-bold rounded-full border border-red-200">
@@ -350,12 +355,13 @@
                         </h5>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Keputusan Status (Dilengkapi x-model) -->
+                        <!-- Keputusan Status (Dilengkapi x-model) -->
                             <div>
                                 <label class="block font-bold text-gray-700 uppercase mb-1">Keputusan Seleksi <span class="text-red-500">*</span></label>
                                 <select name="status_seleksi" x-model="formStatus" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary" required>
                                     <option value="menunggu">Menunggu Seleksi</option>
-                                    <option value="diterima">Diterima Magang</option>
+                                    <option value="diterima">Diterima (Aktif Magang)</option>
+                                    <option value="selesai">Selesai Magang / Stase</option>
                                     <option value="ditolak">Ditolak / Tidak Lolos</option>
                                     <option value="wawancara">Panggil Wawancara</option>
                                 </select>
