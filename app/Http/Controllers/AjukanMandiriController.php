@@ -6,8 +6,12 @@ use App\Models\Pendaftaran;
 use App\Models\Perusahaan;
 use App\Models\Lowongan;
 use App\Models\Setting;
+use App\Models\User;
+use App\Models\SpvProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 class AjukanMandiriController extends Controller
@@ -39,6 +43,7 @@ class AjukanMandiriController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        DB::beginTransaction();
         try {
             // 1. Proteksi Batas Maksimal
             $maxPengajuan = (int) Setting::getByKey('max_pengajuan', 3);
@@ -59,7 +64,7 @@ class AjukanMandiriController extends Controller
 
             // 3. Validasi Form
             $request->validate([
-                'perusahaan_id'        => 'nullable|string', // Bisa ID angka atau teks 'baru'
+                'perusahaan_id'        => 'nullable|string',
                 'nama_instansi'        => 'required|string|max:255',
                 'sektor_industri'      => 'required|string|max:255',
                 'website_instansi'     => 'nullable|url|max:255',
@@ -80,18 +85,15 @@ class AjukanMandiriController extends Controller
                 $suratPath = $request->file('surat_balasan')->store('surat_balasan', 'public');
             }
 
-            // 4. PENENTUAN PERUSAHAAN (Mencegah Duplikat)
+            // 4. PENENTUAN PERUSAHAAN
             $cleanedNama = trim($request->nama_instansi);
             $perusahaan = null;
 
             if ($request->filled('perusahaan_id') && is_numeric($request->perusahaan_id)) {
-                // Gunakan perusahaan lama (berdasarkan Dropdown ID)
                 $perusahaan = Perusahaan::findOrFail($request->perusahaan_id);
             } else {
-                // Cek sekali lagi di DB (mencegah duplikat karena spasi / huruf besar kecil)
                 $perusahaan = Perusahaan::whereRaw('LOWER(TRIM(nama_perusahaan)) = ?', [strtolower($cleanedNama)])->first();
 
-                // Jika benar-benar baru, buat baru
                 if (!$perusahaan) {
                     $perusahaanData = [
                         'nama_perusahaan'  => $cleanedNama,
@@ -110,9 +112,47 @@ class AjukanMandiriController extends Controller
                 }
             }
 
-            // 5. AUTO-CREATE LOWONGAN BAYANGAN (Mencegah Error 1364 & 1265)
+            // 5. AUTO-CREATE / AMBIL AKUN SPV
+            $spvUser = User::where('email', $request->email_supervisor)->first();
+
+            if (!$spvUser) {
+                $rawPassword = 'Spv-' . rand(1000, 9999);
+                $spvUser = User::create([
+                    'name'          => trim($request->nama_supervisor),
+                    'email'         => trim($request->email_supervisor),
+                    'password'      => Hash::make($rawPassword),
+                    'temp_password' => $rawPassword,
+                    'is_active'     => true,
+                ]);
+
+                if (method_exists($spvUser, 'assignRole')) {
+                    $spvUser->assignRole('spv');
+                }
+
+                SpvProfile::create([
+                    'user_id'       => $spvUser->id,
+                    'perusahaan_id' => $perusahaan->id,
+                    'jabatan'       => trim($request->jabatan_supervisor),
+                    'no_hp'         => trim($request->no_hp_supervisor),
+                ]);
+            } else {
+                if (method_exists($spvUser, 'hasRole') && !$spvUser->hasRole('spv')) {
+                    $spvUser->assignRole('spv');
+                }
+
+                SpvProfile::firstOrCreate(
+                    ['user_id' => $spvUser->id],
+                    [
+                        'perusahaan_id' => $perusahaan->id,
+                        'jabatan'       => trim($request->jabatan_supervisor),
+                        'no_hp'         => trim($request->no_hp_supervisor),
+                    ]
+                );
+            }
+
+            // 6. AUTO-CREATE LOWONGAN MANDIRI (DITAUTKAN KE spv_id)
             $sampleLowongan = Lowongan::latest()->first();
-            $validStatus = $sampleLowongan ? $sampleLowongan->status : 'published'; // Menyesuaikan ENUM DB Anda
+            $validStatus = $sampleLowongan ? $sampleLowongan->status : 'published';
 
             $lowonganMandiri = Lowongan::firstOrCreate(
                 [
@@ -120,16 +160,22 @@ class AjukanMandiriController extends Controller
                     'judul_posisi'  => trim($request->posisi),
                 ],
                 [
+                    'spv_id'             => $spvUser->id, // KUNCI KE AKUN SPV
                     'deskripsi'          => 'Lowongan Otomatis - Jalur Magang Mandiri',
                     'kualifikasi'        => 'Khusus Pengajuan Mandiri',
                     'tipe_magang'        => 'mandiri',
                     'kuota'              => 1,
                     'status'             => $validStatus,
-                    'batas_pendaftaran'  => $request->tanggal_selesai ?? now()->addMonths(6)->toDateString(), // <-- Solusi Error 1364
+                    'batas_pendaftaran'  => $request->tanggal_selesai ?? now()->addMonths(6)->toDateString(),
                 ]
             );
 
-            // 6. SIMPAN PENDAFTARAN
+            // Jika lowongan sudah ada sebelumnya tapi spv_id masih null, perbarui sekarang
+            if (empty($lowonganMandiri->spv_id)) {
+                $lowonganMandiri->update(['spv_id' => $spvUser->id]);
+            }
+
+            // 7. SIMPAN PENDAFTARAN
             Pendaftaran::create([
                 'user_id'               => $user->id,
                 'lowongan_id'           => $lowonganMandiri->id,
@@ -144,6 +190,8 @@ class AjukanMandiriController extends Controller
                 'catatan_seleksi'       => "Detail Jobdesc: " . $request->jobdesc . " | Supervisor: " . $request->nama_supervisor . " (" . $request->jabatan_supervisor . " - " . $request->no_hp_supervisor . " / " . $request->email_supervisor . ")",
             ]);
 
+            DB::commit();
+
             session()->flash('success', 'Pengajuan magang mandiri berhasil dikirim! Silakan pantau status verifikasi.');
 
             return response()->json([
@@ -153,11 +201,13 @@ class AjukanMandiriController extends Controller
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             return response()->json([
                 'status'  => 'error',
                 'message' => collect($e->errors())->first()[0] ?? 'Data form tidak valid.'
             ], 422);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()

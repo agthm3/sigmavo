@@ -223,7 +223,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('manajemen-akun')->group(function () {
             
             // Aktivasi User & Import Massal
-            Route::get('/aktivasi-user', [AktivasiUserController::class, 'indxfex'])->name('dashboard-manajemen-aktivasi-user');
+            Route::get('/aktivasi-user', [AktivasiUserController::class, 'index'])->name('dashboard-manajemen-aktivasi-user');
             Route::post('/aktivasi-user', [AktivasiUserController::class, 'store'])->name('dashboard-manajemen-aktivasi-store');
             Route::put('/aktivasi-user/{id}/update-profile', [AktivasiUserController::class, 'updateProfile'])->name('dashboard-manajemen-aktivasi-update-profile');
             Route::patch('/aktivasi-user/{id}/toggle', [AktivasiUserController::class, 'toggleStatus'])->name('dashboard-manajemen-aktivasi-toggle');
@@ -236,6 +236,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Pengaturan Global
             Route::get('/pengaturan', [PengaturanGlobalController::class, 'index'])->name('dashboard-manajemen-pengaturan');
             Route::put('/pengaturan/settings', [PengaturanGlobalController::class, 'updateSettings'])->name('dashboard-manajemen-pengaturan-settings-update');
+            Route::post('/pengaturan/migrate-spv', [App\Http\Controllers\PengaturanGlobalController::class, 'migrateSpvRelasi'])
+                    ->name('dashboard-manajemen-pengaturan-migrate-spv');
             
             // Rubrik Penilaian
             Route::get('/rubrik-penilaian', [RubrikPenilaianController::class, 'index'])->name('dashboard-manajemen-rubrik-penilaian');

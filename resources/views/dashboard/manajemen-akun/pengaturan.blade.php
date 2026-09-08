@@ -263,6 +263,43 @@
                         </div>
                     </div>
                 </div>
+                
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-3">
+                    <h3 class="text-base font-bold text-gray-800 border-b border-gray-100 pb-3"><i class="fas fa-building text-vokasi-primary mr-2"></i> Sekretariat Vokasi</h3>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Resmi</label>
+                            <input type="email" name="email_resmi" value="{{ old('email_resmi', $settings['email_resmi']) }}" required {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Lokasi Sekretariat</label>
+                            <input type="text" name="lokasi" value="{{ old('lokasi', $settings['lokasi']) }}" {{ !Auth::user()->hasAnyRole(['admin', 'superadmin']) ? 'disabled' : '' }} class="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg">
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- PANEL TOOLS DATABASE MIGRATION (HANYA SUPERADMIN) -->
+            @if(Auth::user()->hasAnyRole(['admin', 'superadmin']))
+            <div class="bg-purple-50 p-6 rounded-2xl border border-purple-200 shadow-sm space-y-4">
+                <h3 class="text-base font-bold text-purple-900 border-b border-purple-200/50 pb-3">
+                    <i class="fas fa-database text-purple-600 mr-2"></i> Database System Tools
+                </h3>
+                
+                <div class="text-xs text-purple-800 leading-relaxed font-medium">
+                    <p class="mb-2">Tombol di bawah ini digunakan untuk menambal data lama <strong>(Legacy Data)</strong>. Jika ada Lowongan yang belum memiliki SPV (karena di skema lama SPV hanya menempel di Perusahaan), tool ini akan memindahkan ikatan SPV tersebut ke Listing Lowongan secara otomatis.</p>
+                </div>
+
+                <form action="{{ route('dashboard-manajemen-pengaturan-migrate-spv') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin memigrasi seluruh relasi SPV pada data lama? Proses ini tidak dapat dibatalkan.')">
+                    @csrf
+                    <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fas fa-random"></i> Eksekusi Migrasi Data SPV
+                    </button>
+                </form>
+            </div>
+            @endif
             </form>
         </div>
 

@@ -7,6 +7,7 @@ use App\Models\Prodi;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PengaturanGlobalController extends Controller
 {
@@ -173,5 +174,44 @@ class PengaturanGlobalController extends Controller
         $cpmk->delete();
 
         return redirect()->back()->with('success', 'CPMK berhasil dihapus.');
+    }
+
+    public function migrateSpvRelasi()
+    {
+        if (!Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
+            return redirect()->back()->with('error', 'Akses ditolak! Hanya Admin/Superadmin yang bisa melakukan Migrasi Data.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $lowongans = DB::table('lowongans')->get();
+            $berhasilPindah = 0;
+            $sudahAda = 0;
+
+            foreach ($lowongans as $lowongan) {
+                // Jika sudah ada SPV-nya, lewati
+                if (!empty($lowongan->spv_id)) {
+                    $sudahAda++;
+                    continue;
+                }
+
+                // Cari SPV yang selama ini nempel di perusahaan tersebut
+                $spvProfile = DB::table('spv_profiles')->where('perusahaan_id', $lowongan->perusahaan_id)->first();
+                
+                if ($spvProfile) {
+                    DB::table('lowongans')
+                        ->where('id', $lowongan->id)
+                        ->update(['spv_id' => $spvProfile->user_id]);
+                    $berhasilPindah++;
+                }
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', "Migrasi Selesai! {$berhasilPindah} Lowongan lama berhasil ditautkan dengan SPV perusahaan. ({$sudahAda} Lowongan sudah aman).");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memigrasi data relasi SPV: ' . $e->getMessage());
+        }
     }
 }
