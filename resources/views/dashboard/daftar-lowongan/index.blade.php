@@ -4,7 +4,7 @@
 <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50"
      x-data="lowonganMagang()">
 
-    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 flex flex-col relative custom-scrollbar">
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 flex flex-col relative custom-scrollbar" id="main-content-lowongan">
         
         <!-- Hero Search Section -->
         <div class="bg-vokasi-dark px-4 py-8 lg:px-8 shadow-inner relative overflow-hidden shrink-0">
@@ -20,18 +20,18 @@
                 <div class="flex flex-col md:flex-row gap-2 bg-white p-2 rounded-xl shadow-lg">
                     <div class="flex-1 flex items-center bg-gray-50 rounded-lg border border-gray-200 px-3 py-2">
                         <i class="fas fa-search text-gray-400 mr-2"></i>
-                        <input type="text" x-model="searchQuery" @input.debounce.500ms="fetchData()" placeholder="Cari posisi, poli, instansi, atau kata kunci..." class="bg-transparent border-none outline-none w-full text-sm text-gray-700 focus:outline-none">
+                        <input type="text" x-model="searchQuery" @input.debounce.500ms="filterChanged()" placeholder="Cari posisi, poli, instansi, atau kata kunci..." class="bg-transparent border-none outline-none w-full text-sm text-gray-700 focus:outline-none">
                     </div>
                     <div class="flex-1 flex items-center bg-gray-50 rounded-lg border border-gray-200 px-3 py-2">
                         <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>
-                        <select x-model="searchLocation" @change="fetchData()" class="bg-transparent border-none outline-none w-full text-sm text-gray-700 cursor-pointer focus:outline-none">
+                        <select x-model="searchLocation" @change="filterChanged()" class="bg-transparent border-none outline-none w-full text-sm text-gray-700 cursor-pointer focus:outline-none">
                             <option value="">Semua Lokasi</option>
                             <option value="Makassar">Makassar</option>
                             <option value="Gowa">Gowa</option>
                             <option value="Maros">Maros</option>
                         </select>
                     </div>
-                    <button type="button" @click="fetchData()" class="bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold py-3 md:py-2 px-6 rounded-lg transition-colors w-full md:w-auto">
+                    <button type="button" @click="filterChanged()" class="bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold py-3 md:py-2 px-6 rounded-lg transition-colors w-full md:w-auto">
                         Cari
                     </button>
                 </div>
@@ -57,7 +57,7 @@
             <!-- Loading Indicator -->
             <div x-show="isLoading" x-cloak class="flex justify-center items-center py-10">
                 <i class="fas fa-spinner fa-spin text-3xl text-vokasi-primary"></i>
-                <span class="ml-3 font-semibold text-gray-500">Mencari Lowongan...</span>
+                <span class="ml-3 font-semibold text-gray-500">Memuat Lowongan...</span>
             </div>
 
             <!-- JOB CARDS GRID (Live Data via Alpine) -->
@@ -175,8 +175,12 @@
 
             </div>
 
-            <!-- HTML Pagination Placeholder -->
-            <div x-show="!isLoading && paginationHtml !== ''" class="flex justify-center mb-8" x-html="paginationHtml"></div>
+            <!-- HTML Pagination Placeholder dengan Delegasi Klik -->
+            <div x-show="!isLoading && paginationHtml !== ''" 
+                 class="flex justify-center mb-8 pagination-wrapper" 
+                 @click="handlePaginationClick($event)"
+                 x-html="paginationHtml">
+            </div>
         </div>
 
         <footer class="mt-auto py-4 text-center text-sm text-gray-500 border-t border-gray-200 bg-gray-50">
@@ -242,6 +246,7 @@ document.addEventListener('alpine:init', () => {
         jobs: [],
         searchQuery: new URLSearchParams(window.location.search).get('search') || '',
         searchLocation: new URLSearchParams(window.location.search).get('lokasi') || '',
+        currentPage: parseInt(new URLSearchParams(window.location.search).get('page')) || 1,
         isLoading: true,
         openDetailModal: false,
         selectedJob: null,
@@ -249,16 +254,42 @@ document.addEventListener('alpine:init', () => {
         paginationHtml: '',
 
         init() {
-            this.fetchData();
+            this.fetchData(this.currentPage);
+
+            // Listener untuk navigasi tombol Back / Forward di browser
+            window.addEventListener('popstate', () => {
+                const params = new URLSearchParams(window.location.search);
+                this.searchQuery = params.get('search') || '';
+                this.searchLocation = params.get('lokasi') || '';
+                this.currentPage = parseInt(params.get('page')) || 1;
+                this.fetchData(this.currentPage, false);
+            });
         },
 
-        fetchData() {
+        // Dipanggil ketika user mengetik pencarian baru atau memilih lokasi
+        filterChanged() {
+            this.currentPage = 1;
+            this.fetchData(1);
+        },
+
+        fetchData(page = 1, updateHistory = true) {
             this.isLoading = true;
+            this.currentPage = page;
+
             let url = new URL("{{ route('dashboard-mahasiswa-daftar-lowongan') }}");
-            url.searchParams.set('search', this.searchQuery);
-            url.searchParams.set('lokasi', this.searchLocation);
+            if (this.searchQuery) {
+                url.searchParams.set('search', this.searchQuery);
+            }
+            if (this.searchLocation) {
+                url.searchParams.set('lokasi', this.searchLocation);
+            }
+            if (page > 1) {
+                url.searchParams.set('page', page);
+            }
             
-            window.history.pushState({}, '', url);
+            if (updateHistory) {
+                window.history.pushState({}, '', url);
+            }
 
             fetch(url, {
                 headers: {
@@ -271,11 +302,32 @@ document.addEventListener('alpine:init', () => {
                 this.jobs = data.data;
                 this.paginationHtml = data.links;
                 this.isLoading = false;
+
+                // Smooth scroll kembali ke bagian atas daftar setelah pindah halaman
+                const mainEl = document.getElementById('main-content-lowongan');
+                if (mainEl && page > 1) {
+                    mainEl.scrollTo({ top: 200, behavior: 'smooth' });
+                }
             })
             .catch(err => {
                 console.error(err);
                 this.isLoading = false;
             });
+        },
+
+        // Intercept klik pada link pagination HTML yang di-generate Laravel
+        handlePaginationClick(event) {
+            const targetLink = event.target.closest('a');
+            if (targetLink && targetLink.getAttribute('href')) {
+                event.preventDefault();
+                try {
+                    const parsedUrl = new URL(targetLink.getAttribute('href'), window.location.origin);
+                    const targetPage = parsedUrl.searchParams.get('page') || 1;
+                    this.fetchData(parseInt(targetPage));
+                } catch (e) {
+                    console.error("Gagal membaca link pagination:", e);
+                }
+            }
         },
 
         openModal(job) {

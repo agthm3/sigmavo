@@ -74,7 +74,7 @@ class DaftarLowonganController extends Controller
                 ->toArray();
         }
 
-        // Jika request dari AJAX (untuk Live Search Alpine), kirimkan JSON
+        // Jika request dari AJAX (untuk Live Search & Pagination Alpine), kirimkan JSON
         if ($request->ajax() || $request->wantsJson()) {
             $lowonganItems = $lowongans->map(function ($job) use ($activePendaftaranIds, $completedPendaftaranIds) {
                 
@@ -115,7 +115,12 @@ class DaftarLowonganController extends Controller
 
             return response()->json([
                 'data' => $lowonganItems,
-                'links' => (string) $lowongans->links()
+                'links' => (string) $lowongans->links(),
+                'current_page' => $lowongans->currentPage(),
+                'last_page' => $lowongans->lastPage(),
+                'total' => $lowongans->total(),
+                'per_page' => $lowongans->perPage(),
+                'has_more_pages' => $lowongans->hasMorePages()
             ]);
         }
 
