@@ -22,6 +22,9 @@ class Logbook extends Model
         'verifikator_id',
         'waktu_verifikasi',
         'is_susulan',
+        'status_spv',
+        'status_dosen',
+        'catatan_spv',
     ];
 
     protected $casts = [

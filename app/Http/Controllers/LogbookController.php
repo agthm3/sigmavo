@@ -48,14 +48,16 @@ class LogbookController extends Controller
 
         if ($isLocked) {
             return view('dashboard.logbook.index', [
-                'isLocked'        => true,
-                'sudahPembekalan' => $sudahPembekalan, 
-                'hasAbsenHariIni' => false,
-                'jamTerlambat'    => 0,
-                'logbooks'        => collect(),
-                'pendaftaran'     => $pendaftaran,
-                'daftarCpmk'      => [],
-                'user'            => $user
+                'isLocked'              => true,
+                'sudahPembekalan'       => $sudahPembekalan, 
+                'hasAbsenHariIni'       => false,
+                'hasAbsenPulangHariIni' => false,
+                'statusAbsensi'         => 'belum_absen_masuk',
+                'jamTerlambat'          => 0,
+                'logbooks'              => collect(),
+                'pendaftaran'           => $pendaftaran,
+                'daftarCpmk'            => [],
+                'user'                  => $user
             ]);
         }
 
@@ -65,9 +67,19 @@ class LogbookController extends Controller
             ->first();
         
         $hasAbsenHariIni = $absenHariIni ? true : false;
+        $hasAbsenPulangHariIni = ($absenHariIni && !empty($absenHariIni->waktu_pulang)) ? true : false;
+
+        // Klasifikasi status absensi untuk feedback UX
+        $statusAbsensi = 'belum_absen_masuk';
+        if ($absenHariIni && empty($absenHariIni->waktu_pulang)) {
+            $statusAbsensi = 'belum_absen_pulang';
+        } elseif ($hasAbsenPulangHariIni) {
+            $statusAbsensi = 'lengkap';
+        }
+
         $jamTerlambat = 0;
 
-        // Jika belum absen, hitung estimasi jam keterlambatan (asumsi masuk 08:00)
+        // Jika belum absen masuk, hitung estimasi jam keterlambatan (asumsi masuk 08:00)
         if (!$hasAbsenHariIni) {
             $jamMulai = 8;
             $jamSekarang = (int) Carbon::now()->format('H');
@@ -113,14 +125,16 @@ class LogbookController extends Controller
         }
 
         return view('dashboard.logbook.index', [
-            'isLocked'        => false,
-            'sudahPembekalan' => true,
-            'hasAbsenHariIni' => $hasAbsenHariIni,
-            'jamTerlambat'    => $jamTerlambat,
-            'logbooks'        => $logbooks,
-            'pendaftaran'     => $pendaftaran,
-            'daftarCpmk'      => $daftarCpmk,
-            'user'            => $user
+            'isLocked'              => false,
+            'sudahPembekalan'       => true,
+            'hasAbsenHariIni'       => $hasAbsenHariIni,
+            'hasAbsenPulangHariIni' => $hasAbsenPulangHariIni,
+            'statusAbsensi'         => $statusAbsensi,
+            'jamTerlambat'          => $jamTerlambat,
+            'logbooks'              => $logbooks,
+            'pendaftaran'           => $pendaftaran,
+            'daftarCpmk'            => $daftarCpmk,
+            'user'                  => $user
         ]);
     }
 
@@ -154,13 +168,13 @@ class LogbookController extends Controller
             }
         }
 
-        // Proteksi Backend 3: WAJIB ABSEN HARI INI
+        // Proteksi Backend 3: WAJIB SUDAH ABSEN PULANG HARI INI
         $absenHariIni = Absensi::where('user_id', $user->id)
             ->whereDate('tanggal', Carbon::today()->toDateString())
             ->first();
 
-        if (!$absenHariIni) {
-            return redirect()->back()->with('error', 'Akses Ditolak. Anda belum mengisi absen kehadiran hari ini.');
+        if (!$absenHariIni || empty($absenHariIni->waktu_pulang)) {
+            return redirect()->back()->with('error', 'Akses Ditolak. Anda wajib melakukan Absen Pulang hari ini terlebih dahulu sebelum dapat mengisi dan menyimpan Logbook harian.');
         }
 
         $request->validate([
@@ -228,12 +242,16 @@ class LogbookController extends Controller
         $logbook->uraian_kegiatan = $request->uraian_kegiatan;
         $logbook->mata_kuliah = $request->mata_kuliah ?? [];
 
+        // Reset semua status persetujuan paralel saat mahasiswa mengirim perbaikan logbook
         if ($logbook->status_asistensi === 'revisi') {
             $logbook->status_asistensi = 'pending';
+            $logbook->status_spv       = 'pending';
+            $logbook->status_dosen     = 'pending';
         }
+        
         $logbook->save();
 
-        return redirect()->back()->with('success', 'Logbook harian berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Logbook harian berhasil diperbarui dan diserahkan kembali untuk diverifikasi.');
     }
 
     /**

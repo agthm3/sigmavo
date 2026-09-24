@@ -150,35 +150,17 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Gagal Absen Pulang: Anda belum melakukan Absen Masuk hari ini.');
             }
 
-            // KONTROL VALIDASI MODE FINAL VS TESTING
-            if (!$isTestingMode) {
-                // Konversi string waktu lokal menjadi objek Carbon agar bisa dihitung
-                $waktuMasukObj = Carbon::createFromFormat('H:i:s', $absensi->waktu_masuk);
-                $waktuPulangObj = Carbon::createFromFormat('H:i:s', $waktuAbsen);
-                
-                $selisihMenit = $waktuPulangObj->diffInMinutes($waktuMasukObj);
-                $selisihJam = round($selisihMenit / 60, 1);
+            // [REVISI KLIEN]: Validasi batas minimal 480 menit (8 jam) dilepas 
+            // agar mahasiswa bisa absen pulang kapan saja jam kerjanya berakhir hari ini.
+            // Tag lokasi GPS, foto selfie, dan waktu lokal tetap tercatat akurat.
 
-                // Di Mode Final/Produksi: Harus minimal 8 jam (480 menit) setelah absen masuk
-                if ($selisihMenit < 480) {
-                    $sisaMenit = 480 - $selisihMenit;
-                    $sisaJam = floor($sisaMenit / 60);
-                    $sisaMenitSisa = $sisaMenit % 60;
-
-                    $pesanSisa = $sisaJam > 0 
-                        ? "{$sisaJam} jam {$sisaMenitSisa} menit" 
-                        : "{$sisaMenitSisa} menit";
-
-                    return redirect()->back()->with('error', "Absen pulang belum dapat dilakukan. Durasi kerja Anda baru {$selisihJam} jam. Minimal durasi kerja adalah 8 jam (Harus menunggu {$pesanSisa} lagi).");
-                }
-            }
-
-            // Jika lulus validasi (atau sedang di Mode Testing)
             $absensi->waktu_pulang     = $waktuAbsen; // <-- Pakai waktu lokal
             $absensi->foto_pulang      = $fileName;
             $absensi->latitude_pulang  = $request->latitude;
             $absensi->longitude_pulang = $request->longitude;
-            $absensi->jam_diperoleh    = 8; // Mengalokasikan 8 jam
+            
+            // Catatan: Jam diperoleh tetap dialokasikan 8 jam di record presensi (atau dipotong nanti via approval)
+            $absensi->jam_diperoleh    = 8; 
         }
 
         $absensi->save();

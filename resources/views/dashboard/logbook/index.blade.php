@@ -353,13 +353,81 @@
                                                 </span>
                                             @endif
                                         </td>
+<!-- KOLOM STATUS VERIFIKASI PARALEL (SPV & DOSEN) -->
                                         <td class="p-4">
-                                            @if($item->catatan_dosen)
-                                                <p class="text-xs p-2 rounded border
-                                                    {{ $item->status_asistensi == 'revisi' ? 'bg-red-50 text-red-700 border-red-100 font-medium' : 'bg-green-50 text-green-700 border-green-100' }}">
-                                                    {{ $item->catatan_dosen }}
-                                                </p>
+                                            @php
+                                                $spvOk = ($item->status_spv === 'approved');
+                                                $dosenOk = ($item->status_dosen === 'approved');
+                                                $isRevisi = ($item->status_asistensi === 'revisi' || $item->status_spv === 'revisi' || $item->status_dosen === 'revisi');
+                                                $isFullyApproved = ($item->status_asistensi === 'approved' || ($spvOk && $dosenOk));
+                                            @endphp
+
+                                            @if($isFullyApproved)
+                                                <!-- KEDUA PIHAK TELAH APPROVE -->
+                                                <div class="space-y-1">
+                                                    <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 whitespace-nowrap">
+                                                        <i class="fas fa-check-double mr-1"></i> Approved
+                                                    </span>
+                                                    <span class="block text-[9px] text-emerald-600 font-semibold">+8 Jam Terhitung</span>
+                                                </div>
+                                            @elseif($isRevisi)
+                                                <!-- STATUS REVISI -->
+                                                <div class="space-y-1">
+                                                    <span class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 whitespace-nowrap">
+                                                        <i class="fas fa-exclamation-triangle mr-1"></i> Perlu Revisi
+                                                    </span>
+                                                    @if($item->status_spv === 'revisi' && $item->status_dosen === 'revisi')
+                                                        <span class="block text-[9px] text-red-600 font-medium">Revisi SPV & Dosen</span>
+                                                    @elseif($item->status_spv === 'revisi')
+                                                        <span class="block text-[9px] text-red-600 font-medium">Revisi dari SPV Mitra</span>
+                                                    @else
+                                                        <span class="block text-[9px] text-red-600 font-medium">Revisi dari Dosen</span>
+                                                    @endif
+                                                </div>
                                             @else
+                                                <!-- STATUS PROSES DUAL-APPROVAL -->
+                                                <div class="space-y-1.5">
+                                                    @if($spvOk && !$dosenOk)
+                                                        <span class="inline-flex items-center px-2 py-0.5 bg-teal-50 text-teal-700 text-[10px] font-semibold rounded border border-teal-200 whitespace-nowrap">
+                                                            <i class="fas fa-check text-teal-600 mr-1"></i> SPV Approved
+                                                        </span>
+                                                        <span class="block text-[9px] text-amber-600 font-medium">
+                                                            <i class="fas fa-clock mr-0.5"></i> Menunggu Dosen
+                                                        </span>
+                                                    @elseif(!$spvOk && $dosenOk)
+                                                        <span class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded border border-blue-200 whitespace-nowrap">
+                                                            <i class="fas fa-check text-blue-600 mr-1"></i> Dosen Approved
+                                                        </span>
+                                                        <span class="block text-[9px] text-amber-600 font-medium">
+                                                            <i class="fas fa-clock mr-0.5"></i> Menunggu SPV
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-200 whitespace-nowrap">
+                                                            <i class="fas fa-spinner fa-spin mr-1"></i> Menunggu Verifikasi
+                                                        </span>
+                                                        <span class="block text-[9px] text-gray-400">SPV & Dosen</span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        </td>
+
+                                        <!-- KOLOM CATATAN PEMBIMBING (SPV & DOSEN) -->
+                                        <td class="p-4 text-xs space-y-1.5">
+                                            @if($item->catatan_spv)
+                                                <div class="p-2 rounded border {{ $item->status_spv === 'revisi' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-teal-50 text-teal-800 border-teal-100' }}">
+                                                    <span class="font-bold block text-[10px] uppercase text-teal-900 mb-0.5">Catatan SPV Mitra:</span>
+                                                    <p class="leading-relaxed">{{ $item->catatan_spv }}</p>
+                                                </div>
+                                            @endif
+
+                                            @if($item->catatan_dosen)
+                                                <div class="p-2 rounded border {{ $item->status_dosen === 'revisi' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-800 border-blue-100' }}">
+                                                    <span class="font-bold block text-[10px] uppercase text-blue-900 mb-0.5">Catatan Dosen:</span>
+                                                    <p class="leading-relaxed">{{ $item->catatan_dosen }}</p>
+                                                </div>
+                                            @endif
+
+                                            @if(!$item->catatan_spv && !$item->catatan_dosen)
                                                 <span class="text-gray-400 italic text-xs">Belum ada catatan</span>
                                             @endif
                                         </td>
@@ -643,28 +711,28 @@
     <script>
         function checkAbsensiAndSubmit(event) {
             // Ambil data status absensi dari controller
-            const hasAbsen = {{ isset($hasAbsenHariIni) && $hasAbsenHariIni ? 'true' : 'false' }};
-            const jamTerlambat = {{ isset($jamTerlambat) ? $jamTerlambat : 0 }};
+            const statusAbsensi = '{{ $statusAbsensi ?? 'belum_absen_masuk' }}';
 
-            // Jika belum absen, tahan proses submit
-            if (!hasAbsen) {
+            // Jika absensi belum lengkap (belum absen pulang), tahan proses submit
+            if (statusAbsensi !== 'lengkap') {
                 event.preventDefault(); 
                 
-                let lateText = '';
-                if (jamTerlambat > 0) {
-                    lateText = `
-                        <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs text-left">
-                            <i class="fas fa-clock mr-1"></i> Anda diperkirakan terlambat sekitar <strong>${jamTerlambat} jam</strong> dari waktu masuk kerja.<br>
-                            <span class="text-[10px] text-red-600 mt-1 block italic">*Ini hanya estimasi, bukan waktu pasti dari tempat perusahaan Anda masuk jam kerja.</span>
-                        </div>
-                    `;
+                let pesanHtml = '';
+                let btnText = '';
+
+                if (statusAbsensi === 'belum_absen_masuk') {
+                    pesanHtml = 'Anda belum mengisi <strong>Absen Masuk</strong> hari ini. Seluruh kegiatan logbook harus didahului dengan rekam kehadiran harian yang lengkap.';
+                    btnText = '<i class="fas fa-sign-in-alt mr-1"></i> Isi Absen Masuk Sekarang';
+                } else if (statusAbsensi === 'belum_absen_pulang') {
+                    pesanHtml = 'Anda sudah Absen Masuk, namun belum melakukan <strong>Absen Pulang</strong> hari ini.<br><br>Pekerjaan logbook harian hanya dapat diisi setelah jam kerja magang Anda selesai.';
+                    btnText = '<i class="fas fa-sign-out-alt mr-1"></i> Lakukan Absen Pulang';
                 }
 
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Belum Mengisi Absensi!',
-                    html: `Anda harus mengisi absensi kedatangan terlebih dahulu sebelum dapat mengirim logbook aktivitas harian.${lateText}`,
-                    confirmButtonText: '<i class="fas fa-sign-in-alt mr-1"></i> Isi Absensi Sekarang',
+                    title: 'Lengkapi Kehadiran Anda',
+                    html: pesanHtml,
+                    confirmButtonText: btnText,
                     confirmButtonColor: '#0D9488',
                     showCancelButton: true,
                     cancelButtonText: 'Batal',
@@ -678,7 +746,7 @@
                 return false;
             }
 
-            // Jika sudah absen, jalankan submit dengan animasi loading
+            // Jika sudah absen pulang, jalankan submit dengan animasi loading
             showLogbookLoading(event);
             return true;
         }

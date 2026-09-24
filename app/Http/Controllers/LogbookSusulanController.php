@@ -69,7 +69,7 @@ class LogbookSusulanController extends Controller
             ->first();
 
         if (!$pendaftaran || !$pendaftaran->allow_logbook_susulan) {
-            return redirect()->back()->with('error', 'Akses ditutup oleh Dosen Pembimbing.');
+            return redirect()->back()->with('error', 'Akses Ditolak. Fitur pengisian Logbook Terlewat sedang ditutup oleh Dosen Pembimbing.');
         }
 
         $request->validate([
@@ -79,12 +79,22 @@ class LogbookSusulanController extends Controller
             'foto_dokumentasi' => 'required|image|mimes:jpg,jpeg,png,webp|max:10240',
         ]);
 
+        // Cek jika mahasiswa sudah pernah mengisi logbook pada tanggal yang dipilih
+        $cekLogbookExisting = Logbook::where('user_id', $user->id)
+            ->whereDate('tanggal', $request->tanggal)
+            ->exists();
+
+        if ($cekLogbookExisting) {
+            return redirect()->back()->with('error', 'Gagal: Anda sudah pernah mengirim logbook pada tanggal ' . date('d M Y', strtotime($request->tanggal)) . '.');
+        }
+
         $fotoPath = null;
         if ($request->hasFile('foto_dokumentasi')) {
             $fotoPath = $request->file('foto_dokumentasi')->store('logbook_dokumentasi', 'public');
         }
 
-        // 1. Buat record absensi otomatis untuk tanggal lampau jika belum ada
+        // 1. Buat / Ambil record absensi otomatis untuk tanggal lampau jika belum ada
+        // Nilai jam_diperoleh diset 0, nanti akan menjadi 8 jam otomatis jika SPV & Dosen sudah approve keduanya.
         Absensi::firstOrCreate(
             ['user_id' => $user->id, 'tanggal' => $request->tanggal],
             [
@@ -92,12 +102,12 @@ class LogbookSusulanController extends Controller
                 'tipe_kehadiran'    => 'hadir',
                 'waktu_masuk'       => '08:00:00',
                 'waktu_pulang'      => '17:00:00',
-                'status_verifikasi' => 'approved',
+                'status_verifikasi' => 'pending',
                 'jam_diperoleh'     => 0,
             ]
         );
 
-        // 2. Simpan entri logbook dengan flag is_susulan = true
+        // 2. Simpan entri logbook susulan dengan flag is_susulan = true dan status paralel aktif
         $logbook = new Logbook();
         $logbook->user_id          = $user->id;
         $logbook->pendaftaran_id   = $pendaftaran->id;
@@ -106,9 +116,11 @@ class LogbookSusulanController extends Controller
         $logbook->foto_dokumentasi = $fotoPath;
         $logbook->mata_kuliah      = $request->mata_kuliah ?? [];
         $logbook->status_asistensi = 'pending';
+        $logbook->status_spv       = 'pending';
+        $logbook->status_dosen     = 'pending';
         $logbook->is_susulan       = true;
         $logbook->save();
 
-        return redirect()->back()->with('success', 'Logbook terlewat untuk tanggal ' . date('d M Y', strtotime($request->tanggal)) . ' berhasil dikirim ke antrean verifikasi SPV.');
+        return redirect()->back()->with('success', 'Logbook susulan untuk tanggal ' . date('d M Y', strtotime($request->tanggal)) . ' berhasil dikirim ke antrean verifikasi SPV dan Dosen.');
     }
 }

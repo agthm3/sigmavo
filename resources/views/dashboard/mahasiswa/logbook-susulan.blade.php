@@ -30,7 +30,7 @@
                     <i class="fas fa-info-circle text-red-600 text-base mt-0.5 shrink-0"></i>
                     <div>
                         <strong class="block mb-1 text-sm text-red-900">Akses Khusus Susulan Terbuka!</strong>
-                        <p>Dosen pembimbing telah membukakan akses susulan untuk Anda. Silakan isi kegiatan magang dengan <strong>memilih tanggal yang terlewat secara teliti</strong>. Setiap form yang dikirim akan otomatis men-generate data absensi kehadiran untuk tanggal tersebut agar dapat disahkan oleh Dosen.</p>
+                        <p>Dosen pembimbing telah membukakan akses susulan untuk Anda. Silakan isi kegiatan magang dengan <strong>memilih tanggal yang terlewat secara teliti</strong>. Setiap form yang dikirim akan otomatis men-generate data absensi kehadiran untuk tanggal tersebut agar dapat disahkan oleh SPV Mitra dan Dosen Pembimbing.</p>
                     </div>
                 </div>
 
@@ -237,15 +237,21 @@
                                     <th class="p-4 w-32">Tanggal</th>
                                     <th class="p-4 min-w-[280px]">Uraian Kegiatan & CPMK Terkait</th>
                                     <th class="p-4 w-28 text-center">Foto</th>
-                                    <th class="p-4 w-36">Status</th>
-                                    <th class="p-4 w-48">Catatan Dosen</th>
+                                    <th class="p-4 w-40">Status Verifikasi</th>
+                                    <th class="p-4 w-52">Catatan Pembimbing</th>
                                 </tr>
                             </thead>
                             <tbody class="text-sm divide-y divide-gray-100">
                                 
-                                @forelse($logbooks as $index => $item)
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="p-4 text-center text-gray-500 font-medium">{{ $logbooks->firstItem() + $index }}</td>
+                                @forelse($logbooks as $index =>$item)
+                                @php
+                                    $spvOk = ($item->status_spv === 'approved');
+                                    $dosenOk = ($item->status_dosen === 'approved');
+                                    $isRevisi = ($item->status_asistensi === 'revisi' || $item->status_spv === 'revisi' || $item->status_dosen === 'revisi');
+                                    $isFullyApproved = ($item->status_asistensi === 'approved' || ($spvOk &&$dosenOk));
+                                @endphp
+                                <tr class="hover:bg-gray-50 transition-colors {{ $isRevisi ? 'bg-red-50/20' : '' }}">
+                                    <td class="p-4 text-center text-gray-500 font-medium">{{ $logbooks->firstItem() +$index }}</td>
                                     <td class="p-4 whitespace-nowrap">
                                         <p class="font-bold text-gray-800">{{ $item->tanggal->format('d M Y') }}</p>
                                         <p class="text-xs text-gray-500">{{ $item->tanggal->isoFormat('dddd') }}</p>
@@ -274,28 +280,72 @@
                                             <span class="text-gray-400 text-xs italic">-</span>
                                         @endif
                                     </td>
+
+                                    <!-- KOLOM STATUS VERIFIKASI PARALEL (SPV & DOSEN) -->
                                     <td class="p-4">
-                                        @if($item->status_asistensi == 'approved')
-                                            <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 whitespace-nowrap">
-                                                <i class="fas fa-check-double mr-1"></i> Approved
-                                            </span>
-                                        @elseif($item->status_asistensi == 'revisi')
-                                            <span class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 whitespace-nowrap">
-                                                <i class="fas fa-exclamation-triangle mr-1"></i> Perlu Revisi
-                                            </span>
+                                        @if($isFullyApproved)
+                                            <div class="space-y-1">
+                                                <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 whitespace-nowrap">
+                                                    <i class="fas fa-check-double mr-1"></i> Approved
+                                                </span>
+                                                <span class="block text-[9px] text-emerald-600 font-semibold">+8 Jam Terhitung</span>
+                                            </div>
+                                        @elseif($isRevisi)
+                                            <div class="space-y-1">
+                                                <span class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 whitespace-nowrap">
+                                                    <i class="fas fa-exclamation-triangle mr-1"></i> Perlu Revisi
+                                                </span>
+                                                @if($item->status_spv === 'revisi' &&$item->status_dosen === 'revisi')
+                                                    <span class="block text-[9px] text-red-600 font-medium">Revisi SPV & Dosen</span>
+                                                @elseif($item->status_spv === 'revisi')
+                                                    <span class="block text-[9px] text-red-600 font-medium">Revisi dari SPV Mitra</span>
+                                                @else
+                                                    <span class="block text-[9px] text-red-600 font-medium">Revisi dari Dosen</span>
+                                                @endif
+                                            </div>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-200 whitespace-nowrap">
-                                                <i class="fas fa-spinner fa-spin mr-1"></i> Pending
-                                            </span>
+                                            <div class="space-y-1.5">
+                                                @if($spvOk && !$dosenOk)
+                                                    <span class="inline-flex items-center px-2 py-0.5 bg-teal-50 text-teal-700 text-[10px] font-semibold rounded border border-teal-200 whitespace-nowrap">
+                                                        <i class="fas fa-check text-teal-600 mr-1"></i> SPV Approved
+                                                    </span>
+                                                    <span class="block text-[9px] text-amber-600 font-medium">
+                                                        <i class="fas fa-clock mr-0.5"></i> Menunggu Dosen
+                                                    </span>
+                                                @elseif(!$spvOk &&$dosenOk)
+                                                    <span class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded border border-blue-200 whitespace-nowrap">
+                                                        <i class="fas fa-check text-blue-600 mr-1"></i> Dosen Approved
+                                                    </span>
+                                                    <span class="block text-[9px] text-amber-600 font-medium">
+                                                        <i class="fas fa-clock mr-0.5"></i> Menunggu SPV
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-200 whitespace-nowrap">
+                                                        <i class="fas fa-spinner fa-spin mr-1"></i> Menunggu Verifikasi
+                                                    </span>
+                                                    <span class="block text-[9px] text-gray-400">SPV & Dosen</span>
+                                                @endif
+                                            </div>
                                         @endif
                                     </td>
-                                    <td class="p-4">
+
+                                    <!-- KOLOM CATATAN PEMBIMBING (SPV & DOSEN) -->
+                                    <td class="p-4 text-xs space-y-1.5">
+                                        @if($item->catatan_spv)
+                                            <div class="p-2 rounded border {{ $item->status_spv === 'revisi' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-teal-50 text-teal-800 border-teal-100' }}">
+                                                <span class="font-bold block text-[10px] uppercase text-teal-900 mb-0.5">Catatan SPV Mitra:</span>
+                                                <p class="leading-relaxed">{{ $item->catatan_spv }}</p>
+                                            </div>
+                                        @endif
+
                                         @if($item->catatan_dosen)
-                                            <p class="text-xs p-2 rounded border
-                                                {{ $item->status_asistensi == 'revisi' ? 'bg-red-50 text-red-700 border-red-100 font-medium' : 'bg-green-50 text-green-700 border-green-100' }}">
-                                                {{ $item->catatan_dosen }}
-                                            </p>
-                                        @else
+                                            <div class="p-2 rounded border {{ $item->status_dosen === 'revisi' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-800 border-blue-100' }}">
+                                                <span class="font-bold block text-[10px] uppercase text-blue-900 mb-0.5">Catatan Dosen:</span>
+                                                <p class="leading-relaxed">{{ $item->catatan_dosen }}</p>
+                                            </div>
+                                        @endif
+
+                                        @if(!$item->catatan_spv && !$item->catatan_dosen)
                                             <span class="text-gray-400 italic text-xs">Belum ada catatan</span>
                                         @endif
                                     </td>
@@ -410,7 +460,6 @@
                 openCpmk: false,
                 searchCpmk: '',
                 selectedCpmk: [],
-                // Default Cpmk jika belum ada di database
                 allCpmk: {!! json_encode($daftarCpmk) !!},
                 
                 toggleDropdown() {

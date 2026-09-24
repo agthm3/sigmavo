@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pendaftaran;
 use App\Models\Absensi;
 use App\Models\Logbook;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -38,9 +39,10 @@ class MahasiswaBimbinganController extends Controller
 
         $bimbingans = $query->latest()->get();
 
-        $targetJamDefault = 900;
+        // Ambil target jam dinamis dari Setting Superadmin (default fallback 900)
+        $targetJamDefault = (int) Setting::getByKey('min_jam_magang', 900);
 
-        // Transform data untuk menghitung kalkulasi jam, progress, dan pemisahan status SPV vs Dosen
+        // Transform data untuk menghitung kalkulasi jam, progress, dan pemisahan status SPV vs Dosen (Dual-Approval)
         $bimbingans->transform(function ($item) use ($targetJamDefault) {
             $userId = $item->user_id;
 
@@ -58,25 +60,32 @@ class MahasiswaBimbinganController extends Controller
                 }
             }
 
-            $targetJam = $item->user?->mahasiswaProfile?->prodi?->target_jam_magang ?? $targetJamDefault;
+            // Utamakan target spesifik prodi jika ada, jika tidak pakai setting Superadmin
+            $targetJamProdi = $item->user?->mahasiswaProfile?->prodi?->target_jam_magang;
+            $targetJam = ($targetJamProdi && (int)$targetJamProdi > 0) ? (int)$targetJamProdi : $targetJamDefault;
+
             $persentase = $targetJam > 0 ? min(100, round(($totalJam / $targetJam) * 100, 1)) : 0;
             $sisaJam = max(0, $targetJam - $totalJam);
 
-            // 2. KLASIFIKASI STATUS LOGBOOK (Berdasarkan kolom `status_asistensi`)
+            // 2. KLASIFIKASI STATUS LOGBOOK (Sesuai Skema Paralel Dual-Approval)
             
-            // a. Logbook yang SUDAH DI-APPROVE SPV dan SIAP DIASISTENSI DOSEN
+            // a. Logbook yang BELUM DIASISTENSI DOSEN (Siap diverifikasi tanpa menunggu SPV)
             $logbookReadyDosen = Logbook::where('user_id', $userId)
-                ->where('status_asistensi', 'approved_spv')
+                ->where('status_dosen', 'pending')
                 ->count();
 
-            // b. Logbook yang MASIH MENUNGGU APPROVAL SPV
+            // b. Logbook yang BELUM DI-APPROVE SPV MITRA (Untuk pemantauan Dosen)
             $logbookWaitingSpv = Logbook::where('user_id', $userId)
-                ->whereIn('status_asistensi', ['pending', 'pending_spv'])
+                ->where('status_spv', 'pending')
                 ->count();
 
             // c. Logbook yang statusnya REVISI
             $logbookRevisi = Logbook::where('user_id', $userId)
-                ->where('status_asistensi', 'revisi')
+                ->where(function($q) {
+                    $q->where('status_asistensi', 'revisi')
+                      ->orWhere('status_dosen', 'revisi')
+                      ->orWhere('status_spv', 'revisi');
+                })
                 ->count();
 
             // 3. Status Keaktifan Presensi Hari Ini
@@ -120,19 +129,24 @@ class MahasiswaBimbinganController extends Controller
             'siapAsistensi'
         ));
     }
+
+    /**
+     * Buka / Tutup Akses Pengisian Logbook Susulan (Terlewat)
+     */
     public function toggleSusulan($id)
     {
         $user = Auth::user();
         if (!$user->hasAnyRole(['dosen', 'admin_prodi', 'admin', 'superadmin'])) {
-            abort(403);
+            abort(403, 'Akses Ditolak. Anda tidak memiliki wewenang untuk mengubah status ini.');
         }
 
-        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran = Pendaftaran::with('user')->findOrFail($id);
         $pendaftaran->allow_logbook_susulan = !$pendaftaran->allow_logbook_susulan;
         $pendaftaran->save();
 
-        $status = $pendaftaran->allow_logbook_susulan ? 'diaktifkan' : 'dinonaktifkan (ditutup)';
+        $namaMahasiswa = $pendaftaran->user?->name ?? 'Mahasiswa';
+        $status = $pendaftaran->allow_logbook_susulan ? 'diaktifkan (dibuka)' : 'dinonaktifkan (ditutup)';
 
-        return redirect()->back()->with('success', "Akses pengisian Logbook Terlewat untuk mahasiswa {$pendaftaran->user->name} berhasil {$status}.");
+        return redirect()->back()->with('success', "Akses pengisian Logbook Terlewat untuk {$namaMahasiswa} berhasil {$status}.");
     }
 }

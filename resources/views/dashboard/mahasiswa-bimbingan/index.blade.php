@@ -40,7 +40,7 @@
                                 <i class="fas fa-file-signature text-sm {{ $siapAsistensi > 0 ? 'animate-pulse' : '' }}"></i>
                             </div>
                             <div>
-                                <p class="text-[11px] text-gray-500 font-semibold uppercase">Siap Diasistensi</p>
+                                <p class="text-[11px] text-gray-500 font-semibold uppercase">Perlu Diasistensi</p>
                                 <p class="text-lg font-bold text-orange-600 leading-none mt-0.5">{{ $siapAsistensi }} Mahasiswa</p>
                             </div>
                         </div>
@@ -57,7 +57,7 @@
                     <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
                         <select name="status_laporan" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-medium">
                             <option value="semua" {{ request('status_laporan') == 'semua' ? 'selected' : '' }}>Semua Status Logbook</option>
-                            <option value="ready" {{ request('status_laporan') == 'ready' ? 'selected' : '' }}>Siap Diasistensi Dosen (Sudah di-Approve SPV)</option>
+                            <option value="ready" {{ request('status_laporan') == 'ready' ? 'selected' : '' }}>Perlu Diasistensi Dosen (Pending)</option>
                             <option value="waiting_spv" {{ request('status_laporan') == 'waiting_spv' ? 'selected' : '' }}>Menunggu Approval SPV Mitra</option>
                             <option value="uptodate" {{ request('status_laporan') == 'uptodate' ? 'selected' : '' }}>Logbook Up to Date (Selesai)</option>
                         </select>
@@ -125,13 +125,13 @@
                             <!-- Status Logbook & Action Buttons -->
                             <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6 shrink-0">
                                 
-                                <!-- Status Indicator Berdasarkan Tahap SPV vs Dosen -->
+                                <!-- Status Indicator Berdasarkan Tahap SPV vs Dosen (Dual-Approval) -->
                                 @if($canAssist)
                                     <div class="flex items-center justify-center bg-orange-50 border border-orange-200 rounded-xl px-3.5 py-2 w-full sm:w-auto">
                                         <i class="fas fa-file-signature text-orange-500 mr-2 text-sm animate-pulse"></i>
                                         <div>
                                             <p class="text-[9px] text-orange-800 font-bold uppercase tracking-wider">Status Logbook</p>
-                                            <p class="text-xs text-orange-600 font-bold">{{ $item->logbook_ready_dosen }} Siap Diasistensi</p>
+                                            <p class="text-xs text-orange-600 font-bold">{{ $item->logbook_ready_dosen }} Perlu Asistensi</p>
                                         </div>
                                     </div>
                                 @elseif($isWaitingSpv)
@@ -162,20 +162,13 @@
                                         <i class="fas fa-user text-sm"></i>
                                     </button>
 
-                                    <!-- Tombol Asistensi Logbook -->
+                                    <!-- Tombol Asistensi Logbook (Dosen Langsung Bisa Asistensi Tanpa Dibatasi SPV) -->
                                     @if($canAssist)
                                         <a href="{{ route('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi') }}" 
                                            class="flex-1 sm:flex-none bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5"
                                            title="Buka antrean logbook untuk asistensi">
                                             <i class="fas fa-file-signature"></i> Asistensi Logbook
                                         </a>
-                                    @elseif($isWaitingSpv)
-                                        <button type="button" 
-                                                disabled 
-                                                class="flex-1 sm:flex-none bg-gray-100 border border-gray-300 text-gray-400 font-bold text-xs py-2.5 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5 shadow-none" 
-                                                title="Menunggu validasi dari Supervisor (SPV) Mitra Lapangan terlebih dahulu">
-                                            <i class="fas fa-lock text-[10px]"></i> Menunggu SPV
-                                        </button>
                                     @else
                                         <a href="{{ route('dashboard-verifikasi-daftar-mahasiswa-semua-laporan', ['search' => $mhs?->name]) }}" 
                                            class="flex-1 sm:flex-none bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 font-bold text-xs py-2.5 px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5"
@@ -286,22 +279,22 @@
                         </div>
                     </div>
 
-                    <!-- 4. STATUS ASISTENSI & LOGBOOK -->
+                    <!-- 4. STATUS ASISTENSI & LOGBOOK (DUAL-APPROVAL) -->
                     <div>
                         <h5 class="font-bold text-gray-800 text-xs uppercase mb-2 flex items-center gap-1.5">
                             <i class="fas fa-book-open text-vokasi-primary"></i> Rincian Status Logbook
                         </h5>
                         <div class="grid grid-cols-3 gap-2.5">
                             <div class="p-3 bg-orange-50 border border-orange-200 rounded-xl text-center">
-                                <span class="block text-[10px] font-bold text-orange-800 uppercase">Siap Diasistensi</span>
+                                <span class="block text-[10px] font-bold text-orange-800 uppercase">Perlu Diasistensi</span>
                                 <span class="text-base font-extrabold text-orange-600 mt-1 block" x-text="(activeMhs?.logbook_ready_dosen || 0) + ' Berkas'"></span>
-                                <span class="text-[9px] text-orange-700">Sudah di-Approve SPV</span>
+                                <span class="text-[9px] text-orange-700">Belum Anda Periksa</span>
                             </div>
 
                             <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center">
                                 <span class="block text-[10px] font-bold text-amber-800 uppercase">Menunggu SPV</span>
                                 <span class="text-base font-extrabold text-amber-600 mt-1 block" x-text="(activeMhs?.logbook_waiting_spv || 0) + ' Berkas'"></span>
-                                <span class="text-[9px] text-amber-700">Di Pembimbing Lapangan</span>
+                                <span class="text-[9px] text-amber-700">Belum Diperiksa SPV</span>
                             </div>
 
                             <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-center">
@@ -312,7 +305,7 @@
                         </div>
                     </div>
 
-<!-- 5. INFORMASI KONTAK MAHASISWA & SPV LAPANGAN -->
+                    <!-- 5. INFORMASI KONTAK MAHASISWA & SPV LAPANGAN -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <!-- Kontak Mahasiswa -->
                         <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
@@ -354,7 +347,8 @@
                     </div>
 
                 </div>
-<!-- Modal Footer -->
+
+                <!-- Modal Footer -->
                 <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-between items-center shrink-0 gap-3">
                     <button type="button" @click="openDetailModal = false" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-100 font-bold text-xs transition-colors shadow-sm">
                         Tutup

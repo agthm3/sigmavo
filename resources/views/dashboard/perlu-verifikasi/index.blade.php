@@ -112,11 +112,30 @@
                     <!-- Action Form Area -->
                     <form action="{{ route('dashboard-verifikasi-logbook-action', $logbook->id) }}" method="POST" class="w-full md:w-64 shrink-0 flex flex-col justify-end space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 text-xs">
                         @csrf
+                        
+                        <!-- Info Status Partner (Dual Approval) -->
+                        <div class="mb-2 space-y-1">
+                            @if(auth()->user()->hasRole('spv'))
+                                @if($logbook->status_dosen === 'approved')
+                                    <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded block"><i class="fas fa-check-circle mr-1"></i> Dosen sudah Approve</span>
+                                @else
+                                    <span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded block"><i class="fas fa-clock mr-1"></i> Menunggu Dosen</span>
+                                @endif
+                            @else
+                                @if($logbook->status_spv === 'approved')
+                                    <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded block"><i class="fas fa-check-circle mr-1"></i> SPV Lapangan sudah Approve</span>
+                                @else
+                                    <span class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded block"><i class="fas fa-clock mr-1"></i> Menunggu SPV Lapangan</span>
+                                @endif
+                            @endif
+                        </div>
+
                         <div>
-                            <textarea name="catatan_dosen" rows="2" placeholder="Catatan/Masukan untuk mahasiswa (opsional)..." class="w-full text-xs p-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:border-vokasi-primary resize-none"></textarea>
+                            <!-- NOTE: Name diubah jadi "catatan" agar dinamis dipakai SPV & Dosen -->
+                            <textarea name="catatan" rows="2" placeholder="Tulis masukan untuk mahasiswa (opsional)..." class="w-full text-xs p-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:border-vokasi-primary resize-none"></textarea>
                         </div>
                         <button type="submit" name="action" value="approve" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm flex items-center justify-center">
-                            <i class="fas fa-check mr-1.5"></i> Approve (+8 Jam)
+                            <i class="fas fa-check mr-1.5"></i> Setujui Laporan
                         </button>
                         <button type="submit" name="action" value="revisi" class="w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-bold py-2 rounded-xl transition-colors shadow-sm flex items-center justify-center">
                             <i class="fas fa-undo mr-1.5"></i> Minta Revisi
