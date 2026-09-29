@@ -85,11 +85,13 @@
         <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
             
             <!-- DASHBOARD ANALITIK (UNTUK SEMUA ROLE) -->
+            {{-- @hasanyrole('admin_prodi|admin|superadmin')     --}}
             <a href="{{ route('dashboard-analitik') }}" 
                class="flex items-center px-3 py-2 text-sm rounded-lg font-medium transition-colors {{ request()->routeIs('dashboard-analitik') ? 'text-vokasi-dark bg-[#e6f4f5] font-bold border-l-4 border-vokasi-primary' : 'text-gray-700 hover:bg-gray-100 hover:text-vokasi-primary' }}">
                 <i class="fas fa-chart-pie w-5"></i>
                 <span class="ml-2 flex-1">Dashboard Analitik</span>
             </a>
+            {{-- @endhasanyrole --}}
 
             <!-- ======================================================== -->
             <!-- SECTION: MAHASISWA ONLY                                 -->

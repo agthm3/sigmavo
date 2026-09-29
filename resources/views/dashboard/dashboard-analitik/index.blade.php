@@ -1,40 +1,129 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @php
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
+        $isAdminRole = $authUser->hasAnyRole(['admin_prodi', 'admin', 'superadmin']);
+    @endphp
+
+    @if($isAdminRole)
+        <!-- Chart.js CDN Hanya Dimuat Jika Role Admin/Pengelola -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @endif
 
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
         
-        <!-- MAIN PAGE CONTENT (Dashboard Analitik View) -->
+        <!-- MAIN PAGE CONTENT -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col custom-scrollbar">
             
             <div class="flex-1 max-w-7xl mx-auto w-full space-y-6">
                 
-                <!-- WELCOME BANNER EKSEKUTIF -->
+                <!-- WELCOME BANNER UTAMA (MUNCUL UNTUK SEMUA ROLE) -->
                 <div class="bg-gradient-to-r from-vokasi-primary to-vokasi-dark rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-                    <i class="fas fa-chart-line absolute text-9xl right-0 -bottom-6 opacity-10 pointer-events-none"></i>
+                    <i class="fas fa-graduation-cap absolute text-9xl right-0 -bottom-6 opacity-10 pointer-events-none"></i>
                     <div class="relative z-10">
                         <span class="bg-white/20 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-vokasi-light mb-2 inline-block">
-                            Dashboard Analitik Real-Time
+                            Portal Magang Vokasi
                         </span>
-                        <h3 class="text-2xl font-extrabold">Selamat datang di Portal SIGMAVO, {{ Auth::user()->name }}!</h3>
+                        <h3 class="text-2xl font-extrabold">Selamat datang di Portal SIGMAVO, {{ $authUser->name }}!</h3>
                         <p class="text-xs text-white/80 mt-1 max-w-xl leading-relaxed">
-                            Pusat pemantauan kegiatan magang vokasi Universitas Hasanuddin. Pantau progres pemenuhan jam magang, aktivitas harian, verifikasi dosen, dan kemitraan industri.
+                            Pusat pengelolaan dan pemantauan kegiatan magang mahasiswa Fakultas Vokasi Universitas Hasanuddin. Gunakan menu navigasi di bilah samping untuk mengakses layanan Anda.
                         </p>
                     </div>
                     
-                    <div class="relative z-10 flex items-center gap-3 bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 shrink-0">
+                    <div class="relative z-10 flex items-center gap-3 bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/20 shrink-0">
                         <div class="w-10 h-10 rounded-lg bg-white text-vokasi-primary flex items-center justify-center font-bold text-lg shadow">
                             <i class="fas fa-clock"></i>
                         </div>
                         <div class="text-xs">
                             <p class="text-white/70 uppercase font-bold text-[10px]">Target Standar Magang</p>
-                            <p class="text-sm font-extrabold text-white">{{ $targetJam }} Jam / Mahasiswa</p>
+                            <p class="text-sm font-extrabold text-white">{{ $targetJam }} Jam Praktik</p>
                         </div>
                     </div>
                 </div>
 
+                <!-- ========================================================================= -->
+                <!-- KONTEN KHUSUS NON-ADMIN (MAHASISWA, DOSEN, & SPV): PINTASAN KERJA BERSIH  -->
+                <!-- ========================================================================= -->
+                @unlessrole('admin_prodi|admin|superadmin')
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    @hasrole('mahasiswa')
+                    <!-- Card Pintasan Mahasiswa 1: Presensi -->
+                    <a href="{{ route('dashboard-mahasiswa-absensi') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-vokasi-primary flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-fingerprint"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Presensi Harian</h4>
+                        <p class="text-xs text-gray-500 mt-1">Lakukan Absen Masuk dan Absen Pulang harian magang Anda tepat waktu.</p>
+                    </a>
+
+                    <!-- Card Pintasan Mahasiswa 2: Logbook -->
+                    <a href="{{ route('dashboard-mahasiswa-logbook') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Pengisian Logbook</h4>
+                        <p class="text-xs text-gray-500 mt-1">Catat uraian kegiatan magang dan kaitkan dengan Capaian Pembelajaran (CPMK).</p>
+                    </a>
+
+                    <!-- Card Pintasan Mahasiswa 3: Lowongan -->
+                    <a href="{{ route('dashboard-mahasiswa-daftar-lowongan') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Eksplorasi Lowongan</h4>
+                        <p class="text-xs text-gray-500 mt-1">Temukan stase dan posisi magang terbaru di mitra industri terverifikasi.</p>
+                    </a>
+                    @endhasrole
+
+                    @hasrole('dosen')
+                    <!-- Card Pintasan Dosen 1: Antrean Verifikasi -->
+                    <a href="{{ route('dashboard-dosen-perlu-verifikasi') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Perlu Verifikasi</h4>
+                        <p class="text-xs text-gray-500 mt-1">Periksa dan beri catatan asistensi logbook mahasiswa bimbingan Anda.</p>
+                    </a>
+
+                    <!-- Card Pintasan Dosen 2: Mahasiswa Bimbingan -->
+                    <a href="{{ route('dashboard-dosen-mahasiswa-bimbingan') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-vokasi-primary flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Mahasiswa Bimbingan</h4>
+                        <p class="text-xs text-gray-500 mt-1">Pantau akumulasi jam kerja dan kelola saklar izin logbook susulan.</p>
+                    </a>
+
+                    <!-- Card Pintasan Dosen 3: Rekap Nilai -->
+                    <a href="{{ route('dashboard-penilaian-listing-mahasiswa') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Penilaian Magang</h4>
+                        <p class="text-xs text-gray-500 mt-1">Input penilaian stase dan hasil ujian seminar magang mahasiswa.</p>
+                    </a>
+                    @endhasrole
+
+                    @hasrole('spv')
+                    <!-- Card Pintasan SPV Mitra -->
+                    <a href="{{ route('dashboard-dosen-perlu-verifikasi') }}" class="bg-white p-5 rounded-2xl border border-gray-200 hover:border-vokasi-primary hover:shadow-md transition-all group md:col-span-3">
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-vokasi-primary flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm group-hover:text-vokasi-primary transition-colors">Verifikasi Logbook Mahasiswa di Mitra</h4>
+                        <p class="text-xs text-gray-500 mt-1">Validasi aktivitas harian yang dikerjakan mahasiswa magang di instansi Anda.</p>
+                    </a>
+                    @endhasrole
+                </div>
+                @endunlessrole
+
+                <!-- ========================================================================= -->
+                <!-- BAGIAN ANALITIK: HANYA UNTUK ADMIN PRODI, ADMIN & SUPERADMIN              -->
+                <!-- ========================================================================= -->
+                @hasanyrole('admin_prodi|admin|superadmin')
+                
                 <!-- 1. METRIC STATISTIC CARDS (4 COLS) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     
@@ -128,11 +217,9 @@
                             </h3>
                             <p class="text-[11px] text-gray-500 mt-0.5">Daftar entri kegiatan harian mahasiswa yang membutuhkan verifikasi dosen pendamping.</p>
                         </div>
-                        @hasanyrole('dosen|admin_prodi|admin|superadmin')
-                        <a href="{{ route('dashboard-dosen-perlu-verifikasi') }}" class="px-3 py-1.5 bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold rounded-xl text-xs transition-colors shadow-sm">
+                        <a href="{{ route('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi') }}" class="px-3 py-1.5 bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold rounded-xl text-xs transition-colors shadow-sm">
                             Kelola Semua Antrean
                         </a>
-                        @endhasanyrole
                     </div>
 
                     <div class="overflow-x-auto custom-scrollbar">
@@ -178,6 +265,7 @@
                         </table>
                     </div>
                 </div>
+                @endhasanyrole
 
             </div>
 
@@ -189,10 +277,10 @@
         </main>
     </div>
 
-    <!-- SCRIPT INITIALIZE CHART.JS -->
+    @if($isAdminRole)
+    <!-- SCRIPT INITIALIZE CHART.JS HANYA DIEKSEKUSI UNTUK ADMIN -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Palet Warna Khas Vokasi
             const primaryColor = '#37A7AC';
             const secondaryColors = ['#37A7AC', '#29868a', '#62c2c6', '#f59e0b', '#10b981', '#6366f1', '#ec4899', '#8b5cf6'];
 
@@ -257,4 +345,5 @@
             }
         });
     </script>
+    @endif
 @endsection
