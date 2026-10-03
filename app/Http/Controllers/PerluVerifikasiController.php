@@ -97,14 +97,7 @@ class PerluVerifikasiController extends Controller
      */
     public function verifyLogbook(Request $request, $id)
     {
-        $isTestingMode = true; // Atau ambil dari Setting
-        if ($isTestingMode) return $this->verifyLogbookTesting($request, $id);
         return $this->verifyLogbookProduction($request, $id);
-    }
-
-    private function verifyLogbookTesting(Request $request, $id)
-    {
-        return $this->verifyLogbookProduction($request, $id); // Kita satukan logikanya karena absen pulang sudah wajib.
     }
 
     private function verifyLogbookProduction(Request $request, $id)
@@ -125,6 +118,10 @@ class PerluVerifikasiController extends Controller
             if ($request->action === 'approve') {
                 $logbook->status_spv  = 'approved';
                 $logbook->catatan_spv = $inputCatatan ?? 'Disetujui Pembimbing Lapangan.';
+                // Jika sebelumnya status_asistensi revisi karena SPV, kembalikan ke pending jika dosen belum approve
+                if ($logbook->status_dosen !== 'revisi') {
+                    $logbook->status_asistensi = 'pending';
+                }
             } else {
                 $logbook->status_spv       = 'revisi';
                 $logbook->status_asistensi = 'revisi'; // Master switch agar mhs merevisi
@@ -134,9 +131,13 @@ class PerluVerifikasiController extends Controller
         // JIKA YANG KLIK ADALAH DOSEN PEMBIMBING (Atau Admin)
         else {
             if ($request->action === 'approve') {
-                $logbook->status_dosen  = 'approved';
-                $logbook->catatan_dosen = $inputCatatan ?? 'Telah disetujui Dosen Pembimbing.';
+                $logbook->status_dosen   = 'approved';
+                $logbook->catatan_dosen  = $inputCatatan ?? 'Telah disetujui Dosen Pembimbing.';
                 $logbook->verifikator_id = $user->id; // Dosen pencatat
+                // Jika sebelumnya status_asistensi revisi karena Dosen, kembalikan ke pending jika SPV belum revisi
+                if ($logbook->status_spv !== 'revisi') {
+                    $logbook->status_asistensi = 'pending';
+                }
             } else {
                 $logbook->status_dosen     = 'revisi';
                 $logbook->status_asistensi = 'revisi'; // Master switch agar mhs merevisi
@@ -154,19 +155,21 @@ class PerluVerifikasiController extends Controller
             $tglLogbook = Carbon::parse($logbook->tanggal)->format('Y-m-d');
             $absensi = Absensi::where('user_id', $logbook->user_id)->whereDate('tanggal', $tglLogbook)->first();
 
+            // Kunci logbook menjadi approved
+            $logbook->status_asistensi = 'approved';
+            $logbook->waktu_verifikasi = now();
+            $logbook->save();
+
+            // Set jam absensi ke 8 jam (pasti 8 jam, tidak akan dobel meski ada 2 logbook di hari yang sama)
             if ($absensi && $absensi->waktu_pulang) {
-                // Berikan 8 jam
                 $absensi->jam_diperoleh     = 8;
                 $absensi->status_verifikasi = 'approved';
                 $absensi->save();
 
-                // Tutup Master Logbook
-                $logbook->status_asistensi = 'approved';
-                $logbook->waktu_verifikasi = now();
-                $logbook->save();
-
                 return redirect()->back()->with('success', "Logbook disetujui! Karena kedua pembimbing (SPV & Dosen) telah menyetujui, Kuota jam magang mahasiswa otomatis bertambah +8 Jam.");
             }
+
+            return redirect()->back()->with('success', "Logbook disetujui oleh kedua pembimbing (SPV & Dosen).");
         }
 
         $statusRole = $user->hasRole('spv') ? 'Supervisor' : 'Dosen Pembimbing';
