@@ -338,21 +338,6 @@
                                                 <span class="text-gray-400 text-xs italic">-</span>
                                             @endif
                                         </td>
-                                        <td class="p-4">
-                                            @if($item->status_asistensi == 'approved')
-                                                <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 whitespace-nowrap">
-                                                    <i class="fas fa-check-double mr-1"></i> Approved
-                                                </span>
-                                            @elseif($item->status_asistensi == 'revisi')
-                                                <span class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-full border border-red-200 whitespace-nowrap">
-                                                    <i class="fas fa-exclamation-triangle mr-1"></i> Perlu Revisi
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-200 whitespace-nowrap">
-                                                    <i class="fas fa-spinner fa-spin mr-1"></i> Pending
-                                                </span>
-                                            @endif
-                                        </td>
 <!-- KOLOM STATUS VERIFIKASI PARALEL (SPV & DOSEN) -->
                                         <td class="p-4">
                                             @php
