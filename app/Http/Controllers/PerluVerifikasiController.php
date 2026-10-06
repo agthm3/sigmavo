@@ -147,29 +147,45 @@ class PerluVerifikasiController extends Controller
 
         $logbook->save();
 
-        // ==================================================
-        // PENGECEKAN DUAL APPROVAL (TRIGGER +8 JAM)
+// ==================================================
+        // PENGECEKAN DUAL APPROVAL (TRIGGER +8 JAM & AUTO-SAFETY)
         // ==================================================
         if ($logbook->status_spv === 'approved' && $logbook->status_dosen === 'approved' && $logbook->status_asistensi !== 'approved') {
             
             $tglLogbook = Carbon::parse($logbook->tanggal)->format('Y-m-d');
-            $absensi = Absensi::where('user_id', $logbook->user_id)->whereDate('tanggal', $tglLogbook)->first();
 
-            // Kunci logbook menjadi approved
+            // 1. Kunci master logbook menjadi approved
             $logbook->status_asistensi = 'approved';
             $logbook->waktu_verifikasi = now();
             $logbook->save();
 
-            // Set jam absensi ke 8 jam (pasti 8 jam, tidak akan dobel meski ada 2 logbook di hari yang sama)
-            if ($absensi && $absensi->waktu_pulang) {
-                $absensi->jam_diperoleh     = 8;
-                $absensi->status_verifikasi = 'approved';
-                $absensi->save();
+            // 2. Ambil atau Buat record absensi untuk tanggal ini jika belum ada (firstOrCreate)
+            $absensi = Absensi::firstOrCreate(
+                ['user_id' => $logbook->user_id, 'tanggal' => $tglLogbook],
+                [
+                    'pendaftaran_id'    => $logbook->pendaftaran_id,
+                    'tipe_kehadiran'    => 'hadir',
+                    'waktu_masuk'       => '08:00:00',
+                    'waktu_pulang'      => '17:00:00',
+                    'status_verifikasi' => 'approved',
+                    'jam_diperoleh'     => 8,
+                ]
+            );
 
-                return redirect()->back()->with('success', "Logbook disetujui! Karena kedua pembimbing (SPV & Dosen) telah menyetujui, Kuota jam magang mahasiswa otomatis bertambah +8 Jam.");
+            // 3. Fallback Safety: Jika record absensi sudah ada tapi mahasiswa lupa klik Absen Pulang (waktu_pulang NULL)
+            if (empty($absensi->waktu_pulang)) {
+                $absensi->waktu_pulang = '17:00:00';
+            }
+            if (empty($absensi->waktu_masuk)) {
+                $absensi->waktu_masuk = '08:00:00';
             }
 
-            return redirect()->back()->with('success', "Logbook disetujui oleh kedua pembimbing (SPV & Dosen).");
+            // 4. Pastikan jam terkunci tepat 8 jam
+            $absensi->status_verifikasi = 'approved';
+            $absensi->jam_diperoleh     = 8;
+            $absensi->save();
+
+            return redirect()->back()->with('success', "Logbook disetujui! Karena kedua pembimbing (SPV & Dosen) telah menyetujui, Kuota jam magang mahasiswa otomatis bertambah +8 Jam.");
         }
 
         $statusRole = $user->hasRole('spv') ? 'Supervisor' : 'Dosen Pembimbing';

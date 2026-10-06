@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class SyncApprovedLogbookAbsensi extends Command
 {
-    protected $signature = 'logbook:sync-jam {--fix : Otomatis perbaiki data yang macet}';
-    protected $description = 'Deteksi dan sinkronisasi jam absensi untuk semua logbook yang telah disetujui SPV & Dosen';
+    protected $signature = 'logbook:sync-jam {--fix : Otomatis perbaiki data absensi yang macet}';
+    protected $description = 'Deteksi dan sinkronkan jam absensi untuk semua logbook yang telah disetujui SPV & Dosen';
 
     public function handle()
     {
-        $this->info("Memulai pemindaian anomali jam absensi di seluruh mahasiswa...");
+        $this->info("Memulai pemindaian data absensi dan logbook seluruh mahasiswa...");
 
-        // Ambil semua logbook yang sudah disetujui oleh SPV & Dosen
+        // Ambil semua logbook yang berstatus approved penuh (baik master approved maupun dual approved)
         $approvedLogs = Logbook::where(function ($q) {
             $q->where('status_asistensi', 'approved')
               ->orWhere(function ($sub) {
@@ -35,29 +35,28 @@ class SyncApprovedLogbookAbsensi extends Command
                 ->whereDate('tanggal', $tgl)
                 ->first();
 
-            // Jika absensi tidak ada ATAU jamnya masih kurang dari 8 jam
+            // Jika absensi belum ada ATAU jamnya masih kurang dari 8 jam
             if (!$absensi || $absensi->jam_diperoleh < 8) {
                 $anomali[] = [
-                    'user_id'     => $log->user_id,
-                    'nama'        => $log->user->name ?? 'User #' . $log->user_id,
-                    'tanggal'     => $tgl,
-                    'logbook_id'  => $log->id,
-                    'alasan'      => !$absensi ? 'Tidak ada record absensi' : ($absensi->waktu_pulang ? 'Absensi belum di-approve' : 'Lupa Absen Pulang (waktu_pulang NULL)'),
+                    'user_id'    => $log->user_id,
+                    'nama'       => $log->user->name ?? 'User #' . $log->user_id,
+                    'tanggal'    => $tgl,
+                    'logbook_id' => $log->id,
+                    'kondisi'    => !$absensi ? 'Tidak ada record absensi' : (empty($absensi->waktu_pulang) ? 'Lupa Absen Pulang (NULL)' : 'Jam masih 0 (belum sinkron)'),
                 ];
             }
         }
 
         if (empty($anomali)) {
-            $this->info("✅ Semua akun BERSIH! Tidak ada jam logbook yang macet.");
+            $this->info("✅ Semua data sinkron! Tidak ditemukan mahasiswa dengan jam yang tertahan.");
             return 0;
         }
 
-        $this->warn("Ditemukan " . count($anomali) . " logbook approved yang jam absensinya belum masuk:");
+        $this->warn("Ditemukan " . count($anomali) . " kasus logbook approved yang jam absensinya belum 8 jam:");
         $this->table(['User ID', 'Nama Mahasiswa', 'Tanggal', 'Logbook ID', 'Kondisi'], $anomali);
 
-        // Jika opsi --fix diberikan, perbaiki otomatis
         if ($this->option('fix')) {
-            $this->info("Menjalankan perbaikan otomatis...");
+            $this->info("Menjalankan perbaikan massal...");
 
             DB::transaction(function () use ($anomali) {
                 foreach ($anomali as $item) {
@@ -76,14 +75,14 @@ class SyncApprovedLogbookAbsensi extends Command
                     );
 
                     Logbook::where('id', $item['logbook_id'])->update([
-                        'status_asistensi' => 'approved'
+                        'status_asistensi' => 'approved',
                     ]);
                 }
             });
 
-            $this->info("✅ Seluruh data anomali berhasil diperbaiki! Jam semua mahasiswa sudah sinkron.");
+            $this->info("✅ Sukses! Seluruh data anomali telah diperbaiki dan jam absensi sudah sinkron 8 jam.");
         } else {
-            $this->comment("Jalankan perintah ini dengan flag '--fix' untuk memperbaiki: php artisan logbook:sync-jam --fix");
+            $this->comment("Jalankan kembali dengan opsi '--fix' untuk otomatis memperbaiki semua data di atas: php artisan logbook:sync-jam --fix");
         }
 
         return 0;
