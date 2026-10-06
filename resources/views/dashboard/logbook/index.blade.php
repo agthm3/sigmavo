@@ -126,7 +126,6 @@
                             </span>
                         </div>
                         
-                        <!-- HANDLER ONSUBMIT SWEETALERT DI FORM INI -->
                         <form action="{{ route('dashboard-mahasiswa-logbook-store') }}" 
                             method="POST" 
                             enctype="multipart/form-data" 
@@ -135,7 +134,7 @@
                             @csrf
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 
-                                <!-- Kolom Kiri: Uraian & Multi-Select CPMK (2 Cols) -->
+                                <!-- Kolom Kiri: Uraian & Multi-Select CPMK -->
                                 <div class="lg:col-span-2 space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Uraian Kegiatan / Pekerjaan <span class="text-red-500">*</span></label>
@@ -148,7 +147,6 @@
                                             Capaian Pembelajaran (CPMK) Terkait <span class="text-gray-400 font-normal text-xs">(Pilih satu atau lebih)</span>
                                         </label>
                                         
-                                        <!-- Box Input Trigger -->
                                         <div @click="toggleDropdown()" class="min-h-[42px] p-2 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer flex flex-wrap items-center gap-1.5 focus-within:ring-2 focus-within:ring-vokasi-primary">
                                             <template x-for="item in selectedCpmk" :key="item">
                                                 <span class="inline-flex items-center gap-1 bg-vokasi-primary/10 text-vokasi-primary border border-vokasi-primary/20 text-xs font-semibold px-2.5 py-1 rounded-md max-w-full truncate">
@@ -166,7 +164,6 @@
                                             <i class="fas fa-chevron-down text-gray-400 text-xs ml-auto pr-2"></i>
                                         </div>
 
-                                        <!-- Dropdown Popover dengan Search -->
                                         <div x-show="openCpmk" @click.away="openCpmk = false" x-cloak class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl p-2 max-h-60 overflow-y-auto custom-scrollbar z-50">
                                             <div class="p-1 mb-2 border-b border-gray-100">
                                                 <input type="text" x-model="searchCpmk" placeholder="Cari kode atau deskripsi CPMK..." class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-vokasi-primary" @click.stop>
@@ -270,18 +267,56 @@
                     <!-- TABEL RIWAYAT LOGBOOK -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative z-10">
                         
-                        <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-gray-50/50">
-                            <div class="flex items-center">
-                                <i class="fas fa-table text-vokasi-primary mr-2 text-lg"></i>
-                                <h3 class="font-bold text-gray-800">Tabel Riwayat Kegiatan Logbook</h3>
+                        <!-- HEADER & RINGKASAN REKAPITULASI DATA (QA & MAHASISWA) -->
+                        <div class="p-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between lg:items-center gap-4 bg-gray-50/50">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-table text-vokasi-primary text-lg"></i>
+                                    <h3 class="font-bold text-gray-800">Tabel Riwayat Kegiatan Logbook</h3>
+                                </div>
+                                
+                                <!-- Mini Counter Status Rekapitulasi Manual -->
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold">
+                                        <i class="fas fa-list text-[10px] text-gray-500"></i> Total: <strong>{{ $totalLogbook }}</strong>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+                                        <i class="fas fa-check-double text-[10px] text-emerald-600"></i> Disetujui: <strong>{{ $totalApproved }}</strong>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold">
+                                        <i class="fas fa-clock text-[10px] text-amber-500"></i> Menunggu: <strong>{{ $totalPending }}</strong>
+                                    </span>
+                                    @if($totalRevisi > 0)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 text-xs font-semibold">
+                                        <i class="fas fa-exclamation-triangle text-[10px] text-red-500"></i> Revisi: <strong>{{ $totalRevisi }}</strong>
+                                    </span>
+                                    @endif
+                                </div>
                             </div>
                             
-                            <form action="{{ route('dashboard-mahasiswa-logbook') }}" method="GET" class="flex items-center gap-2">
+                            <!-- FORM FILTER: BULAN & STATUS -->
+                            <form action="{{ route('dashboard-mahasiswa-logbook') }}" method="GET" class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                                
+                                <!-- Filter Status -->
+                                <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
+                                    <option value="semua" {{ request('status', 'semua') == 'semua' ? 'selected' : '' }}>Semua Status</option>
+                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui (+8 Jam)</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Verifikasi</option>
+                                    <option value="revisi" {{ request('status') == 'revisi' ? 'selected' : '' }}>Perlu Revisi</option>
+                                </select>
+
+                                <!-- Filter Bulan -->
                                 <select name="bulan" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-lg focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
                                     <option value="semua" {{ request('bulan') == 'semua' ? 'selected' : '' }}>Semua Bulan</option>
                                     <option value="{{ now()->format('Y-m') }}" {{ request('bulan') == now()->format('Y-m') ? 'selected' : '' }}>Bulan Ini</option>
                                     <option value="{{ now()->subMonth()->format('Y-m') }}" {{ request('bulan') == now()->subMonth()->format('Y-m') ? 'selected' : '' }}>Bulan Lalu</option>
                                 </select>
+
+                                @if(request()->filled('status') && request('status') !== 'semua' || request()->filled('bulan') && request('bulan') !== 'semua')
+                                <a href="{{ route('dashboard-mahasiswa-logbook') }}" class="p-2 text-xs text-red-600 hover:text-red-800 bg-red-50 rounded-lg border border-red-200" title="Reset Filter">
+                                    <i class="fas fa-undo"></i>
+                                </a>
+                                @endif
                             </form>
                         </div>
 
@@ -293,21 +328,28 @@
                                         <th class="p-4 w-32">Tanggal</th>
                                         <th class="p-4 min-w-[280px]">Uraian Kegiatan & CPMK Terkait</th>
                                         <th class="p-4 w-28 text-center">Foto</th>
-                                        <th class="p-4 w-36">Status</th>
-                                        <th class="p-4 w-48">Catatan Dosen</th>
+                                        <th class="p-4 w-40">Status Verifikasi</th>
+                                        <th class="p-4 w-48">Catatan Pembimbing</th>
                                         <th class="p-4 w-28 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm divide-y divide-gray-100">
                                     
                                     @forelse($logbooks as $index => $item)
-                                    <tr class="hover:bg-gray-50 transition-colors {{ $item->status_asistensi == 'revisi' ? 'bg-red-50/20' : '' }}">
+                                    @php
+                                        $spvOk = ($item->status_spv === 'approved');
+                                        $dosenOk = ($item->status_dosen === 'approved');
+                                        $isRevisi = ($item->status_asistensi === 'revisi' || $item->status_spv === 'revisi' || $item->status_dosen === 'revisi');
+                                        $isFullyApproved = ($item->status_asistensi === 'approved' || ($spvOk && $dosenOk));
+                                        $daftarMk = is_array($item->mata_kuliah) ? $item->mata_kuliah : (is_string($item->mata_kuliah) ? json_decode($item->mata_kuliah, true) : []);
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 transition-colors {{ $isRevisi ? 'bg-red-50/20' : '' }}">
                                         <td class="p-4 text-center text-gray-500 font-medium">{{ $logbooks->firstItem() + $index }}</td>
                                         
                                         <!-- BADGE TANGGAL DAN PENANDA SUSULAN -->
                                         <td class="p-4 whitespace-nowrap">
-                                            <p class="font-bold text-gray-800">{{ $item->tanggal->format('d M Y') }}</p>
-                                            <p class="text-xs text-gray-500">{{ $item->tanggal->isoFormat('dddd') }}</p>
+                                            <p class="font-bold text-gray-800">{{ \Carbon\Carbon::parse($item->tanggal)->format('d M Y') }}</p>
+                                            <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($item->tanggal)->isoFormat('dddd') }}</p>
                                             @if($item->is_susulan)
                                                 <span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-700 border border-red-200 uppercase">
                                                     Susulan
@@ -319,9 +361,9 @@
                                             <p class="mb-2 text-justify">{{ $item->uraian_kegiatan }}</p>
 
                                             <!-- Badge CPMK Terkait -->
-                                            @if(!empty($item->mata_kuliah) && is_array($item->mata_kuliah))
+                                            @if(!empty($daftarMk) && is_array($daftarMk))
                                                 <div class="flex flex-wrap gap-1 mt-1">
-                                                    @foreach($item->mata_kuliah as $cpmk)
+                                                    @foreach($daftarMk as $cpmk)
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded bg-teal-50 text-vokasi-primary text-[10px] font-semibold border border-vokasi-primary/20">
                                                             <i class="fas fa-bullseye text-[9px] mr-1"></i> {{ $cpmk }}
                                                         </span>
@@ -329,6 +371,7 @@
                                                 </div>
                                             @endif
                                         </td>
+
                                         <td class="p-4 text-center">
                                             @if($item->foto_dokumentasi)
                                                 <button type="button" @click="fotoUrl = '{{ asset('storage/' . $item->foto_dokumentasi) }}'; openFotoModal = true" class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center text-vokasi-primary overflow-hidden hover:opacity-80 transition-opacity shadow-sm">
@@ -338,15 +381,9 @@
                                                 <span class="text-gray-400 text-xs italic">-</span>
                                             @endif
                                         </td>
-<!-- KOLOM STATUS VERIFIKASI PARALEL (SPV & DOSEN) -->
-                                        <td class="p-4">
-                                            @php
-                                                $spvOk = ($item->status_spv === 'approved');
-                                                $dosenOk = ($item->status_dosen === 'approved');
-                                                $isRevisi = ($item->status_asistensi === 'revisi' || $item->status_spv === 'revisi' || $item->status_dosen === 'revisi');
-                                                $isFullyApproved = ($item->status_asistensi === 'approved' || ($spvOk && $dosenOk));
-                                            @endphp
 
+                                        <!-- KOLOM STATUS VERIFIKASI PARALEL (SPV & DOSEN) -->
+                                        <td class="p-4">
                                             @if($isFullyApproved)
                                                 <!-- KEDUA PIHAK TELAH APPROVE -->
                                                 <div class="space-y-1">
@@ -416,15 +453,17 @@
                                                 <span class="text-gray-400 italic text-xs">Belum ada catatan</span>
                                             @endif
                                         </td>
+
+                                        <!-- KOLOM AKSI (EDIT / HAPUS) -->
                                         <td class="p-4 text-center">
-                                            @if($item->status_asistensi == 'approved')
+                                            @if($isFullyApproved)
                                                 <span class="text-gray-400 text-xs" title="Telah disetujui"><i class="fas fa-lock"></i></span>
                                             @else
                                                 <div class="flex items-center justify-center gap-1.5">
                                                     <button type="button" @click="activeLogbook = {{ json_encode($item) }}; editSelectedCpmk = {{ json_encode($item->mata_kuliah ?? []) }}; activeEditUrl = '{{ route('dashboard-mahasiswa-logbook-update', $item->id) }}'; openEditModal = true" 
-                                                            class="{{ $item->status_asistensi == 'revisi' ? 'bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 py-1 text-xs' : 'text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5' }} rounded transition-colors" 
+                                                            class="{{ $isRevisi ? 'bg-red-500 hover:bg-red-600 text-white font-bold px-2.5 py-1 text-xs' : 'text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5' }} rounded transition-colors" 
                                                             title="Edit / Revisi">
-                                                        @if($item->status_asistensi == 'revisi')
+                                                        @if($isRevisi)
                                                             Revisi
                                                         @else
                                                             <i class="fas fa-edit"></i>
@@ -445,7 +484,7 @@
                                     @empty
                                     <tr>
                                         <td colspan="7" class="p-8 text-center text-gray-400">
-                                            <i class="fas fa-book-open text-3xl mb-2 block"></i> Belum ada catatan logbook harian.
+                                            <i class="fas fa-book-open text-3xl mb-2 block"></i> Belum ada catatan logbook yang sesuai filter.
                                         </td>
                                     </tr>
                                     @endforelse
@@ -487,10 +526,15 @@
                         @csrf
                         @method('PUT')
 
-                        <template x-if="activeLogbook?.status_asistensi === 'revisi'">
-                            <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
-                                <strong>Catatan Dosen untuk Perbaikan:</strong>
-                                <p class="mt-1 font-medium" x-text="activeLogbook?.catatan_dosen"></p>
+                        <template x-if="activeLogbook?.status_asistensi === 'revisi' || activeLogbook?.status_dosen === 'revisi' || activeLogbook?.status_spv === 'revisi'">
+                            <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-1">
+                                <strong>Catatan untuk Perbaikan:</strong>
+                                <template x-if="activeLogbook?.catatan_spv">
+                                    <p class="font-medium text-teal-800">SPV: <span x-text="activeLogbook?.catatan_spv"></span></p>
+                                </template>
+                                <template x-if="activeLogbook?.catatan_dosen">
+                                    <p class="font-medium text-blue-800">Dosen: <span x-text="activeLogbook?.catatan_dosen"></span></p>
+                                </template>
                             </div>
                         </template>
 
@@ -565,9 +609,6 @@
 
     <!-- GLOBAL COMPRESSION ENGINE SCRIPT (PDF & GAMBAR) -->
     <script>
-        /**
-         * FUNGSI UTAMA PENGOMPRES FILE OTOMATIS OFFLINE DI BROWSER
-         */
         async function handleSmartFileCompression(file, maxImgKb = 300, maxPdfKb = 500, callback) {
             const isImage = file.type.startsWith('image/');
             const isPdf = file.type === 'application/pdf';
@@ -695,10 +736,8 @@
     <!-- SCRIPT HANDLER UNTUK SWEETALERT ABSENSI -->
     <script>
         function checkAbsensiAndSubmit(event) {
-            // Ambil data status absensi dari controller
             const statusAbsensi = '{{ $statusAbsensi ?? 'belum_absen_masuk' }}';
 
-            // Jika absensi belum lengkap (belum absen pulang), tahan proses submit
             if (statusAbsensi !== 'lengkap') {
                 event.preventDefault(); 
                 
@@ -731,7 +770,6 @@
                 return false;
             }
 
-            // Jika sudah absen pulang, jalankan submit dengan animasi loading
             showLogbookLoading(event);
             return true;
         }

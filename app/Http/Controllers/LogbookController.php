@@ -57,7 +57,11 @@ class LogbookController extends Controller
                 'logbooks'              => collect(),
                 'pendaftaran'           => $pendaftaran,
                 'daftarCpmk'            => [],
-                'user'                  => $user
+                'user'                  => $user,
+                'totalLogbook'          => 0,
+                'totalApproved'         => 0,
+                'totalPending'          => 0,
+                'totalRevisi'           => 0,
             ]);
         }
 
@@ -88,7 +92,18 @@ class LogbookController extends Controller
             }
         }
 
-        // 4. Query Logbook Mahasiswa (Menampilkan semua logbook: reguler + susulan)
+        // 4. Hitung Statistik Ringkasan Logbook Mahasiswa (Untuk Verifikasi Cepat QA)
+        $allUserLogs = Logbook::where('user_id', $user->id)->get();
+        $totalLogbook = $allUserLogs->count();
+        $totalApproved = $allUserLogs->filter(function ($item) {
+            return $item->status_asistensi === 'approved' || ($item->status_spv === 'approved' && $item->status_dosen === 'approved');
+        })->count();
+        $totalRevisi = $allUserLogs->filter(function ($item) {
+            return $item->status_asistensi === 'revisi' || $item->status_spv === 'revisi' || $item->status_dosen === 'revisi';
+        })->count();
+        $totalPending = $totalLogbook - $totalApproved - $totalRevisi;
+
+        // 5. Query Logbook dengan Filter Bulan & Filter Status
         $query = Logbook::where('user_id', $user->id);
 
         if ($request->filled('bulan') && $request->bulan !== 'semua') {
@@ -99,9 +114,37 @@ class LogbookController extends Controller
             }
         }
 
-        $logbooks = $query->orderBy('tanggal', 'desc')->paginate(10)->withQueryString();
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $statusFilter = $request->status;
+            if ($statusFilter === 'approved') {
+                $query->where(function ($q) {
+                    $q->where('status_asistensi', 'approved')
+                      ->orWhere(function ($sub) {
+                          $sub->where('status_spv', 'approved')
+                              ->where('status_dosen', 'approved');
+                      });
+                });
+            } elseif ($statusFilter === 'revisi') {
+                $query->where(function ($q) {
+                    $q->where('status_asistensi', 'revisi')
+                      ->orWhere('status_spv', 'revisi')
+                      ->orWhere('status_dosen', 'revisi');
+                });
+            } elseif ($statusFilter === 'pending') {
+                $query->where(function ($q) {
+                    $q->where('status_asistensi', '!=', 'approved')
+                      ->where('status_asistensi', '!=', 'revisi')
+                      ->where(function ($sub) {
+                          $sub->where('status_spv', '!=', 'approved')
+                              ->orWhere('status_dosen', '!=', 'approved');
+                      });
+                });
+            }
+        }
 
-        // 5. AMBIL DATA CPMK BERDASARKAN PRODI MAHASISWA
+        $logbooks = $query->orderBy('tanggal', 'desc')->latest('id')->paginate(10)->withQueryString();
+
+        // 6. AMBIL DATA CPMK BERDASARKAN PRODI MAHASISWA
         $mahasiswaProdiId = $user->mahasiswaProfile?->prodi_id;
 
         if ($mahasiswaProdiId) {
@@ -134,7 +177,11 @@ class LogbookController extends Controller
             'logbooks'              => $logbooks,
             'pendaftaran'           => $pendaftaran,
             'daftarCpmk'            => $daftarCpmk,
-            'user'                  => $user
+            'user'                  => $user,
+            'totalLogbook'          => $totalLogbook,
+            'totalApproved'         => $totalApproved,
+            'totalPending'          => $totalPending,
+            'totalRevisi'           => $totalRevisi,
         ]);
     }
 
@@ -145,7 +192,6 @@ class LogbookController extends Controller
     {
         $user = Auth::user();
 
-        // Proteksi Backend 1: Cek Pendaftaran Aktif
         $pendaftaran = Pendaftaran::where('user_id', $user->id)
             ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
@@ -155,7 +201,6 @@ class LogbookController extends Controller
             return redirect()->back()->with('error', 'Akses Ditolak. Anda belum diterima di program magang aktif.');
         }
 
-        // Proteksi Backend 2: Cek Kehadiran Pembekalan
         $latestPembekalan = Pembekalan::latest()->first();
         if ($latestPembekalan) {
             $cekPresensi = PembekalanPresensi::where('pembekalan_id', $latestPembekalan->id)
@@ -168,7 +213,6 @@ class LogbookController extends Controller
             }
         }
 
-        // Proteksi Backend 3: WAJIB SUDAH ABSEN PULANG HARI INI
         $absenHariIni = Absensi::where('user_id', $user->id)
             ->whereDate('tanggal', Carbon::today()->toDateString())
             ->first();
@@ -196,6 +240,8 @@ class LogbookController extends Controller
             'mata_kuliah'      => $request->mata_kuliah ?? [],
             'foto_dokumentasi' => $fotoPath,
             'status_asistensi' => 'pending',
+            'status_spv'       => 'pending',
+            'status_dosen'     => 'pending',
             'is_susulan'       => false,
         ]);
 
@@ -242,7 +288,6 @@ class LogbookController extends Controller
         $logbook->uraian_kegiatan = $request->uraian_kegiatan;
         $logbook->mata_kuliah = $request->mata_kuliah ?? [];
 
-        // Reset semua status persetujuan paralel saat mahasiswa mengirim perbaikan logbook
         if ($logbook->status_asistensi === 'revisi') {
             $logbook->status_asistensi = 'pending';
             $logbook->status_spv       = 'pending';
@@ -308,7 +353,6 @@ class LogbookController extends Controller
             ob_end_clean();
         }
 
-        // Ambil semua logbook (termasuk yang susulan) berurutan dari tanggal paling awal
         $logbooks = Logbook::where('user_id', $user->id)
             ->orderBy('tanggal', 'asc')
             ->get();
