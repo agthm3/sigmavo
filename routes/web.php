@@ -31,6 +31,12 @@ use App\Http\Controllers\SemuaLaporanController;
 use App\Http\Controllers\StatusPengajuanController;
 use App\Http\Controllers\TerverifikasiController;
 use App\Http\Controllers\UploadDokumenController;
+use App\Models\Absensi;
+use App\Models\Logbook;
+use App\Models\Lowongan;
+use App\Models\Perusahaan;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -324,5 +330,101 @@ Route::get('/fix-mandiri-data', function () {
 
         return "Sukses! Berhasil memperbaiki {$fixedCount} data pendaftaran mandiri menggunakan status valid ({$validStatus}).";
     });
+});
+
+Route::get('/debug-cek-logbook-user', function (\Illuminate\Http\Request $request) {
+    // Masukkan email mahasiswa atau NIM mahasiswa yang bersangkutan
+    // Contoh: bisa lewat query ?email=xxx atau tentukan langsung
+    $email = $request->get('email');
+    
+    $user = $email ? User::where('email', $email)->first() : auth()->user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User tidak ditemukan. Harap login atau berikan parameter ?email=xxx']);
+    }
+
+    // 1. Ambil semua logbook yang statusnya APPROVED (baik master approved maupun dual approved)
+    $approvedLogs = Logbook::where('user_id', $user->id)
+        ->where(function($q) {
+            $q->where('status_asistensi', 'approved')
+              ->orWhere(function($sub) {
+                  $sub->where('status_spv', 'approved')
+                      ->where('status_dosen', 'approved');
+              });
+        })
+        ->orderBy('tanggal', 'asc')
+        ->get(['id', 'tanggal', 'status_asistensi', 'status_spv', 'status_dosen']);
+
+    // 2. Cari tanggal yang terisi lebih dari 1 logbook (Double Logbook di hari yang sama)
+    $tanggalCounts = $approvedLogs->groupBy(fn($item) => \Carbon\Carbon::parse($item->tanggal)->format('Y-m-d'))
+        ->map(fn($group) => $group->count());
+
+    $tanggalDuplikat = $tanggalCounts->filter(fn($count) => $count > 1);
+
+    // 3. Ambil semua tanggal unik dari logbook approved
+    $tanggalUnik = $tanggalCounts->keys()->toArray();
+
+    // 4. Cek record absensi untuk tanggal-tanggal tersebut
+    $absensis = Absensi::where('user_id', $user->id)
+        ->whereIn('tanggal', $tanggalUnik)
+        ->get(['id', 'tanggal', 'waktu_masuk', 'waktu_pulang', 'status_verifikasi', 'jam_diperoleh']);
+
+    // Cari absensi yang jamnya masih 0 atau kurang dari 8
+    $absensiBelumDapatJam = $absensis->filter(fn($a) => $a->jam_diperoleh < 8);
+
+    // Cari tanggal logbook approved yang bahkan TIDAK MEMILIKI baris record absensi sama sekali
+    $tanggalAdaAbsensi = $absensis->map(fn($a) => \Carbon\Carbon::parse($a->tanggal)->format('Y-m-d'))->toArray();
+    $tanggalTanpaAbsensi = array_diff($tanggalUnik, $tanggalAdaAbsensi);
+
+    // 5. Total jam absensi yang dihitung saat ini
+    $totalJamAbsensiSekarang = Absensi::where('user_id', $user->id)->sum('jam_diperoleh');
+
+    // JIKA PARAMETER ?sync=1 DIBERIKAN, LANGSUNG PERBAIKI SECARA OTOMATIS
+    $syncResult = 'Tidak dijalankan. Tambahkan ?sync=1 di URL jika ingin otomatis menyinkronkan jam.';
+    if ($request->get('sync') == '1') {
+        $pendaftaran = \App\Models\Pendaftaran::where('user_id', $user->id)->latest()->first();
+        
+        foreach ($tanggalUnik as $tgl) {
+            Absensi::updateOrCreate(
+                ['user_id' => $user->id, 'tanggal' => $tgl],
+                [
+                    'pendaftaran_id'    => $pendaftaran?->id,
+                    'tipe_kehadiran'    => 'hadir',
+                    'waktu_masuk'       => DB::raw("COALESCE(waktu_masuk, '08:00:00')"),
+                    'waktu_pulang'      => DB::raw("COALESCE(waktu_pulang, '17:00:00')"),
+                    'status_verifikasi' => 'approved',
+                    'jam_diperoleh'     => 8,
+                ]
+            );
+
+            // Pastikan master logbook juga tertutup approved
+            Logbook::where('user_id', $user->id)
+                ->whereDate('tanggal', $tgl)
+                ->where('status_spv', 'approved')
+                ->where('status_dosen', 'approved')
+                ->update(['status_asistensi' => 'approved']);
+        }
+        $syncResult = 'BERHASIL DISINKRONISASI! Seluruh tanggal logbook approved telah dijamin 8 jam.';
+    }
+
+    return response()->json([
+        'user' => [
+            'id' => $user->id,
+            'nama' => $user->name,
+            'email' => $user->email,
+        ],
+        'ringkasan' => [
+            'total_logbook_approved' => $approvedLogs->count(),
+            'total_tanggal_unik_bekerja' => count($tanggalUnik),
+            'total_jam_di_database_sekarang' => $totalJamAbsensiSekarang,
+            'potensi_jam_maksimal' => count($tanggalUnik) * 8,
+        ],
+        'temuan_masalah' => [
+            'apakah_ada_tanggal_dobel_kegiatan' => $tanggalDuplikat,
+            'absensi_yang_belum_dapat_8_jam' => $absensiBelumDapatJam->values(),
+            'tanggal_yang_tidak_ada_baris_absensi' => array_values($tanggalTanpaAbsensi),
+        ],
+        'action_sync' => $syncResult
+    ]);
 });
 });
