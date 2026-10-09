@@ -153,25 +153,55 @@ class DaftarPerusahaanController extends Controller
         }
 
         try {
-            DB::transaction(function() use ($targetId, $sourceIds) {
+            $isMultiSpv = false;
+
+            DB::transaction(function() use ($targetId, $sourceIds, &$isMultiSpv) {
                 $targetPerusahaan = Perusahaan::findOrFail($targetId);
                 $sourcePerusahaans = Perusahaan::whereIn('id', $sourceIds)->get();
                 $oldNames = $sourcePerusahaans->pluck('nama_perusahaan')->toArray();
 
+                // 1. Pindahkan Lowongan dan Profil SPV ke Perusahaan Target
                 DB::table('lowongans')->whereIn('perusahaan_id', $sourceIds)->update(['perusahaan_id' => $targetId]);
                 DB::table('spv_profiles')->whereIn('perusahaan_id', $sourceIds)->update(['perusahaan_id' => $targetId]);
 
+                // 2. Perbarui riwayat pendaftaran mandiri
                 DB::table('pendaftarans')
                     ->whereIn('nama_instansi_mandiri', $oldNames)
                     ->where('jalur_magang', 'mandiri')
                     ->update(['nama_instansi_mandiri' => $targetPerusahaan->nama_perusahaan]);
 
+                // ========================================================
+                // 3. SAFE AUTO-LINK SPV (Hanya jika tunggal / tidak ambigu)
+                // ========================================================
+                $spvUserIds = DB::table('spv_profiles')
+                    ->where('perusahaan_id', $targetId)
+                    ->pluck('user_id')
+                    ->unique();
+
+                if ($spvUserIds->count() === 1) {
+                    // AMAN 100%: Hanya ada tepat 1 SPV di instansi ini
+                    $singleSpvId = $spvUserIds->first();
+                    
+                    DB::table('lowongans')
+                        ->where('perusahaan_id', $targetId)
+                        ->whereNull('spv_id') // Hanya isi yang belum punya SPV
+                        ->update(['spv_id' => $singleSpvId]);
+                } elseif ($spvUserIds->count() > 1) {
+                    // Ada lebih dari 1 SPV: Jangan tebak sembarangan agar tidak salah divisi
+                    $isMultiSpv = true;
+                }
+
+                // 4. Hapus Perusahaan Duplikat yang sudah bersih
                 Perusahaan::whereIn('id', $sourceIds)->delete();
             });
 
-            return redirect()->back()->with('success', 'Data instansi/perusahaan berhasil digabungkan. Semua riwayat pendaftar & logbook telah dipindahkan.');
+            if ($isMultiSpv) {
+                return redirect()->back()->with('success', 'Data instansi berhasil digabungkan. Catatan: Instansi ini memiliki lebih dari 1 akun SPV, silakan pastikan penugasan divisi SPV di menu Listing Program.');
+            }
+
+            return redirect()->back()->with('success', 'Data instansi berhasil digabungkan dan akun SPV otomatis terhubung.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menggabungkan perusahaan: Terjadi masalah sistem.');
+            return redirect()->back()->with('error', 'Gagal menggabungkan perusahaan: ' . $e->getMessage());
         }
     }
 }
