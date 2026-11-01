@@ -5,14 +5,30 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PengajuanMagangController extends Controller
 {
-   public function index(Request $request)
+    public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         // Hanya ambil pendaftaran yang memiliki akun user aktif
         $query = Pendaftaran::has('user')
             ->with(['user.mahasiswaProfile.prodi', 'lowongan.perusahaan']);
+
+        // Base query untuk statistik
+        $statsQuery = Pendaftaran::has('user');
+
+        // Jika user adalah Admin Prodi (dan bukan Admin / Superadmin), batasi hanya mahasiswa prodinya
+        if ($user && $user->hasAnyRole(['admin_prodi', 'admin-prodi']) && !$user->hasAnyRole(['admin', 'superadmin'])) {
+            $adminProdiId = $user->adminProdiProfile?->prodi_id ?? $user->prodi_id;
+            if ($adminProdiId) {
+                $query->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $adminProdiId));
+                $statsQuery->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $adminProdiId));
+            }
+        }
 
         // Filter Pencarian Teks (Nama, NIM, Perusahaan)
         if ($request->filled('search')) {
@@ -35,13 +51,18 @@ class PengajuanMagangController extends Controller
             $query->where('status_surat', $request->status_surat);
         }
 
+        // Filter Status Seleksi / Magang
+        if ($request->filled('status_seleksi') && $request->status_seleksi !== 'semua') {
+            $query->where('status_seleksi', $request->status_seleksi);
+        }
+
         $pendaftarans = $query->latest()->paginate(10)->withQueryString();
 
         // Ringkasan Statistik
-        $totalPengajuan  = Pendaftaran::has('user')->count();
-        $totalPerluSurat = Pendaftaran::has('user')->where('status_surat', 'menunggu')->count();
-        $totalSuratTerbit = Pendaftaran::has('user')->where('status_surat', 'terbit')->count();
-        $totalMandiri    = Pendaftaran::has('user')->where('jalur_magang', 'mandiri')->count();
+        $totalPengajuan   = (clone $statsQuery)->count();
+        $totalPerluSurat  = (clone $statsQuery)->where('status_surat', 'menunggu')->count();
+        $totalSuratTerbit = (clone $statsQuery)->where('status_surat', 'terbit')->count();
+        $totalMandiri     = (clone $statsQuery)->where('jalur_magang', 'mandiri')->count();
 
         return view('dashboard.pengajuan-magang.index', compact(
             'pendaftarans',
@@ -57,7 +78,16 @@ class PengajuanMagangController extends Controller
      */
     public function terbitSurat(Request $request, $id)
     {
-        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran = Pendaftaran::with('user.mahasiswaProfile')->findOrFail($id);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(['admin_prodi', 'admin-prodi']) && !$user->hasAnyRole(['admin', 'superadmin'])) {
+            $adminProdiId = $user->adminProdiProfile?->prodi_id ?? $user->prodi_id;
+            if ($adminProdiId && $pendaftaran->user?->mahasiswaProfile?->prodi_id != $adminProdiId) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memproses permohonan dari prodi lain.');
+            }
+        }
 
         $request->validate([
             'nomor_surat'        => 'required|string|max:100',
@@ -82,7 +112,16 @@ class PengajuanMagangController extends Controller
  
     public function verifikasiSuratBalasan(Request $request, $id)
     {
-        $pendaftaran = Pendaftaran::with('lowongan')->findOrFail($id);
+        $pendaftaran = Pendaftaran::with(['lowongan', 'user.mahasiswaProfile'])->findOrFail($id);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(['admin_prodi', 'admin-prodi']) && !$user->hasAnyRole(['admin', 'superadmin'])) {
+            $adminProdiId = $user->adminProdiProfile?->prodi_id ?? $user->prodi_id;
+            if ($adminProdiId && $pendaftaran->user?->mahasiswaProfile?->prodi_id != $adminProdiId) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk memverifikasi surat balasan dari prodi lain.');
+            }
+        }
 
         $request->validate([
             'status_seleksi'  => 'required|in:diterima,ditolak',
@@ -114,7 +153,16 @@ class PengajuanMagangController extends Controller
 
     public function selesaikanMagang(Request $request, $id)
     {
-        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran = Pendaftaran::with(['lowongan', 'user.mahasiswaProfile'])->findOrFail($id);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(['admin_prodi', 'admin-prodi']) && !$user->hasAnyRole(['admin', 'superadmin'])) {
+            $adminProdiId = $user->adminProdiProfile?->prodi_id ?? $user->prodi_id;
+            if ($adminProdiId && $pendaftaran->user?->mahasiswaProfile?->prodi_id != $adminProdiId) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menyelesaikan magang mahasiswa dari prodi lain.');
+            }
+        }
 
         $pendaftaran->update([
             'status_seleksi'     => 'selesai',
