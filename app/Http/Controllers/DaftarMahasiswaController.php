@@ -33,8 +33,11 @@ class DaftarMahasiswaController extends Controller
             $spvPerusahaanId = $user->spvProfile?->perusahaan_id;
 
             $query->whereIn('status_seleksi', ['diterima', 'selesai'])
-                  ->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $spvProdiId))
                   ->whereHas('lowongan', fn($l) => $l->where('perusahaan_id', $spvPerusahaanId));
+
+            if (!empty($spvProdiId)) {
+                $query->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $spvProdiId));
+            }
         } elseif ($user->hasRole('admin_prodi')) {
             $adminProdiId = $user->adminProdiProfile?->prodi_id;
             if ($adminProdiId) {

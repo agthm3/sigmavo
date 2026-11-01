@@ -114,6 +114,7 @@ class AjukanMandiriController extends Controller
 
             // 5. AUTO-CREATE / AMBIL AKUN SPV
             $spvUser = User::where('email', $request->email_supervisor)->first();
+            $mhsProdiId = $user->mahasiswaProfile?->prodi_id;
 
             if (!$spvUser) {
                 $rawPassword = 'Spv-' . rand(1000, 9999);
@@ -131,6 +132,7 @@ class AjukanMandiriController extends Controller
 
                 SpvProfile::create([
                     'user_id'       => $spvUser->id,
+                    'prodi_id'      => $mhsProdiId,
                     'perusahaan_id' => $perusahaan->id,
                     'jabatan'       => trim($request->jabatan_supervisor),
                     'no_hp'         => trim($request->no_hp_supervisor),
@@ -140,14 +142,20 @@ class AjukanMandiriController extends Controller
                     $spvUser->assignRole('spv');
                 }
 
-                SpvProfile::firstOrCreate(
+                $existingSpvProfile = SpvProfile::firstOrCreate(
                     ['user_id' => $spvUser->id],
                     [
+                        'prodi_id'      => $mhsProdiId,
                         'perusahaan_id' => $perusahaan->id,
                         'jabatan'       => trim($request->jabatan_supervisor),
                         'no_hp'         => trim($request->no_hp_supervisor),
                     ]
                 );
+
+                // Update prodi_id jika profil sebelumnya bernilai null
+                if (empty($existingSpvProfile->prodi_id) && $mhsProdiId) {
+                    $existingSpvProfile->update(['prodi_id' => $mhsProdiId]);
+                }
             }
 
             // 6. AUTO-CREATE LOWONGAN MANDIRI (DITAUTKAN KE spv_id)
@@ -164,15 +172,23 @@ class AjukanMandiriController extends Controller
                     'deskripsi'          => 'Lowongan Otomatis - Jalur Magang Mandiri',
                     'kualifikasi'        => 'Khusus Pengajuan Mandiri',
                     'tipe_magang'        => 'mandiri',
-                    'kuota'              => 1,
+                    'kuota'              => 50, // Kuota fleksibel untuk pengajuan mandiri
                     'status'             => $validStatus,
                     'batas_pendaftaran'  => $request->tanggal_selesai ?? now()->addMonths(6)->toDateString(),
                 ]
             );
 
-            // Jika lowongan sudah ada sebelumnya tapi spv_id masih null, perbarui sekarang
+            // Jika lowongan sudah ada sebelumnya (dari pengajuan mahasiswa lain)
+            // Pastikan kuota bertambah dan spv_id terhubung
+            $updateLowonganData = [];
+            if ($lowonganMandiri->kuota < 50) {
+                $updateLowonganData['kuota'] = 50;
+            }
             if (empty($lowonganMandiri->spv_id)) {
-                $lowonganMandiri->update(['spv_id' => $spvUser->id]);
+                $updateLowonganData['spv_id'] = $spvUser->id;
+            }
+            if (!empty($updateLowonganData)) {
+                $lowonganMandiri->update($updateLowonganData);
             }
 
             // 7. SIMPAN PENDAFTARAN

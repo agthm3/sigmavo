@@ -360,6 +360,20 @@
                         </select>
                     </div>
 
+                    <!-- Assign Dosen Pembimbing Lapangan -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Assign Dosen Pembimbing Lapangan</label>
+                        <select name="dosen_id" :value="activeData?.dosen_id" class="w-full px-3.5 py-2 text-xs bg-gray-50 border border-gray-300 rounded-xl focus:ring-vokasi-primary focus:outline-none">
+                            <option value="">-- Pilih Dosen Pembimbing (Opsional) --</option>
+                            @if(isset($dosens))
+                                @foreach($dosens as $dosen)
+                                    <option value="{{ $dosen->id }}">{{ $dosen->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <p class="text-[10px] text-gray-400 mt-1">Dosen yang dipilih akan otomatis dapat memantau logbook, presensi, dan memberi penilaian.</p>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Catatan Tambahan (Opsional)</label>
                         <textarea name="catatan_seleksi" :value="activeData?.catatan_seleksi" rows="3" placeholder="Contoh: Diterima di divisi IT Support..." class="w-full px-3.5 py-2 text-xs bg-gray-50 border border-gray-300 rounded-xl focus:ring-vokasi-primary focus:outline-none resize-none"></textarea>

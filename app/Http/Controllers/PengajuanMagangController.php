@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftaran;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -64,12 +65,16 @@ class PengajuanMagangController extends Controller
         $totalSuratTerbit = (clone $statsQuery)->where('status_surat', 'terbit')->count();
         $totalMandiri     = (clone $statsQuery)->where('jalur_magang', 'mandiri')->count();
 
+        // Ambil daftar Dosen Pembimbing untuk opsi penugasan
+        $dosens = User::role('dosen')->orderBy('name', 'asc')->get();
+
         return view('dashboard.pengajuan-magang.index', compact(
             'pendaftarans',
             'totalPengajuan',
             'totalPerluSurat',
             'totalSuratTerbit',
-            'totalMandiri'
+            'totalMandiri',
+            'dosens'
         ));
     }
 
@@ -125,6 +130,7 @@ class PengajuanMagangController extends Controller
 
         $request->validate([
             'status_seleksi'  => 'required|in:diterima,ditolak',
+            'dosen_id'        => 'nullable|exists:users,id',
             'catatan_seleksi' => 'nullable|string|max:255',
         ]);
 
@@ -133,17 +139,26 @@ class PengajuanMagangController extends Controller
             $lowongan = $pendaftaran->lowongan;
             $jumlahDiterima = Pendaftaran::where('lowongan_id', $lowongan->id)
                 ->where('status_seleksi', 'diterima')
+                ->where('id', '!=', $pendaftaran->id)
                 ->count();
 
-            if ($jumlahDiterima >= $lowongan->kuota) {
+            // Pada jalur mandiri, kuota bersifat fleksibel
+            if ($pendaftaran->jalur_magang !== 'mandiri' && $jumlahDiterima >= $lowongan->kuota) {
                 return redirect()->back()->with('error', "Gagal menerima: Kuota penerimaan untuk lowongan '{$lowongan->judul_posisi}' sudah penuh ({$lowongan->kuota} Mahasiswa).");
             }
         }
 
-        $pendaftaran->update([
+        $updateData = [
             'status_seleksi'  => $request->status_seleksi,
             'catatan_seleksi' => $request->catatan_seleksi,
-        ]);
+        ];
+
+        // Jika ada input dosen_id, update ke record pendaftaran
+        if ($request->has('dosen_id')) {
+            $updateData['dosen_id'] = $request->dosen_id ?: null;
+        }
+
+        $pendaftaran->update($updateData);
 
         $statusText = $request->status_seleksi === 'diterima' ? 'DITERIMA MAGANG' : 'DITOLAK';
         $namaMhs = $pendaftaran->user?->name ?? 'Mahasiswa';
