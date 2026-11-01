@@ -163,16 +163,42 @@
             $nilaiAkhir = $isDinilai ? $penilaianDosen->nilai_akhir : 0;
             
             $hurufMutu = '-';
+            $nilaiKonversi = '-';
+            $statusLulus = '-';
+            $isLulus = false;
+
             if($isDinilai) {
-                if($nilaiAkhir >= 85) $hurufMutu = 'A';
-                elseif($nilaiAkhir >= 80) $hurufMutu = 'A-';
-                elseif($nilaiAkhir >= 75) $hurufMutu = 'B+';
-                elseif($nilaiAkhir >= 70) $hurufMutu = 'B';
-                elseif($nilaiAkhir >= 65) $hurufMutu = 'B-';
-                elseif($nilaiAkhir >= 60) $hurufMutu = 'C+';
-                elseif($nilaiAkhir >= 50) $hurufMutu = 'C';
-                elseif($nilaiAkhir >= 40) $hurufMutu = 'D';
-                else $hurufMutu = 'E';
+                if($nilaiAkhir >= 85.00) {
+                    $hurufMutu = 'A';
+                    $nilaiKonversi = '4,00';
+                    $statusLulus = 'LULUS';
+                    $isLulus = true;
+                } elseif($nilaiAkhir >= 80.00) {
+                    $hurufMutu = 'A-';
+                    $nilaiKonversi = '3,75';
+                    $statusLulus = 'LULUS';
+                    $isLulus = true;
+                } elseif($nilaiAkhir >= 75.00) {
+                    $hurufMutu = 'B+';
+                    $nilaiKonversi = '3,50';
+                    $statusLulus = 'LULUS';
+                    $isLulus = true;
+                } elseif($nilaiAkhir >= 70.00) {
+                    $hurufMutu = 'B';
+                    $nilaiKonversi = '3,00';
+                    $statusLulus = 'LULUS';
+                    $isLulus = true;
+                } elseif($nilaiAkhir >= 65.00) {
+                    $hurufMutu = 'B-';
+                    $nilaiKonversi = '2,75';
+                    $statusLulus = 'LULUS';
+                    $isLulus = true;
+                } else {
+                    $hurufMutu = 'E';
+                    $nilaiKonversi = '0,00';
+                    $statusLulus = 'TIDAK LULUS';
+                    $isLulus = false;
+                }
             }
         @endphp
 
@@ -180,7 +206,18 @@
             <div class="nilai-box">
                 <span style="font-size: 9px; color: #718096; text-transform: uppercase; font-weight: bold;">Nilai Akhir Akumulasi</span>
                 <div class="score">{{ number_format($nilaiAkhir, 2) }}</div>
-                <div class="grade">HURUF MUTU: <strong>{{ $hurufMutu }}</strong></div>
+                <div class="grade">
+                    HURUF MUTU: <strong>{{ $hurufMutu }}</strong> ({{ $nilaiKonversi }})
+                </div>
+                <div style="margin-top: 4px;">
+                    @if($isDinilai)
+                        <span style="font-size: 9px; font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; {{ $isLulus ? 'background-color: #d1fae5; color: #065f46;' : 'background-color: #ffe4e6; color: #9f1239;' }}">
+                            {{ $statusLulus }}
+                        </span>
+                    @else
+                        <span style="font-size: 9px; font-style: italic; color: #9ca3af;">Belum Dinilai</span>
+                    @endif
+                </div>
             </div>
         </div>
 

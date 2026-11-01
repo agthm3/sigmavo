@@ -138,9 +138,9 @@
                                     <th class="p-4 w-12 text-center">No</th>
                                     <th class="p-4 w-60">Mahasiswa & Prodi</th>
                                     <th class="p-4 w-48">Instansi Penempatan</th>
-                                    <th class="p-4 w-32 text-center">Nilai Akhir<br><span class="text-[10px] text-gray-400 font-normal">(Skala 100)</span></th>
-                                    <th class="p-4 w-32 text-center">Huruf Mutu</th>
-                                    <th class="p-4 w-32 text-center">Status</th>
+                                    <th class="p-4 w-28 text-center">Nilai Akhir<br><span class="text-[10px] text-gray-400 font-normal">(Skala 100)</span></th>
+                                    <th class="p-4 w-32 text-center">Nilai Mutu</th>
+                                    <th class="p-4 w-32 text-center">Status Kelulusan</th>
                                     <th class="p-4 w-32 text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -152,18 +152,44 @@
                                         $nilaiAkhir = $penilaianDosen ? $penilaianDosen->nilai_akhir : null;
                                         $isDinilai = $nilaiAkhir !== null;
 
-                                        // Konversi Huruf Mutu
+                                        // Konversi Huruf Mutu, Nilai Konversi (Bobot), dan Status Kelulusan
                                         $hurufMutu = '-';
+                                        $nilaiKonversi = '-';
+                                        $statusLulus = '-';
+                                        $isLulus = false;
+
                                         if($isDinilai) {
-                                            if($nilaiAkhir >= 85) $hurufMutu = 'A';
-                                            elseif($nilaiAkhir >= 80) $hurufMutu = 'A-';
-                                            elseif($nilaiAkhir >= 75) $hurufMutu = 'B+';
-                                            elseif($nilaiAkhir >= 70) $hurufMutu = 'B';
-                                            elseif($nilaiAkhir >= 65) $hurufMutu = 'B-';
-                                            elseif($nilaiAkhir >= 60) $hurufMutu = 'C+';
-                                            elseif($nilaiAkhir >= 50) $hurufMutu = 'C';
-                                            elseif($nilaiAkhir >= 40) $hurufMutu = 'D';
-                                            else $hurufMutu = 'E';
+                                            if($nilaiAkhir >= 85.00) {
+                                                $hurufMutu = 'A';
+                                                $nilaiKonversi = '4,00';
+                                                $statusLulus = 'Lulus';
+                                                $isLulus = true;
+                                            } elseif($nilaiAkhir >= 80.00) {
+                                                $hurufMutu = 'A-';
+                                                $nilaiKonversi = '3,75';
+                                                $statusLulus = 'Lulus';
+                                                $isLulus = true;
+                                            } elseif($nilaiAkhir >= 75.00) {
+                                                $hurufMutu = 'B+';
+                                                $nilaiKonversi = '3,50';
+                                                $statusLulus = 'Lulus';
+                                                $isLulus = true;
+                                            } elseif($nilaiAkhir >= 70.00) {
+                                                $hurufMutu = 'B';
+                                                $nilaiKonversi = '3,00';
+                                                $statusLulus = 'Lulus';
+                                                $isLulus = true;
+                                            } elseif($nilaiAkhir >= 65.00) {
+                                                $hurufMutu = 'B-';
+                                                $nilaiKonversi = '2,75';
+                                                $statusLulus = 'Lulus';
+                                                $isLulus = true;
+                                            } else {
+                                                $hurufMutu = 'E';
+                                                $nilaiKonversi = '0,00';
+                                                $statusLulus = 'Tidak Lulus';
+                                                $isLulus = false;
+                                            }
                                         }
 
                                         // Persiapkan Data Form Rubrik
@@ -198,26 +224,34 @@
                                         @if($isDinilai)
                                             @php
                                                 $color = 'bg-gray-100 text-gray-700';
-                                                if(in_array($hurufMutu, ['A', 'A-'])) $color = 'bg-green-100 text-green-700 border-green-200';
-                                                elseif(in_array($hurufMutu, ['B+', 'B', 'B-'])) $color = 'bg-blue-100 text-blue-700 border-blue-200';
-                                                elseif(in_array($hurufMutu, ['C+', 'C'])) $color = 'bg-yellow-100 text-yellow-700 border-yellow-200';
-                                                else $color = 'bg-red-100 text-red-700 border-red-200';
+                                                if(in_array($hurufMutu, ['A', 'A-'])) $color = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                                                elseif(in_array($hurufMutu, ['B+', 'B', 'B-'])) $color = 'bg-blue-100 text-blue-800 border-blue-300';
+                                                else $color = 'bg-rose-100 text-rose-800 border-rose-300';
                                             @endphp
-                                            <span class="inline-block px-3 py-1 font-bold text-sm rounded-lg border {{ $color }}">
-                                                {{ $hurufMutu }}
-                                            </span>
+                                            <div class="inline-flex flex-col items-center">
+                                                <span class="inline-block px-3 py-1 font-extrabold text-sm rounded-lg border {{ $color }}">
+                                                    {{ $hurufMutu }}
+                                                </span>
+                                                <span class="text-[10px] text-gray-500 font-bold mt-1">Bobot: {{ $nilaiKonversi }}</span>
+                                            </div>
                                         @else
                                             <span class="text-xs text-gray-400 font-mono">--</span>
                                         @endif
                                     </td>
                                     <td class="p-4 text-center">
                                         @if($isDinilai)
-                                            <span class="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
-                                                <i class="fas fa-check-circle mr-1"></i> Selesai
-                                            </span>
+                                            @if($isLulus)
+                                                <span class="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
+                                                    <i class="fas fa-check-circle mr-1"></i> Lulus
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-full border border-rose-200">
+                                                    <i class="fas fa-times-circle mr-1"></i> Tidak Lulus
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full border border-yellow-200">
-                                                <i class="fas fa-exclamation-triangle mr-1"></i> Menunggu
+                                                <i class="fas fa-clock mr-1"></i> Menunggu Nilai
                                             </span>
                                         @endif
                                     </td>
