@@ -98,9 +98,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Pelaksanaan Magang (Mahasiswa)
         Route::prefix('pelaksanaan-magang')->group(function () {
-            Route::post('/pembekalan-magang', [PembekalanMagangController::class, 'store'])->name('dashboard-mahasiswa-pembekalan-magang-store');
             Route::post('/pembekalan-magang/{id}/presensi', [PembekalanMagangController::class, 'presensi'])->name('dashboard-mahasiswa-pembekalan-magang-presensi');
-            Route::post('/pembekalan-magang/{id}/materi', [PembekalanMagangController::class, 'storeMateri'])->name('dashboard-mahasiswa-pembekalan-magang-materi-store');
 
             Route::post('/absensi', [AbsensiController::class, 'storeAbsensi'])->name('dashboard-mahasiswa-absensi-store');
             Route::post('/absensi/izin', [AbsensiController::class, 'storeIzin'])->name('dashboard-mahasiswa-absensi-izin-store');
@@ -134,6 +132,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/logbook', [LogbookController::class, 'index'])->name('dashboard-mahasiswa-logbook');
         Route::get('/seminar-hasil', [SeminarController::class, 'index'])->name('dashboard-mahasiswa-seminar');
         Route::get('/laporan-akhir', [LaporanAkhirMahasiswaController::class, 'index'])->name('dashboard-mahasiswa-laporan-akhir');
+
+        // Aksi Pengelolaan Pembekalan Magang (Admin / Superadmin / Admin Prodi)
+        Route::middleware(['role:admin|superadmin|admin_prodi'])->group(function () {
+            Route::post('/pembekalan-magang', [PembekalanMagangController::class, 'store'])->name('dashboard-mahasiswa-pembekalan-magang-store');
+            Route::post('/pembekalan-magang/{id}/materi', [PembekalanMagangController::class, 'storeMateri'])->name('dashboard-mahasiswa-pembekalan-magang-materi-store');
+        });
     });
 
     // Download & Upload Dokumen Umum
