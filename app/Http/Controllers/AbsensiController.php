@@ -118,6 +118,7 @@ class AbsensiController extends Controller
             'latitude'     => 'nullable|string',
             'longitude'    => 'nullable|string',
             'waktu_lokal'  => 'required|string', // <-- Menangkap waktu lokal dari frontend
+            'zona_waktu'   => 'nullable|string|in:WIB,WITA,WIT',
         ]);
 
         // Decode Base64 Image
@@ -136,14 +137,23 @@ class AbsensiController extends Controller
         // Ambil status Mode Testing dari Setting Global (Default: 'true')
         $isTestingMode = Setting::getByKey('mode_testing', 'true') === 'true';
 
+        // Tentukan zona waktu: prioritaskan input frontend, jika tidak ada hitung dari longitude
+        $zonaWaktu = $request->zona_waktu;
+        if (!$zonaWaktu && $request->filled('longitude')) {
+            $lon = (float) $request->longitude;
+            $zonaWaktu = $lon < 114.5 ? 'WIB' : ($lon < 126.0 ? 'WITA' : 'WIT');
+        }
+        $zonaWaktu = $zonaWaktu ?: 'WITA';
+
         // Gunakan Waktu Lokal yang dikirim perangkat mahasiswa
         $waktuAbsen = $request->waktu_lokal; 
 
         if ($request->tipe === 'masuk') {
-            $absensi->waktu_masuk     = $waktuAbsen; // <-- Pakai waktu lokal
-            $absensi->foto_masuk      = $fileName;
-            $absensi->latitude_masuk  = $request->latitude;
-            $absensi->longitude_masuk = $request->longitude;
+            $absensi->waktu_masuk       = $waktuAbsen; // <-- Pakai waktu lokal
+            $absensi->foto_masuk        = $fileName;
+            $absensi->latitude_masuk    = $request->latitude;
+            $absensi->longitude_masuk   = $request->longitude;
+            $absensi->zona_waktu_masuk  = $zonaWaktu;
         } else {
             // PROSES ABSEN PULANG
             if (!$absensi->waktu_masuk) {
@@ -154,13 +164,14 @@ class AbsensiController extends Controller
             // agar mahasiswa bisa absen pulang kapan saja jam kerjanya berakhir hari ini.
             // Tag lokasi GPS, foto selfie, dan waktu lokal tetap tercatat akurat.
 
-            $absensi->waktu_pulang     = $waktuAbsen; // <-- Pakai waktu lokal
-            $absensi->foto_pulang      = $fileName;
-            $absensi->latitude_pulang  = $request->latitude;
-            $absensi->longitude_pulang = $request->longitude;
+            $absensi->waktu_pulang       = $waktuAbsen; // <-- Pakai waktu lokal
+            $absensi->foto_pulang        = $fileName;
+            $absensi->latitude_pulang    = $request->latitude;
+            $absensi->longitude_pulang   = $request->longitude;
+            $absensi->zona_waktu_pulang  = $zonaWaktu;
             
             // Catatan: Jam diperoleh tetap dialokasikan 8 jam di record presensi (atau dipotong nanti via approval)
-            $absensi->jam_diperoleh    = 8; 
+            $absensi->jam_diperoleh      = 8; 
         }
 
         $absensi->save();

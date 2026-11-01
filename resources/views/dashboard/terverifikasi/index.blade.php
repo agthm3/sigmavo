@@ -157,7 +157,7 @@
                             <!-- Absen Masuk -->
                             <div class="p-3.5 bg-teal-50/60 border border-teal-200 rounded-xl space-y-1">
                                 <span class="text-[10px] uppercase font-bold text-teal-800 block"><i class="fas fa-sign-in-alt mr-1"></i> Absen Masuk</span>
-                                <p class="font-mono font-bold text-gray-800 text-xs" x-text="activeDetail?.waktu_masuk ? activeDetail?.waktu_masuk + ' WITA' : '-'"></p>
+                                <p class="font-mono font-bold text-gray-800 text-xs" x-text="activeDetail?.waktu_masuk ? (activeDetail?.waktu_masuk + ' ' + (activeDetail?.zona_waktu_masuk || 'WITA')) : '-'"></p>
                                 <div class="text-[10px] text-gray-500 font-mono pt-1">
                                     <i class="fas fa-map-marker-alt text-teal-600 mr-1"></i>
                                     <span x-text="(activeDetail?.latitude_masuk || '-') + ', ' + (activeDetail?.longitude_masuk || '-')"></span>
@@ -167,7 +167,7 @@
                             <!-- Absen Pulang -->
                             <div class="p-3.5 bg-orange-50/60 border border-orange-200 rounded-xl space-y-1">
                                 <span class="text-[10px] uppercase font-bold text-orange-800 block"><i class="fas fa-sign-out-alt mr-1"></i> Absen Pulang</span>
-                                <p class="font-mono font-bold text-gray-800 text-xs" x-text="activeDetail?.waktu_pulang ? activeDetail?.waktu_pulang + ' WITA' : 'Belum Absen Pulang'"></p>
+                                <p class="font-mono font-bold text-gray-800 text-xs" x-text="activeDetail?.waktu_pulang ? (activeDetail?.waktu_pulang + ' ' + (activeDetail?.zona_waktu_pulang || 'WITA')) : 'Belum Absen Pulang'"></p>
                                 <div class="text-[10px] text-gray-500 font-mono pt-1">
                                     <i class="fas fa-map-marker-alt text-orange-600 mr-1"></i>
                                     <span x-text="(activeDetail?.latitude_pulang || '-') + ', ' + (activeDetail?.longitude_pulang || '-')"></span>

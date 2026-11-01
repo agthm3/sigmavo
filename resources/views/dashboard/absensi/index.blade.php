@@ -112,7 +112,7 @@
 
                             <!-- Watermark Informasi GPS & Waktu Real-time Lokal -->
                             <div class="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[9px] p-2 rounded-lg z-20 font-mono space-y-0.5">
-                                <p><i class="fas fa-map-marker-alt text-red-400 w-3"></i> <span x-text="lat ? lat + ', ' + lng : 'Mendapatkan GPS...'"></span></p>
+                                <p><i class="fas fa-map-marker-alt text-red-400 w-3"></i> <span x-text="lat ? lat + ', ' + lng : (gpsLoading ? 'Mencari lokasi GPS...' : 'GPS tidak aktif')"></span></p>
                                 <p><i class="fas fa-clock text-blue-400 w-3"></i> <span x-text="localTimeString + ' ' + detectedZone"></span></p>
                                 <p><i class="fas fa-user text-emerald-400 w-3"></i> {{ $user->name }}</p>
                             </div>
@@ -126,6 +126,7 @@
                             <input type="hidden" name="latitude" x-ref="inputLat" :value="lat">
                             <input type="hidden" name="longitude" x-ref="inputLng" :value="lng">
                             <input type="hidden" name="waktu_lokal" x-ref="inputWaktuLokal">
+                            <input type="hidden" name="zona_waktu" x-ref="inputZonaWaktu" :value="detectedZone">
                         </form>
 
                         <!-- Tombol Aksi Absen -->
@@ -239,17 +240,17 @@
                                         </td>
                                         <td class="p-3.5 text-center font-mono">
                                             {{ $row->waktu_masuk ?? '-' }}
-                                            @if($row->waktu_masuk && $row->longitude_masuk)
-                                                <span class="text-[9px] text-gray-400 font-bold ml-0.5">
-                                                    {{ $row->longitude_masuk < 114.5 ? 'WIB' : ($row->longitude_masuk < 126.0 ? 'WITA' : 'WIT') }}
+                                            @if($row->waktu_masuk)
+                                                <span class="text-[9px] text-gray-500 font-bold ml-0.5">
+                                                    {{ $row->zona_waktu_masuk ?: ($row->longitude_masuk ? ($row->longitude_masuk < 114.5 ? 'WIB' : ($row->longitude_masuk < 126.0 ? 'WITA' : 'WIT')) : 'WITA') }}
                                                 </span>
                                             @endif
                                         </td>
                                         <td class="p-3.5 text-center font-mono">
                                             {{ $row->waktu_pulang ?? '-' }}
-                                            @if($row->waktu_pulang && $row->longitude_pulang)
-                                                <span class="text-[9px] text-gray-400 font-bold ml-0.5">
-                                                    {{ $row->longitude_pulang < 114.5 ? 'WIB' : ($row->longitude_pulang < 126.0 ? 'WITA' : 'WIT') }}
+                                            @if($row->waktu_pulang)
+                                                <span class="text-[9px] text-gray-500 font-bold ml-0.5">
+                                                    {{ $row->zona_waktu_pulang ?: ($row->longitude_pulang ? ($row->longitude_pulang < 114.5 ? 'WIB' : ($row->longitude_pulang < 126.0 ? 'WITA' : 'WIT')) : 'WITA') }}
                                                 </span>
                                             @endif
                                         </td>
@@ -464,25 +465,56 @@
             absentType: 'masuk',
             lat: null,
             lng: null,
+            gpsLoading: true,
             localTimeString: '',
             clockInterval: null,
 
-            // Hitung zona waktu secara cerdas dari koordinat Longitude GPS
-            get detectedZone() {
-                if (!this.lng) return 'WITA';
-                const lon = parseFloat(this.lng);
-                if (lon < 114.5) return 'WIB';
-                if (lon >= 114.5 && lon < 126.0) return 'WITA';
-                return 'WIT';
+            // Dapatkan zona waktu browser bawaan (misal Asia/Jakarta -> WIB, Asia/Makassar -> WITA, Asia/Jayapura -> WIT)
+            get browserZone() {
+                try {
+                    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+                    if (tz.includes('Jakarta') || tz.includes('Pontianak') || tz.includes('Bangkok') || tz.includes('Saigon')) {
+                        return 'WIB';
+                    }
+                    if (tz.includes('Makassar') || tz.includes('Ujung_Pandang') || tz.includes('Bali') || tz.includes('Singapore') || tz.includes('Kuala_Lumpur')) {
+                        return 'WITA';
+                    }
+                    if (tz.includes('Jayapura')) {
+                        return 'WIT';
+                    }
+                } catch (e) {
+                    console.warn("Intl timezone error:", e);
+                }
+                // Fallback berdasarkan getTimezoneOffset()
+                // UTC+7 -> offset -420 (WIB)
+                // UTC+8 -> offset -480 (WITA)
+                // UTC+9 -> offset -540 (WIT)
+                const offsetMin = new Date().getTimezoneOffset();
+                if (offsetMin <= -510) return 'WIT';
+                if (offsetMin <= -450) return 'WITA';
+                if (offsetMin <= -390) return 'WIB';
+                return 'WITA';
             },
 
-            // Hitung offset jam relatif terhadap UTC berdasarkan Longitude GPS
-            get targetTimeZoneOffset() {
-                if (!this.lng) return 8; // default WITA (UTC+8)
-                const lon = parseFloat(this.lng);
-                if (lon < 114.5) return 7; // WIB (UTC+7)
-                if (lon >= 114.5 && lon < 126.0) return 8; // WITA (UTC+8)
-                return 9; // WIT (UTC+9)
+            // Deteksi zona waktu: Utamakan hasil koordinat GPS jika sudah didapat, jika belum gunakan zona waktu perangkat (browser)
+            get detectedZone() {
+                if (this.lng !== null && this.lng !== undefined && this.lng !== '') {
+                    const lon = parseFloat(this.lng);
+                    if (!isNaN(lon)) {
+                        if (lon < 114.5) return 'WIB';
+                        if (lon >= 114.5 && lon < 126.0) return 'WITA';
+                        return 'WIT';
+                    }
+                }
+                return this.browserZone;
+            },
+
+            // IANA timeZone string sesuai zona terdeteksi
+            get ianaTimeZone() {
+                const zone = this.detectedZone;
+                if (zone === 'WIB') return 'Asia/Jakarta';
+                if (zone === 'WIT') return 'Asia/Jayapura';
+                return 'Asia/Makassar'; // WITA
             },
 
             init() {
@@ -497,41 +529,48 @@
                 }, 1000);
             },
 
-            // Format jam disesuaikan otomatis dengan zona waktu GPS
+            // Format jam real-time sesuai IANA timezone zona terdeteksi (bebas dari distorsi manipulasi offset)
             updateTime() {
                 const now = new Date();
-                // Hitung waktu UTC lalu tambahkan offset zona GPS
-                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const targetTime = new Date(utc + (3600000 * this.targetTimeZoneOffset));
+                const tz = this.ianaTimeZone;
 
-                const optionsDate = { year: 'numeric', month: 'short', day: 'numeric' };
-                const dateStr = targetTime.toLocaleDateString('id-ID', optionsDate);
+                const optionsDate = { timeZone: tz, year: 'numeric', month: 'short', day: 'numeric' };
+                const dateStr = new Intl.DateTimeFormat('id-ID', optionsDate).format(now);
+
+                const optionsTime = { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const timeParts = new Intl.DateTimeFormat('id-ID', optionsTime).formatToParts(now);
                 
-                const hours = String(targetTime.getHours()).padStart(2, '0');
-                const minutes = String(targetTime.getMinutes()).padStart(2, '0');
-                const seconds = String(targetTime.getSeconds()).padStart(2, '0');
+                let h = '00', m = '00', s = '00';
+                for (const part of timeParts) {
+                    if (part.type === 'hour') h = part.value.padStart(2, '0');
+                    if (part.type === 'minute') m = part.value.padStart(2, '0');
+                    if (part.type === 'second') s = part.value.padStart(2, '0');
+                }
 
-                this.localTimeString = `${dateStr}, ${hours}:${minutes}:${seconds}`;
+                this.localTimeString = `${dateStr}, ${h}:${m}:${s}`;
             },
 
             getLocation() {
+                this.gpsLoading = true;
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
                             this.lat = position.coords.latitude.toFixed(6);
                             this.lng = position.coords.longitude.toFixed(6);
-                            this.updateTime(); // Segera update jam & zona waktu begitu titik koordinat didapat
+                            this.gpsLoading = false;
+                            this.updateTime();
                         },
                         (error) => {
                             console.warn("Gagal mengambil GPS:", error.message);
-                            this.lat = "-5.132200";
-                            this.lng = "119.425500";
+                            this.gpsLoading = false;
+                            // Jangan timpa lat & lng dengan koordinat palsu Makassar jika gagal,
+                            // biarkan null agar zona waktu tetap mengikuti browser user!
                             this.updateTime();
-                        }
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
                     );
                 } else {
-                    this.lat = "-5.132200";
-                    this.lng = "119.425500";
+                    this.gpsLoading = false;
                     this.updateTime();
                 }
             },
@@ -572,21 +611,26 @@
                     return;
                 }
 
-                // Ambil jam akurat sesuai zona GPS (bukan sekadar jam internal HP yang belum sinkron)
+                // Ambil jam lokal akurat sesuai timezone terdeteksi
                 const now = new Date();
-                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const targetTime = new Date(utc + (3600000 * this.targetTimeZoneOffset));
+                const tz = this.ianaTimeZone;
+                const optionsTime = { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const timeParts = new Intl.DateTimeFormat('id-ID', optionsTime).formatToParts(now);
 
-                const hours = String(targetTime.getHours()).padStart(2, '0');
-                const minutes = String(targetTime.getMinutes()).padStart(2, '0');
-                const seconds = String(targetTime.getSeconds()).padStart(2, '0');
+                let hours = '00', minutes = '00', seconds = '00';
+                for (const part of timeParts) {
+                    if (part.type === 'hour') hours = part.value.padStart(2, '0');
+                    if (part.type === 'minute') minutes = part.value.padStart(2, '0');
+                    if (part.type === 'second') seconds = part.value.padStart(2, '0');
+                }
                 const localTime = `${hours}:${minutes}:${seconds}`;
 
                 this.$refs.inputTipe.value = type;
                 this.$refs.inputImage.value = imageData;
-                this.$refs.inputLat.value = this.lat || "-5.132200";
-                this.$refs.inputLng.value = this.lng || "119.425500";
+                this.$refs.inputLat.value = this.lat || "";
+                this.$refs.inputLng.value = this.lng || "";
                 this.$refs.inputWaktuLokal.value = localTime;
+                this.$refs.inputZonaWaktu.value = this.detectedZone;
 
                 this.$nextTick(() => {
                     this.$refs.formAbsen.submit();

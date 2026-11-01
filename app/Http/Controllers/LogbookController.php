@@ -337,6 +337,10 @@ class LogbookController extends Controller
      */
     public function exportWord()
     {
+        // Alokasikan memori dan waktu eksekusi ekstra untuk proses pembuatan dokumen besar
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
@@ -362,23 +366,7 @@ class LogbookController extends Controller
         }
 
         foreach ($logbooks as $logbook) {
-            $logbook->foto_base64 = null;
-
-            if (!empty($logbook->foto_dokumentasi)) {
-                $path = $logbook->foto_dokumentasi;
-                if (Storage::disk('public')->exists($path)) {
-                    $fileData = Storage::disk('public')->get($path);
-                    $mimeType = Storage::disk('public')->mimeType($path);
-                    $logbook->foto_base64 = 'data:' . $mimeType . ';base64,' . base64_encode($fileData);
-                } else {
-                    $localPath = storage_path('app/public/' . ltrim($path, '/'));
-                    if (file_exists($localPath) && !is_dir($localPath)) {
-                        $fileData = file_get_contents($localPath);
-                        $mimeType = mime_content_type($localPath);
-                        $logbook->foto_base64 = 'data:' . $mimeType . ';base64,' . base64_encode($fileData);
-                    }
-                }
-            }
+            $logbook->foto_base64 = $this->getOptimizedBase64Image($logbook->foto_dokumentasi);
         }
 
         $htmlContent = view('dashboard.logbook.word-export', compact('user', 'pendaftaran', 'logbooks'))->render();
@@ -391,5 +379,94 @@ class LogbookController extends Controller
             'Cache-Control'       => 'max-age=0, no-cache, must-revalidate, proxy-revalidate',
             'Expires'             => '0',
         ]);
+    }
+
+    /**
+     * Optimasi Foto untuk Export Dokumen (Downsampling on-the-fly)
+     * Mengurangi pemakaian memori dari 2-10 MB per foto menjadi ~20-40 KB per foto
+     */
+    private function getOptimizedBase64Image(?string $path, int $maxWidth = 500, int $quality = 70): ?string
+    {
+        if (empty($path)) {
+            return null;
+        }
+
+        try {
+            $fullPath = null;
+            if (Storage::disk('public')->exists($path)) {
+                $fullPath = Storage::disk('public')->path($path);
+            } else {
+                $localPath = storage_path('app/public/' . ltrim($path, '/'));
+                if (file_exists($localPath) && !is_dir($localPath)) {
+                    $fullPath = $localPath;
+                }
+            }
+
+            if (!$fullPath || !file_exists($fullPath)) {
+                return null;
+            }
+
+            // Downsampling menggunakan GD jika ekstensi tersedia
+            if (extension_loaded('gd')) {
+                $info = @getimagesize($fullPath);
+                if ($info && in_array($info['mime'], ['image/jpeg', 'image/png', 'image/webp'])) {
+                    $width = $info[0];
+                    $height = $info[1];
+                    $mime = $info['mime'];
+
+                    $src = null;
+                    switch ($mime) {
+                        case 'image/jpeg':
+                            $src = @imagecreatefromjpeg($fullPath);
+                            break;
+                        case 'image/png':
+                            $src = @imagecreatefrompng($fullPath);
+                            break;
+                        case 'image/webp':
+                            $src = function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($fullPath) : null;
+                            break;
+                    }
+
+                    if ($src) {
+                        if ($width > $maxWidth) {
+                            $newWidth = $maxWidth;
+                            $newHeight = (int) round(($height * $maxWidth) / $width);
+                            $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+                            if ($mime === 'image/png') {
+                                imagealphablending($dst, false);
+                                imagesavealpha($dst, true);
+                            }
+
+                            imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                            imagedestroy($src);
+                            $target = $dst;
+                        } else {
+                            $target = $src;
+                        }
+
+                        ob_start();
+                        imagejpeg($target, null, $quality);
+                        $compressedData = ob_get_clean();
+                        imagedestroy($target);
+
+                        if ($compressedData) {
+                            return 'data:image/jpeg;base64,' . base64_encode($compressedData);
+                        }
+                    }
+                }
+            }
+
+            // Fallback aman: jika GD tidak dapat memproses, baca file langsung
+            $fileData = @file_get_contents($fullPath);
+            if ($fileData) {
+                $mimeType = @mime_content_type($fullPath) ?: 'image/jpeg';
+                return 'data:' . $mimeType . ';base64,' . base64_encode($fileData);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Gagal optimasi foto logbook untuk export: " . $e->getMessage());
+        }
+
+        return null;
     }
 }

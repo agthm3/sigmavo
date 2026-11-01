@@ -102,6 +102,8 @@ class TerverifikasiController extends Controller
                 'tipe_data'         => 'absensi',
                 'waktu_masuk'       => $item->waktu_masuk,
                 'waktu_pulang'      => $item->waktu_pulang,
+                'zona_waktu_masuk'  => $item->zona_waktu_masuk ?: ($item->longitude_masuk ? ($item->longitude_masuk < 114.5 ? 'WIB' : ($item->longitude_masuk < 126.0 ? 'WITA' : 'WIT')) : 'WITA'),
+                'zona_waktu_pulang' => $item->zona_waktu_pulang ?: ($item->longitude_pulang ? ($item->longitude_pulang < 114.5 ? 'WIB' : ($item->longitude_pulang < 126.0 ? 'WITA' : 'WIT')) : 'WITA'),
                 'latitude_masuk'    => $item->latitude_masuk,
                 'longitude_masuk'   => $item->longitude_masuk,
                 'latitude_pulang'   => $item->latitude_pulang,
