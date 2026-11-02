@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\Logbook;
+use App\Models\Prodi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -56,9 +57,23 @@ class PerluVerifikasiController extends Controller
         } else {
             // ADMIN / SUPERADMIN melihat yang master statusnya belum approved
             $queryLogbooks->where('status_asistensi', '!=', 'approved');
+
+            // Filter Prodi untuk Admin / Superadmin jika dipilih
+            if ($request->filled('prodi_id') && $request->prodi_id !== 'semua') {
+                $queryLogbooks->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $request->prodi_id));
+            }
         }
 
-        $pendingLogbooks = $queryLogbooks->latest()->get();
+        // Filter Pencarian Teks (Nama, NIM, Perusahaan)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $queryLogbooks->where(function ($q) use ($search) {
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('user.mahasiswaProfile', fn($mp) => $mp->where('nim', 'like', "%{$search}%"))
+                  ->orWhereHas('pendaftaran.lowongan.perusahaan', fn($p) => $p->where('nama_perusahaan', 'like', "%{$search}%"))
+                  ->orWhere('uraian_kegiatan', 'like', "%{$search}%");
+            });
+        }
 
         // ==========================================
         // 3. ANTREAN VERIFIKASI ABSENSI / IZIN / SAKIT
@@ -81,15 +96,53 @@ class PerluVerifikasiController extends Controller
             $queryAbsensis->whereHas('user.mahasiswaProfile', function($m) use ($adminProdiId) {
                 if ($adminProdiId) $m->where('prodi_id', $adminProdiId);
             });
+        } else {
+            // Filter Prodi untuk Admin / Superadmin jika dipilih
+            if ($request->filled('prodi_id') && $request->prodi_id !== 'semua') {
+                $queryAbsensis->whereHas('user.mahasiswaProfile', fn($m) => $m->where('prodi_id', $request->prodi_id));
+            }
         }
 
-        $pendingAbsensis = $queryAbsensis->latest()->get();
+        // Filter Pencarian Teks pada Absensi
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $queryAbsensis->where(function ($q) use ($search) {
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('user.mahasiswaProfile', fn($mp) => $mp->where('nim', 'like', "%{$search}%"))
+                  ->orWhereHas('pendaftaran.lowongan.perusahaan', fn($p) => $p->where('nama_perusahaan', 'like', "%{$search}%"))
+                  ->orWhere('alasan_izin', 'like', "%{$search}%");
+            });
+        }
+
+        // Hitung total ringkasan secara instan via query count
+        $totalPendingLogbooks = (clone $queryLogbooks)->count();
+        $totalPendingAbsensis = (clone $queryAbsensis)->count();
+
+        // Paginasi cepat (15 item per halaman)
+        $pendingLogbooks = $queryLogbooks->latest()->paginate(15, ['*'], 'page_logbook')->withQueryString();
+        $pendingAbsensis = $queryAbsensis->latest()->paginate(15, ['*'], 'page_absensi')->withQueryString();
+
+        $prodis = Prodi::orderBy('nama_prodi', 'asc')->get();
 
         if ($isMonitoring) {
-            return view('dashboard.monitoring.perlu-verifikasi', compact('pendingLogbooks', 'pendingAbsensis', 'targetUser'));
+            return view('dashboard.monitoring.perlu-verifikasi', compact(
+                'pendingLogbooks', 
+                'pendingAbsensis', 
+                'totalPendingLogbooks', 
+                'totalPendingAbsensis', 
+                'targetUser', 
+                'prodis'
+            ));
         }
 
-        return view('dashboard.perlu-verifikasi.index', compact('pendingLogbooks', 'pendingAbsensis', 'currentUser'));
+        return view('dashboard.perlu-verifikasi.index', compact(
+            'pendingLogbooks', 
+            'pendingAbsensis', 
+            'totalPendingLogbooks', 
+            'totalPendingAbsensis', 
+            'currentUser', 
+            'prodis'
+        ));
     }
 
     /**

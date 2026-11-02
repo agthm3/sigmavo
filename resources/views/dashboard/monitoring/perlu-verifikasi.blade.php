@@ -2,7 +2,7 @@
 
 @section('content')
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
-      x-data="{ activeTab: 'semua' }">
+      x-data="{ activeTab: '{{ request('tab', 'semua') }}' }">
     
     <div class="max-w-5xl mx-auto w-full flex-1">
         
@@ -34,20 +34,20 @@
                 <p class="text-sm text-gray-500 mt-1">Daftar logbook dan pengajuan izin/sakit yang sedang ditunggu konfirmasinya oleh pengguna ini.</p>
             </div>
             <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                <i class="fas fa-tasks mr-1.5"></i> {{ count($pendingLogbooks) + count($pendingAbsensis) }} Antrean Menunggu
+                <i class="fas fa-tasks mr-1.5"></i> {{ number_format($totalPendingLogbooks + $totalPendingAbsensis) }} Antrean Menunggu
             </span>
         </div>
 
         <!-- QUICK FILTER TABS -->
         <div class="flex overflow-x-auto gap-2 mb-6 custom-scrollbar pb-2">
             <button @click="activeTab = 'semua'" :class="activeTab === 'semua' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
-                Semua ({{ count($pendingLogbooks) + count($pendingAbsensis) }})
+                Semua ({{ number_format($totalPendingLogbooks + $totalPendingAbsensis) }})
             </button>
             <button @click="activeTab = 'logbook'" :class="activeTab === 'logbook' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
-                Logbook ({{ count($pendingLogbooks) }})
+                Logbook ({{ number_format($totalPendingLogbooks) }})
             </button>
             <button @click="activeTab = 'absensi'" :class="activeTab === 'absensi' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
-                Izin / Sakit / Flag ({{ count($pendingAbsensis) }})
+                Izin / Sakit / Flag ({{ number_format($totalPendingAbsensis) }})
             </button>
         </div>
 
@@ -126,6 +126,13 @@
             </div>
             @endforelse
 
+            <!-- PAGINASI LOGBOOK -->
+            @if($pendingLogbooks->hasPages())
+            <div x-show="activeTab === 'semua' || activeTab === 'logbook'" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                {{ $pendingLogbooks->links() }}
+            </div>
+            @endif
+
             <!-- LIST ITEM 2: IZIN / SAKIT / ABSENSI -->
             @forelse($pendingAbsensis as $absensi)
             <div x-show="activeTab === 'semua' || activeTab === 'absensi'" class="bg-white rounded-2xl shadow-sm border border-orange-200 overflow-hidden">
@@ -177,6 +184,13 @@
                 <i class="fas fa-check-circle text-3xl mb-2 text-emerald-500 block"></i> Tidak ada antrean pengajuan izin / sakit.
             </div>
             @endforelse
+
+            <!-- PAGINASI ABSENSI -->
+            @if($pendingAbsensis->hasPages())
+            <div x-show="activeTab === 'semua' || activeTab === 'absensi'" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                {{ $pendingAbsensis->links() }}
+            </div>
+            @endif
 
         </div>
     </div>

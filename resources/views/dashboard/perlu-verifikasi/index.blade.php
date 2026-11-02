@@ -23,7 +23,7 @@
     </div>
     @endif
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar"
-      x-data="{ activeTab: 'semua' }">
+      x-data="{ activeTab: '{{ request('tab', 'semua') }}' }">
     
     <div class="max-w-5xl mx-auto w-full flex-1">
         
@@ -33,7 +33,7 @@
                 <p class="text-sm text-gray-500 mt-1">Tinjau logbook harian, pengajuan izin/sakit, dan flag absensi dari mahasiswa bimbingan Anda.</p>
             </div>
             <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                <i class="fas fa-tasks mr-1.5"></i> {{ count($pendingLogbooks) + count($pendingAbsensis) }} Antrean Menunggu
+                <i class="fas fa-tasks mr-1.5"></i> {{ number_format($totalPendingLogbooks + $totalPendingAbsensis) }} Antrean Menunggu
             </span>
         </div>
 
@@ -48,16 +48,53 @@
         </div>
         @endif
 
+        <!-- TOOLBAR PENCARIAN & FILTER PRODI -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6">
+            <form action="{{ route('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi') }}" method="GET" class="flex flex-col md:flex-row gap-3 items-center justify-between">
+                <input type="hidden" name="tab" :value="activeTab">
+
+                <div class="relative w-full md:flex-1">
+                    <i class="fas fa-search absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                    <input type="text" 
+                           name="search" 
+                           value="{{ request('search') }}" 
+                           placeholder="Cari nama mahasiswa, NIM, perusahaan, atau isi laporan..." 
+                           class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-vokasi-primary">
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
+                    <select name="prodi_id" onchange="this.form.submit()" class="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm">
+                        <option value="semua">Semua Program Studi</option>
+                        @foreach($prodis as $p)
+                            <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_prodi }}</option>
+                        @endforeach
+                    </select>
+                    @endif
+
+                    <button type="submit" class="bg-vokasi-primary hover:bg-vokasi-dark text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-sm">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                    </button>
+
+                    @if(request()->hasAny(['search', 'prodi_id']))
+                        <a href="{{ route('dashboard-verifikasi-daftar-mahasiswa-perlu-verifikasi', ['tab' => request('tab', 'semua')]) }}" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs px-3 py-2 rounded-xl transition" title="Reset Filter">
+                            <i class="fas fa-undo"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
+
         <!-- QUICK FILTER TABS -->
         <div class="flex overflow-x-auto gap-2 mb-6 custom-scrollbar pb-2">
             <button @click="activeTab = 'semua'" :class="activeTab === 'semua' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
-                Semua ({{ count($pendingLogbooks) + count($pendingAbsensis) }})
+                Semua ({{ number_format($totalPendingLogbooks + $totalPendingAbsensis) }})
             </button>
             <button @click="activeTab = 'logbook'" :class="activeTab === 'logbook' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
-                Logbook Harian ({{ count($pendingLogbooks) }})
+                Logbook Harian ({{ number_format($totalPendingLogbooks) }})
             </button>
             <button @click="activeTab = 'absensi'" :class="activeTab === 'absensi' ? 'bg-vokasi-primary text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap shadow-sm transition-colors">
-                Izin / Sakit / Flag ({{ count($pendingAbsensis) }})
+                Izin / Sakit / Flag ({{ number_format($totalPendingAbsensis) }})
             </button>
         </div>
 
@@ -149,6 +186,13 @@
             </div>
             @endforelse
 
+            <!-- PAGINASI LOGBOOK -->
+            @if($pendingLogbooks->hasPages())
+            <div x-show="activeTab === 'semua' || activeTab === 'logbook'" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                {{ $pendingLogbooks->links() }}
+            </div>
+            @endif
+
             <!-- LIST ITEM 2: IZIN / SAKIT / ABSENSI -->
             @forelse($pendingAbsensis as $absensi)
             <div x-show="activeTab === 'semua' || activeTab === 'absensi'" class="bg-white rounded-2xl shadow-sm border border-orange-200 overflow-hidden">
@@ -197,6 +241,13 @@
                 <i class="fas fa-check-circle text-3xl mb-2 text-emerald-500 block"></i> Tidak ada antrean pengajuan izin / sakit.
             </div>
             @endforelse
+
+            <!-- PAGINASI ABSENSI -->
+            @if($pendingAbsensis->hasPages())
+            <div x-show="activeTab === 'semua' || activeTab === 'absensi'" class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                {{ $pendingAbsensis->links() }}
+            </div>
+            @endif
 
         </div>
     </div>
