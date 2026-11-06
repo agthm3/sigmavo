@@ -86,14 +86,14 @@ class SeleksiController extends Controller
 
                 $spvName  = !empty($matchName[1]) ? trim($matchName[1]) : ('Supervisor ' . $pendaftaran->nama_instansi_mandiri);
                 $spvPhone = !empty($matchPhone[1]) ? trim($matchPhone[1]) : '-';
-                $spvEmail = !empty($matchEmail[1]) ? trim($matchEmail[1]) : null;
+                $spvEmail = !empty($matchEmail[1]) ? strtolower(trim($matchEmail[1])) : null;
 
                 if (!$spvEmail && $pendaftaran->lowongan?->perusahaan) {
-                    $spvEmail = $pendaftaran->lowongan->perusahaan->email_hrd;
+                    $spvEmail = !empty($pendaftaran->lowongan->perusahaan->email_hrd) ? strtolower(trim($pendaftaran->lowongan->perusahaan->email_hrd)) : null;
                 }
 
                 if ($spvEmail) {
-                    $existingUser = User::where('email', $spvEmail)->first();
+                    $existingUser = User::whereRaw('LOWER(TRIM(email)) = ?', [$spvEmail])->first();
 
                     if ($existingUser) {
                         if (!$existingUser->hasRole('spv')) {

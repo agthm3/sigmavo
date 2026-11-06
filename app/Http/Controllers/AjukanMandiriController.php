@@ -113,14 +113,15 @@ class AjukanMandiriController extends Controller
             }
 
             // 5. AUTO-CREATE / AMBIL AKUN SPV
-            $spvUser = User::where('email', $request->email_supervisor)->first();
+            $cleanedEmailSpv = strtolower(trim($request->email_supervisor));
+            $spvUser = User::whereRaw('LOWER(TRIM(email)) = ?', [$cleanedEmailSpv])->first();
             $mhsProdiId = $user->mahasiswaProfile?->prodi_id;
 
             if (!$spvUser) {
                 $rawPassword = 'Spv-' . rand(1000, 9999);
                 $spvUser = User::create([
                     'name'          => trim($request->nama_supervisor),
-                    'email'         => trim($request->email_supervisor),
+                    'email'         => $cleanedEmailSpv,
                     'password'      => Hash::make($rawPassword),
                     'temp_password' => $rawPassword,
                     'is_active'     => true,
