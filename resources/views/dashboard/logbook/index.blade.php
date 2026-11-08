@@ -8,10 +8,31 @@
          x-data="{ 
             openEditModal: false, 
             openFotoModal: false, 
+            openActionModal: false,
+            actionItem: null,
             activeLogbook: null, 
             activeEditUrl: '', 
             fotoUrl: '',
-            editSelectedCpmk: []
+            editSelectedCpmk: [],
+            openActionMenu(item) {
+                this.actionItem = item;
+                this.openActionModal = true;
+            },
+            triggerEditFromMenu() {
+                if (!this.actionItem) return;
+                this.activeLogbook = this.actionItem.logbook;
+                this.editSelectedCpmk = this.actionItem.cpmk || [];
+                this.activeEditUrl = this.actionItem.editUrl;
+                this.openActionModal = false;
+                this.openEditModal = true;
+            },
+            triggerDeleteFromMenu() {
+                if (!this.actionItem) return;
+                if (confirm('Yakin ingin menghapus entri logbook ini?')) {
+                    const form = document.getElementById('delete-logbook-form-' + this.actionItem.logbook.id);
+                    if (form) form.submit();
+                }
+            }
          }">
 
         <!-- CONTENT -->
@@ -343,8 +364,19 @@
                                         $isRevisi = ($item->status_asistensi === 'revisi' || $item->status_spv === 'revisi' || $item->status_dosen === 'revisi');
                                         $isFullyApproved = ($item->status_asistensi === 'approved' || ($spvOk && $dosenOk));
                                         $daftarMk = is_array($item->mata_kuliah) ? $item->mata_kuliah : (is_string($item->mata_kuliah) ? json_decode($item->mata_kuliah, true) : []);
+                                        $payloadAction = [
+                                            'logbook'        => $item,
+                                            'isFullyApproved'=> $isFullyApproved,
+                                            'isRevisi'       => $isRevisi,
+                                            'cpmk'           => $daftarMk,
+                                            'tanggalFormat'  => \Carbon\Carbon::parse($item->tanggal)->format('d M Y'),
+                                            'editUrl'        => route('dashboard-mahasiswa-logbook-update', $item->id),
+                                            'deleteUrl'      => route('dashboard-mahasiswa-logbook-destroy', $item->id),
+                                        ];
                                     @endphp
-                                    <tr class="hover:bg-gray-50 transition-colors {{ $isRevisi ? 'bg-red-50/20' : '' }}">
+                                    <tr @click="openActionMenu({{ json_encode($payloadAction) }})" 
+                                        class="hover:bg-teal-50/40 cursor-pointer transition-colors {{ $isRevisi ? 'bg-red-50/20' : '' }}"
+                                        title="Klik baris ini untuk opsi menu aksi (Edit / Hapus / Detail)">
                                         <td class="p-4 text-center text-gray-500 font-medium">{{ $logbooks->firstItem() + $index }}</td>
                                         
                                         <!-- BADGE TANGGAL DAN PENANDA SUSULAN -->
@@ -373,7 +405,7 @@
                                             @endif
                                         </td>
 
-                                        <td class="p-4 text-center">
+                                        <td class="p-4 text-center" @click.stop>
                                             @if($item->foto_dokumentasi)
                                                 <button type="button" @click="fotoUrl = '{{ asset('storage/' . $item->foto_dokumentasi) }}'; openFotoModal = true" class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center text-vokasi-primary overflow-hidden hover:opacity-80 transition-opacity shadow-sm">
                                                     <img src="{{ asset('storage/' . $item->foto_dokumentasi) }}" alt="Foto" class="w-full h-full object-cover">
@@ -527,7 +559,7 @@
                                         </td>
 
                                         <!-- KOLOM AKSI (EDIT / HAPUS) -->
-                                        <td class="p-4 text-center">
+                                        <td class="p-4 text-center" @click.stop>
                                             @if($isFullyApproved)
                                                 <span class="text-gray-400 text-xs" title="Telah disetujui"><i class="fas fa-lock"></i></span>
                                             @else
@@ -542,7 +574,7 @@
                                                         @endif
                                                     </button>
 
-                                                    <form action="{{ route('dashboard-mahasiswa-logbook-destroy', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus entri logbook ini?')">
+                                                    <form id="delete-logbook-form-{{ $item->id }}" action="{{ route('dashboard-mahasiswa-logbook-destroy', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus entri logbook ini?')">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded transition-colors" title="Hapus">
@@ -582,6 +614,116 @@
         </main>
 
         @if(!isset($isLocked) || !$isLocked)
+            <!-- ========================================== -->
+            <!-- MODAL POPUP: MENU AKSI CEPAT DARI KLIK BARIS -->
+            <!-- ========================================== -->
+            <div x-show="openActionModal" 
+                 x-cloak 
+                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                
+                <div @click.away="openActionModal = false" 
+                     class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-150">
+                    
+                    <!-- Header -->
+                    <div class="bg-vokasi-primary px-5 py-4 text-white flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-bars-staggered text-base"></i>
+                            <div>
+                                <h3 class="font-bold text-sm">Menu Opsi Logbook</h3>
+                                <p class="text-[11px] text-white/80" x-text="actionItem ? ('Tanggal: ' + actionItem.tanggalFormat) : ''"></p>
+                            </div>
+                        </div>
+                        <button type="button" @click="openActionModal = false" class="text-white/80 hover:text-white p-1 rounded-lg">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-5 space-y-3 text-xs">
+                        <!-- Ringkasan Kegiatan -->
+                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase block">Ringkasan Kegiatan:</span>
+                            <p class="text-gray-700 font-medium line-clamp-3 leading-relaxed" x-text="actionItem?.logbook?.uraian_kegiatan"></p>
+                        </div>
+
+                        <!-- Status Badge Info -->
+                        <div class="flex items-center justify-between p-2.5 bg-gray-50/70 rounded-xl border border-gray-100">
+                            <span class="font-bold text-gray-500 text-[11px]">Status Saat Ini:</span>
+                            <template x-if="actionItem?.isFullyApproved">
+                                <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-full text-[10px] border border-emerald-200 flex items-center gap-1">
+                                    <i class="fas fa-check-double text-[9px]"></i> Disetujui Penuh
+                                </span>
+                            </template>
+                            <template x-if="actionItem?.isRevisi">
+                                <span class="px-2.5 py-0.5 bg-red-100 text-red-800 font-bold rounded-full text-[10px] border border-red-200 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-triangle text-[9px]"></i> Perlu Revisi
+                                </span>
+                            </template>
+                            <template x-if="!actionItem?.isFullyApproved && !actionItem?.isRevisi">
+                                <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 font-bold rounded-full text-[10px] border border-amber-200 flex items-center gap-1">
+                                    <i class="fas fa-clock text-[9px]"></i> Menunggu Verifikasi
+                                </span>
+                            </template>
+                        </div>
+
+                        <!-- Tombol Aksi -->
+                        <div class="pt-2 space-y-2">
+                            <!-- Tombol Lihat Foto jika ada -->
+                            <template x-if="actionItem?.logbook?.foto_dokumentasi">
+                                <button type="button" 
+                                        @click="fotoUrl = '{{ asset('storage') }}/' + actionItem.logbook.foto_dokumentasi; openActionModal = false; openFotoModal = true" 
+                                        class="w-full py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition flex items-center justify-between text-xs">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-image text-vokasi-primary text-sm"></i> Lihat Foto Dokumentasi
+                                    </span>
+                                    <i class="fas fa-arrow-up-right-from-square text-gray-400 text-[11px]"></i>
+                                </button>
+                            </template>
+
+                            <!-- Tombol Edit / Revisi -->
+                            <template x-if="!actionItem?.isFullyApproved">
+                                <button type="button" 
+                                        @click="triggerEditFromMenu()" 
+                                        class="w-full py-2.5 px-4 text-white font-bold rounded-xl transition flex items-center justify-between text-xs shadow-sm"
+                                        :class="actionItem?.isRevisi ? 'bg-red-600 hover:bg-red-700' : 'bg-vokasi-primary hover:bg-vokasi-dark'">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-edit text-sm"></i>
+                                        <span x-text="actionItem?.isRevisi ? 'Revisi Logbook Ini' : 'Edit Entri Logbook'"></span>
+                                    </span>
+                                    <i class="fas fa-chevron-right text-white/70 text-[11px]"></i>
+                                </button>
+                            </template>
+
+                            <template x-if="actionItem?.isFullyApproved">
+                                <div class="p-3 bg-gray-100 text-gray-500 rounded-xl text-center text-xs font-semibold flex items-center justify-center gap-1.5">
+                                    <i class="fas fa-lock text-gray-400"></i> Logbook ini sudah disetujui (Terkunci)
+                                </div>
+                            </template>
+
+                            <!-- Tombol Hapus -->
+                            <template x-if="!actionItem?.isFullyApproved">
+                                <button type="button" 
+                                        @click="triggerDeleteFromMenu()" 
+                                        class="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition flex items-center justify-between text-xs border border-red-200">
+                                    <span class="flex items-center gap-2">
+                                        <i class="fas fa-trash-alt text-sm"></i> Hapus Entri Logbook
+                                    </span>
+                                    <i class="fas fa-trash text-red-400 text-[11px]"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-3 bg-gray-50 border-t border-gray-100 flex justify-end">
+                        <button type="button" @click="openActionModal = false" class="px-4 py-1.5 border border-gray-300 rounded-xl text-gray-600 bg-white hover:bg-gray-100 font-semibold text-xs transition">
+                            Tutup
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- MODAL POPUP: EDIT / REVISI LOGBOOK -->
             <div x-show="openEditModal" 
                  x-cloak 

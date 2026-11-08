@@ -89,7 +89,19 @@
                             <ul class="text-[11px] text-gray-500 space-y-2 mb-4">
                                 <li class="flex items-center"><i class="fas fa-map-marker-alt w-5 text-gray-400"></i> <span x-text="job.alamat"></span></li>
                                 <li class="flex items-center"><i class="fas fa-calendar-alt w-5 text-gray-400"></i> Batas: <span x-text="job.batas_pendaftaran"></span></li>
-                                <li class="flex items-center"><i class="fas fa-user-shield w-5 text-gray-400"></i> SPV: <span class="font-bold text-gray-700 ml-1" x-text="job.spv_nama"></span></li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-user-shield w-5 text-gray-400 mt-0.5 shrink-0"></i> 
+                                    <div class="leading-tight overflow-hidden">
+                                        <span class="text-gray-500">SPV:</span>
+                                        <span class="font-bold text-gray-700 ml-1" x-text="job.spv_nama"></span>
+                                        <template x-if="job.spv_email">
+                                            <span class="block text-[10px] text-teal-600 font-mono mt-0.5 truncate flex items-center gap-1">
+                                                <i class="fas fa-envelope text-[9px]"></i>
+                                                <span x-text="job.spv_email"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </li>
                             </ul>
 
                             <div class="grid grid-cols-3 gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200 text-center mb-4 mt-auto">
@@ -216,6 +228,21 @@
                     <div><span class="text-gray-400 block font-semibold uppercase text-[10px]">Target Penerimaan</span><span class="font-bold text-purple-700" x-text="selectedJob?.kuota + ' Mahasiswa'"></span></div>
                     <div><span class="text-gray-400 block font-semibold uppercase text-[10px]">Total Pendaftar</span><span class="font-bold text-emerald-600" x-text="selectedJob?.total_pelamar + ' Orang'"></span></div>
                     <div><span class="text-gray-400 block font-semibold uppercase text-[10px]">Batas Akhir</span><span class="font-bold text-red-600" x-text="selectedJob?.batas_pendaftaran"></span></div>
+                    <div class="col-span-2 sm:col-span-3 pt-2 border-t border-gray-200/80">
+                        <span class="text-gray-400 block font-semibold uppercase text-[10px]">Supervisor Lapangan (Mitra)</span>
+                        <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span class="font-bold text-gray-800 flex items-center gap-1.5">
+                                <i class="fas fa-user-shield text-vokasi-primary text-xs"></i>
+                                <span x-text="selectedJob?.spv_nama"></span>
+                            </span>
+                            <template x-if="selectedJob?.spv_email">
+                                <span class="text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 font-mono text-[11px] flex items-center gap-1">
+                                    <i class="fas fa-envelope text-[10px]"></i>
+                                    <span x-text="selectedJob?.spv_email"></span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
                 </div>
 
                 <div>

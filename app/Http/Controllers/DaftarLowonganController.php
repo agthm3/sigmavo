@@ -14,6 +14,7 @@ class DaftarLowonganController extends Controller
     {
         // Tambahkan relasi dosen dan spvProfiles agar datanya bisa dibaca
         $query = Lowongan::with([
+                'spv.spvProfile',
                 'perusahaan.spvProfiles.user', 
                 'prodi', 
                 'pendaftarans' => function ($q) {
@@ -108,7 +109,8 @@ class DaftarLowonganController extends Controller
                     'deskripsi' => $job->deskripsi,
                     'durasi' => $job->durasi,
                     'perusahaan_sektor' => $job->perusahaan->sektor_industri ?? '-',
-                    'spv_nama' => $job->perusahaan->spvProfiles->first()->user->name ?? 'Belum ada SPV',
+                    'spv_nama' => $job->spv->name ?? ($job->perusahaan->spvProfiles->first()->user->name ?? 'Belum ada SPV'),
+                    'spv_email' => $job->spv->email ?? ($job->perusahaan->spvProfiles->first()->user->email ?? ($job->perusahaan->email_hrd ?? null)),
                     'pelamars' => $pelamars
                 ];
             });
