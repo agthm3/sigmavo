@@ -118,7 +118,7 @@
                             <img src="https://ui-avatars.com/api/?name={{ urlencode($logbook->user->name) }}&background=37A7AC&color=fff" class="w-10 h-10 rounded-full border shadow-sm">
                             <div>
                                 <p class="font-bold text-gray-800 text-sm">{{ $logbook->user->name }} <span class="text-gray-400 font-normal ml-1">NIM: {{ $logbook->user->mahasiswaProfile->nim ?? '-' }}</span></p>
-                                <p class="text-[11px] text-gray-500">{{ $logbook->pendaftaran->perusahaan->nama_perusahaan ?? 'Perusahaan Mitra' }} • {{ $logbook->user->mahasiswaProfile->prodi->nama_prodi ?? '-' }}</p>
+                                <p class="text-[11px] text-gray-500">{{ $logbook->pendaftaran ? $logbook->pendaftaran->nama_perusahaan : ($logbook->pendaftaran->perusahaan->nama_with_id ?? 'Perusahaan Mitra') }} • {{ $logbook->user->mahasiswaProfile->prodi->nama_prodi ?? '-' }}</p>
                             </div>
                         </div>
 
@@ -210,7 +210,7 @@
                             <img src="https://ui-avatars.com/api/?name={{ urlencode($absensi->user->name) }}&background=f3f4f6&color=37A7AC" class="w-10 h-10 rounded-full border shadow-sm">
                             <div>
                                 <p class="font-bold text-gray-800 text-sm">{{ $absensi->user->name }} <span class="text-gray-400 font-normal ml-1">NIM: {{ $absensi->user->mahasiswaProfile->nim ?? '-' }}</span></p>
-                                <p class="text-[11px] text-gray-500">{{ $absensi->pendaftaran->perusahaan->nama_perusahaan ?? 'Perusahaan Mitra' }}</p>
+                                <p class="text-[11px] text-gray-500">{{ $absensi->pendaftaran ? $absensi->pendaftaran->nama_perusahaan : ($absensi->pendaftaran->perusahaan->nama_with_id ?? 'Perusahaan Mitra') }}</p>
                             </div>
                         </div>
 

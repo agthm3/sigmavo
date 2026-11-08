@@ -265,7 +265,7 @@ class ListingProgramController extends Controller
             'lowongan' => [
                 'id'           => $lowongan->id,
                 'judul_posisi' => $lowongan->judul_posisi,
-                'perusahaan'   => $lowongan->perusahaan->nama_perusahaan ?? '-',
+                'perusahaan'   => $lowongan->perusahaan ? $lowongan->perusahaan->nama_with_id : '-',
                 'kuota'        => $lowongan->kuota,
                 'total_pelamar'=> $pelamars->count(),
                 'diterima'     => $pelamars->where('status_seleksi', 'diterima')->count(),

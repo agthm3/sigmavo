@@ -137,7 +137,7 @@
                             $noHpVal = $user->dosenProfile->no_hp;
                         } elseif($user->spvProfile) {
                             $identitasStr = 'Jabatan: ' . ($user->spvProfile->jabatan ?? '-');
-                            $instansiStr = $user->spvProfile->perusahaan?->nama_perusahaan ?? '-';
+                            $instansiStr = $user->spvProfile->perusahaan ? $user->spvProfile->perusahaan->nama_with_id : '-';
                             $perusahaanIdVal = $user->spvProfile->perusahaan_id;
                             $jabatanVal = $user->spvProfile->jabatan; $noHpVal = $user->spvProfile->no_hp;
                         } elseif($user->adminProdiProfile) {

@@ -63,7 +63,7 @@
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="p-4 text-center text-gray-500 font-medium">{{ $perusahaans->firstItem() + $index }}</td>
                                     <td class="p-4">
-                                        <p class="font-bold text-gray-800">{{ $item->nama_perusahaan }}</p>
+                                        <p class="font-bold text-gray-800">{{ $item->nama_with_id }}</p>
                                         <p class="text-[11px] text-gray-500">{{ $item->email_hrd }}</p>
                                     </td>
                                     <td class="p-4">
@@ -407,7 +407,7 @@
     <!-- SCRIPT ALPINE COMPONENT -->
     <script>
         function perusahaanComponent() {
-            const rawPerusahaan = @json($allPerusahaan->map(function($p) { return ['id' => $p->id, 'nama' => $p->nama_perusahaan]; }));
+            const rawPerusahaan = @json($allPerusahaan->map(function($p) { return ['id' => $p->id, 'nama' => $p->nama_with_id]; }));
 
             return {
                 openModal: false,

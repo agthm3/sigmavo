@@ -93,7 +93,7 @@ class DaftarLowonganController extends Controller
                 return [
                     'id' => $job->id,
                     'judul_posisi' => $job->judul_posisi,
-                    'perusahaan_nama' => $job->perusahaan->nama_perusahaan ?? '-',
+                    'perusahaan_nama' => $job->perusahaan ? $job->perusahaan->nama_with_id : '-',
                     'inisial' => $job->perusahaan->inisial ?? 'PT',
                     'alamat' => Str::limit($job->perusahaan->alamat ?? '-', 28),
                     'mode_kerja' => $job->mode_kerja,

@@ -58,7 +58,7 @@
                 @forelse($riwayats as $item)
                     @php
                         $isMandiri = $item->jalur_magang === 'mandiri';
-                        $namaPerusahaan = $isMandiri ? $item->nama_instansi_mandiri : ($item->lowongan->perusahaan->nama_perusahaan ?? '-');
+                        $namaPerusahaan = $item->nama_perusahaan ?: ($isMandiri ? $item->nama_instansi_mandiri : ($item->lowongan->perusahaan->nama_perusahaan ?? '-'));
                         $judulPosisi = $isMandiri ? ($item->divisi_mandiri ?? 'Pengajuan Mandiri') : ($item->lowongan->judul_posisi ?? '-');
                         $alamat = $isMandiri ? '-' : ($item->lowongan->perusahaan->alamat ?? '-');
                         
@@ -176,7 +176,7 @@
 
                 <div class="p-6 space-y-4 text-xs text-gray-700">
                     <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
-                        <p class="text-sm font-bold text-gray-800" x-text="activeItem?.jalur_magang === 'mandiri' ? activeItem?.nama_instansi_mandiri : activeItem?.lowongan?.perusahaan?.nama_perusahaan"></p>
+                        <p class="text-sm font-bold text-gray-800" x-text="activeItem?.nama_perusahaan || (activeItem?.jalur_magang === 'mandiri' ? activeItem?.nama_instansi_mandiri : (activeItem?.lowongan?.perusahaan?.nama_perusahaan ? activeItem.lowongan.perusahaan.nama_perusahaan + (activeItem.lowongan.perusahaan.id ? ' #' + activeItem.lowongan.perusahaan.id : '') : '-'))"></p>
                         <p class="text-vokasi-primary font-semibold" x-text="activeItem?.jalur_magang === 'mandiri' ? (activeItem?.divisi_mandiri || 'Pengajuan Mandiri') : activeItem?.lowongan?.judul_posisi"></p>
                     </div>
 

@@ -63,7 +63,7 @@
                     @forelse($pendaftarans as $item)
                         @php
                             $isMandiri = $item->jalur_magang === 'mandiri';
-                            $namaPerusahaan = $isMandiri ? $item->nama_instansi_mandiri : ($item->lowongan->perusahaan->nama_perusahaan ?? '-');
+                            $namaPerusahaan = $item->nama_perusahaan ?: ($isMandiri ? $item->nama_instansi_mandiri : ($item->lowongan->perusahaan->nama_perusahaan ?? '-'));
                             $judulPosisi = $isMandiri ? ($item->divisi_mandiri ?? 'Pengajuan Mandiri') : ($item->lowongan->judul_posisi ?? '-');
                         @endphp
 

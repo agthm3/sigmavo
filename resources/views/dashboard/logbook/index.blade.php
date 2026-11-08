@@ -418,14 +418,7 @@
                                         <!-- KOLOM BARU: PERUSAHAAN, DOSEN PENDAMPING & SPV BESERTA EMAIL -->
                                         @php
                                             $pend = $item->pendaftaran ?? $pendaftaran;
-                                            $namaPerusahaanLog = '-';
-                                            if ($pend) {
-                                                if ($pend->jalur_magang === 'mandiri' || !empty($pend->nama_instansi_mandiri)) {
-                                                    $namaPerusahaanLog = $pend->nama_instansi_mandiri ?: 'Pengajuan Mandiri';
-                                                } else {
-                                                    $namaPerusahaanLog = $pend->lowongan?->perusahaan?->nama_perusahaan ?? '-';
-                                                }
-                                            }
+                                            $namaPerusahaanLog = $pend ? $pend->nama_perusahaan : '-';
 
                                             // Dosen
                                             $dosenObj = $pend?->dosen;

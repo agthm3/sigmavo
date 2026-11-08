@@ -142,7 +142,7 @@
                                 $profile = $mhs?->mahasiswaProfile;
                                 $pendaftaran = $item->pendaftaran;
                                 $isMandiri = $pendaftaran?->jalur_magang === 'mandiri';
-                                $namaMitra = $isMandiri ? $pendaftaran?->nama_instansi_mandiri : ($pendaftaran?->lowongan?->perusahaan?->nama_perusahaan ?? '-');
+                                $namaMitra = $pendaftaran ? $pendaftaran->nama_perusahaan : '-';
                             @endphp
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="p-4 text-center text-gray-500 font-medium">{{ $laporans->firstItem() + $index }}</td>

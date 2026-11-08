@@ -145,10 +145,10 @@
                                     </td>
                                     <td class="p-4">
                                         @if($item->jalur_magang == 'mandiri')
-                                            <p class="font-bold text-gray-800 text-xs">{{ $item->nama_instansi_mandiri ?? '-' }}</p>
+                                            <p class="font-bold text-gray-800 text-xs">{{ $item->nama_perusahaan }}</p>
                                             <p class="text-[10px] text-purple-600 font-semibold">Magang Mandiri</p>
                                         @else
-                                            <p class="font-bold text-gray-800 text-xs">{{ $item->lowongan?->perusahaan?->nama_perusahaan ?? '-' }}</p>
+                                            <p class="font-bold text-gray-800 text-xs">{{ $item->lowongan?->perusahaan ? $item->lowongan->perusahaan->nama_with_id : '-' }}</p>
                                             <p class="text-[10px] text-blue-600 font-semibold">{{ $item->lowongan?->judul_posisi ?? 'Lowongan Reguler' }}</p>
                                         @endif
                                     </td>
@@ -289,7 +289,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 mb-1">Instansi / Perusahaan Tujuan</label>
-                            <input type="text" :value="activeData?.jalur_magang === 'mandiri' ? activeData?.nama_instansi_mandiri : activeData?.lowongan?.perusahaan?.nama_perusahaan" readonly class="w-full px-3 py-2 bg-gray-100 border rounded-lg text-sm text-gray-600 font-medium cursor-not-allowed">
+                            <input type="text" :value="activeData?.jalur_magang === 'mandiri' ? activeData?.nama_instansi_mandiri : (activeData?.lowongan?.perusahaan?.nama_perusahaan ? activeData.lowongan.perusahaan.nama_perusahaan + (activeData.lowongan.perusahaan.id ? ' #' + activeData.lowongan.perusahaan.id : '') : '-')" readonly class="w-full px-3 py-2 bg-gray-100 border rounded-lg text-sm text-gray-600 font-medium cursor-not-allowed">
                         </div>
 
                         <div class="md:col-span-2">
@@ -413,7 +413,7 @@
 
                     <div>
                         <p class="text-[11px] text-gray-500 uppercase font-bold">Stase / Posisi Saat Ini</p>
-                        <p class="text-sm font-semibold text-blue-600" x-text="activeData?.jalur_magang === 'mandiri' ? activeData?.nama_instansi_mandiri : (activeData?.lowongan?.judul_posisi + ' - ' + activeData?.lowongan?.perusahaan?.nama_perusahaan)"></p>
+                        <p class="text-sm font-semibold text-blue-600" x-text="activeData?.jalur_magang === 'mandiri' ? activeData?.nama_instansi_mandiri : (activeData?.lowongan?.judul_posisi + ' - ' + (activeData?.lowongan?.perusahaan?.nama_perusahaan ? activeData.lowongan.perusahaan.nama_perusahaan + (activeData.lowongan.perusahaan.id ? ' #' + activeData.lowongan.perusahaan.id : '') : '-'))"></p>
                     </div>
 
                     <div>

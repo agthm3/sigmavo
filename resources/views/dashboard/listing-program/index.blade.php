@@ -208,7 +208,7 @@
                                             </div>
                                             <div>
                                                 <p class="font-bold text-gray-800 hover:text-vokasi-primary transition-colors">{{ $item->judul_posisi }}</p>
-                                                <p class="text-xs text-vokasi-primary font-medium">{{ $item->perusahaan->nama_perusahaan ?? '-' }}</p>
+                                                <p class="text-xs text-vokasi-primary font-medium">{{ $item->perusahaan ? $item->perusahaan->nama_with_id : '-' }}</p>
                                                 <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-bullseye text-gray-300"></i> {{ $item->prodi?->nama_prodi ?? 'Semua Prodi' }}</p>
                                             </div>
                                         </div>
@@ -366,7 +366,7 @@
                                 <select name="perusahaan_id" :value="isEdit ? editData.perusahaan_id : ''" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-light focus:border-vokasi-primary transition-colors" required>
                                     <option value="" disabled selected>Pilih Perusahaan Mitra</option>
                                     @foreach($perusahaans as $p)
-                                        <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                        <option value="{{ $p->id }}">{{ $p->nama_with_id }}</option>
                                     @endforeach
                                 </select>
                             </div>

@@ -99,7 +99,7 @@
                                 <!-- Opsi Perusahaan Terdaftar -->
                                 <template x-for="p in filteredPerusahaans" :key="p.id">
                                     <div @click="selectExistingCompany(p)" class="p-3 hover:bg-teal-50 cursor-pointer border-b border-gray-100 text-gray-700 transition">
-                                        <p class="font-bold text-sm text-gray-800" x-text="p.nama_perusahaan"></p>
+                                        <p class="font-bold text-sm text-gray-800" x-text="p.nama_perusahaan + ' #' + p.id"></p>
                                         <p class="text-[11px] text-gray-400 mt-0.5" x-text="(p.sektor_industri || 'Lainnya') + ' • ' + (p.alamat || '-')"></p>
                                     </div>
                                 </template>
@@ -119,7 +119,7 @@
                                     <i class="fas fa-check-circle text-teal-600 text-base"></i>
                                     <div>
                                         <span class="font-bold text-xs">Instansi Terdaftar Terpilih:</span>
-                                        <p class="text-sm font-bold text-teal-900" x-text="selectedCompany.nama_perusahaan"></p>
+                                        <p class="text-sm font-bold text-teal-900" x-text="selectedCompany.nama_perusahaan + ' #' + selectedCompany.id"></p>
                                     </div>
                                 </div>
                                 <button type="button" @click="resetCompanySelection()" class="px-3 py-1.5 bg-white text-xs text-red-600 border border-red-200 hover:bg-red-50 rounded-lg font-semibold shadow-sm transition">Ganti Pilihan</button>
@@ -313,9 +313,9 @@
 
             selectExistingCompany(p) {
                 this.selectedCompany = p;
-                this.searchQuery = p.nama_perusahaan;
+                this.searchQuery = p.nama_perusahaan + ' #' + p.id;
                 this.formData.perusahaan_id = p.id;
-                this.formData.nama_instansi = p.nama_perusahaan;
+                this.formData.nama_instansi = p.nama_perusahaan + ' #' + p.id;
                 this.formData.sektor_industri = p.sektor_industri || '';
                 this.formData.website_instansi = p.website || '';
                 this.formData.alamat_instansi = p.alamat || '';

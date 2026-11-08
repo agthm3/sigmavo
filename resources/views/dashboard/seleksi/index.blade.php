@@ -111,7 +111,7 @@
                                 $currentLowonganId = request('lowongan_id', 'semua');
                                 $selectedLowonganObj = $lowongans->firstWhere('id', $currentLowonganId);
                                 $selectedLowonganLabel = $selectedLowonganObj 
-                                    ? ($selectedLowonganObj->judul_posisi . ' (' . ($selectedLowonganObj->perusahaan->nama_perusahaan ?? '') . ')') 
+                                    ? ($selectedLowonganObj->judul_posisi . ' (' . ($selectedLowonganObj->perusahaan ? $selectedLowonganObj->perusahaan->nama_with_id : '') . ')') 
                                     : 'Semua Posisi Lowongan';
                             @endphp
                             <div class="relative" 
@@ -125,7 +125,7 @@
                                         @foreach($lowongans as $l)
                                         { 
                                             id: '{{ $l->id }}', 
-                                            label: '{{ addslashes($l->judul_posisi) }} ({{ addslashes($l->perusahaan->nama_perusahaan ?? '') }})' 
+                                            label: '{{ addslashes($l->judul_posisi) }} ({{ addslashes($l->perusahaan ? $l->perusahaan->nama_with_id : '') }})' 
                                         },
                                         @endforeach
                                     ],
@@ -264,10 +264,10 @@
                                     <td class="p-4">
                                         @if($item->jalur_magang === 'mandiri' || !empty($item->nama_instansi_mandiri))
                                             <p class="font-bold text-gray-800 text-xs">{{ $item->divisi_mandiri ?? 'Pengajuan Mandiri' }}</p>
-                                            <p class="text-xs text-purple-600 font-bold"><i class="fas fa-building mr-1"></i> {{ $item->nama_instansi_mandiri }}</p>
+                                            <p class="text-xs text-purple-600 font-bold"><i class="fas fa-building mr-1"></i> {{ $item->nama_perusahaan }}</p>
                                         @else
                                             <p class="font-bold text-gray-800 text-xs">{{ $item->lowongan->judul_posisi ?? '-' }}</p>
-                                            <p class="text-xs text-vokasi-primary font-medium">{{ $item->lowongan->perusahaan->nama_perusahaan ?? '-' }}</p>
+                                            <p class="text-xs text-vokasi-primary font-medium">{{ $item->lowongan?->perusahaan ? $item->lowongan->perusahaan->nama_with_id : '-' }}</p>
                                         @endif
                                     </td>
                                     <td class="p-4 text-center">
@@ -449,7 +449,7 @@
                                 </div>
                                 <div>
                                     <p class="text-gray-500">Perusahaan Mitra:</p>
-                                    <p class="font-bold text-vokasi-primary" x-text="activeData?.lowongan?.perusahaan?.nama_perusahaan"></p>
+                                    <p class="font-bold text-vokasi-primary" x-text="activeData?.lowongan?.perusahaan?.nama_perusahaan ? (activeData.lowongan.perusahaan.nama_perusahaan + (activeData.lowongan.perusahaan.id ? ' #' + activeData.lowongan.perusahaan.id : '')) : '-'"></p>
                                 </div>
                             </div>
                         </div>

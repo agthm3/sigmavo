@@ -104,7 +104,7 @@
                                         $mhs = $item->user;
                                         $profile = $mhs?->mahasiswaProfile;
                                         $isMandiri = $item->jalur_magang === 'mandiri';
-                                        $namaMitra = $isMandiri ? $item->nama_instansi_mandiri : ($item->lowongan->perusahaan->nama_perusahaan ?? '-');
+                                        $namaMitra = $item->nama_perusahaan;
                                         $judulPosisi = $isMandiri ? ($item->divisi_mandiri ?? 'Pengajuan Mandiri') : ($item->lowongan->judul_posisi ?? '-');
                                     @endphp
                                     <tr class="hover:bg-gray-50 transition-colors">
@@ -233,7 +233,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
                             <span class="text-gray-400 block uppercase font-bold text-[10px]"><i class="fas fa-building mr-1"></i> Tempat & Stase</span>
-                            <p class="font-bold text-gray-800 text-xs" x-text="activeMhs?.jalur_magang === 'mandiri' ? activeMhs?.nama_instansi_mandiri : activeMhs?.lowongan?.perusahaan?.nama_perusahaan"></p>
+                            <p class="font-bold text-gray-800 text-xs" x-text="activeMhs?.nama_perusahaan || (activeMhs?.jalur_magang === 'mandiri' ? activeMhs?.nama_instansi_mandiri : (activeMhs?.lowongan?.perusahaan?.nama_perusahaan ? activeMhs.lowongan.perusahaan.nama_perusahaan + (activeMhs.lowongan.perusahaan.id ? ' #' + activeMhs.lowongan.perusahaan.id : '') : '-'))"></p>
                             <p class="text-vokasi-primary font-semibold text-[11px]" x-text="activeMhs?.jalur_magang === 'mandiri' ? (activeMhs?.divisi_mandiri || 'Mandiri') : activeMhs?.lowongan?.judul_posisi"></p>
                         </div>
 

@@ -80,9 +80,18 @@ class Pendaftaran extends Model
     public function getNamaPerusahaanAttribute()
     {
         if ($this->jalur_magang === 'mandiri' || $this->nama_instansi_mandiri) {
-            return $this->nama_instansi_mandiri;
+            $nama = $this->nama_instansi_mandiri;
+            $ptId = $this->lowongan?->perusahaan_id;
+            if ($ptId && !str_contains($nama, "#{$ptId}")) {
+                return "{$nama} #{$ptId}";
+            }
+            return $nama ?: '-';
         }
 
-        return $this->lowongan?->perusahaan?->nama_perusahaan ?? '-';
+        if ($this->lowongan?->perusahaan) {
+            return $this->lowongan->perusahaan->nama_with_id;
+        }
+
+        return '-';
     }
 }

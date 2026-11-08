@@ -137,7 +137,7 @@
                                         <p class="text-[10px] text-vokasi-primary mt-0.5 font-semibold">{{ $item->user->mahasiswaProfile->prodi->nama_prodi ?? '-' }}</p>
                                     </td>
                                     <td class="p-4">
-                                        <p class="font-bold text-gray-800 text-xs">{{ $item->pendaftaran->lowongan->perusahaan->nama_perusahaan ?? $item->pendaftaran->nama_instansi_mandiri ?? '-' }}</p>
+                                        <p class="font-bold text-gray-800 text-xs">{{ $item->pendaftaran ? $item->pendaftaran->nama_perusahaan : '-' }}</p>
                                         <p class="text-xs text-gray-500">{{ $item->pendaftaran->lowongan->judul_posisi ?? 'Magang Mandiri' }}</p>
                                     </td>
                                     <td class="p-4">

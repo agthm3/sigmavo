@@ -48,4 +48,21 @@ class Perusahaan extends Model
         }
         return $inisial ?: 'PT';
     }
+
+    /**
+     * Nama perusahaan dengan ID (Contoh: RSUD Daya #245)
+     */
+    public function getNamaWithIdAttribute(): string
+    {
+        if (empty($this->nama_perusahaan)) {
+            return '-';
+        }
+
+        // Jika string nama sudah mengandung format #ID, jangan duplikasi
+        if (preg_match('/#\d+$/', $this->nama_perusahaan)) {
+            return $this->nama_perusahaan;
+        }
+
+        return $this->id ? "{$this->nama_perusahaan} #{$this->id}" : $this->nama_perusahaan;
+    }
 }

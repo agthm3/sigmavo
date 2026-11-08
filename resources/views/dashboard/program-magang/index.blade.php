@@ -19,7 +19,7 @@
                 @if($activeMagang)
                     @php
                         $isMandiri = $activeMagang->jalur_magang === 'mandiri';
-                        $namaInstansi = $isMandiri ? $activeMagang->nama_instansi_mandiri : ($activeMagang->lowongan->perusahaan->nama_perusahaan ?? '-');
+                        $namaInstansi = $activeMagang->nama_perusahaan ?: ($isMandiri ? $activeMagang->nama_instansi_mandiri : ($activeMagang->lowongan->perusahaan->nama_perusahaan ?? '-'));
                         $posisi = $isMandiri ? ($activeMagang->divisi_mandiri ?? 'Pengajuan Mandiri') : ($activeMagang->lowongan->judul_posisi ?? '-');
                         $alamat = $isMandiri ? '-' : ($activeMagang->lowongan->perusahaan->alamat ?? '-');
                         $deskripsi = $isMandiri ? 'Magang Mandiri Mahasiswa Vokasi UNHAS.' : ($activeMagang->lowongan->deskripsi ?? '-');

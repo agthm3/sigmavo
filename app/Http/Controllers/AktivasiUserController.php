@@ -105,7 +105,7 @@ class AktivasiUserController extends Controller
 
                     $riwayatMagang[] = [
                         'posisi'   => $p->jalur_magang == 'mandiri' ? $p->divisi_mandiri : ($p->lowongan->judul_posisi ?? '-'),
-                        'instansi' => $p->jalur_magang == 'mandiri' ? $p->nama_instansi_mandiri : ($p->lowongan->perusahaan->nama_perusahaan ?? '-'),
+                        'instansi' => $p->jalur_magang == 'mandiri' ? $p->nama_instansi_mandiri : ($p->lowongan?->perusahaan ? $p->lowongan->perusahaan->nama_with_id : '-'),
                         'dosen'    => $p->dosen->name ?? 'Belum ditetapkan',
                         'spv'      => $spvName,
                         'status'   => $p->status_seleksi,

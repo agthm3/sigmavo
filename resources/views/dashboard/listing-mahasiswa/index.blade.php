@@ -210,7 +210,7 @@
                                         </div>
                                     </td>
                                     <td class="p-4">
-                                        <p class="font-semibold text-gray-800 text-xs">{{ $item->lowongan->perusahaan->nama_perusahaan ?? $item->nama_instansi_mandiri ?? '-' }}</p>
+                                        <p class="font-semibold text-gray-800 text-xs">{{ $item->nama_perusahaan }}</p>
                                         <p class="text-[10px] text-gray-500 mt-0.5">{{ $item->lowongan->judul_posisi ?? 'Magang Mandiri' }}</p>
                                     </td>
                                     <td class="p-4 text-center">

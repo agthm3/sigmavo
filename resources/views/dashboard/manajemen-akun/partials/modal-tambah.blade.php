@@ -98,7 +98,7 @@
                 <label class="block font-bold text-gray-700 uppercase mb-1">Perusahaan Mitra <span class="text-red-500">*</span></label>
                 <div x-data="{
                         formPerusahaanId: '', search: '', open: false,
-                        options: [ @foreach($perusahaans as $pt) { id: '{{ $pt->id }}', text: '{{ addslashes($pt->nama_perusahaan) }}' }, @endforeach ],
+                        options: [ @foreach($perusahaans as $pt) { id: '{{ $pt->id }}', text: '{{ addslashes($pt->nama_with_id) }}' }, @endforeach ],
                         get filtered() {
                             if (this.search === '') return this.options.slice(0, 50); // Tampilkan 50 data awal untuk optimasi
                             return this.options.filter(i => i.text.toLowerCase().includes(this.search.toLowerCase())).slice(0, 50);
