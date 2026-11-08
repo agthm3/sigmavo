@@ -23,7 +23,8 @@ class LogbookController extends Controller
         $user = Auth::user();
 
         // 1. Ambil pendaftaran magang aktif mahasiswa (status 'diterima' atau 'selesai')
-        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+        $pendaftaran = Pendaftaran::with(['lowongan.perusahaan', 'lowongan.spv', 'dosen'])
+            ->where('user_id', $user->id)
             ->whereIn('status_seleksi', ['diterima', 'selesai'])
             ->latest()
             ->first();
@@ -104,7 +105,8 @@ class LogbookController extends Controller
         $totalPending = $totalLogbook - $totalApproved - $totalRevisi;
 
         // 5. Query Logbook dengan Filter Bulan & Filter Status
-        $query = Logbook::where('user_id', $user->id);
+        $query = Logbook::with(['pendaftaran.lowongan.perusahaan', 'pendaftaran.lowongan.spv', 'pendaftaran.dosen'])
+            ->where('user_id', $user->id);
 
         if ($request->filled('bulan') && $request->bulan !== 'semua') {
             $parts = explode('-', $request->bulan);

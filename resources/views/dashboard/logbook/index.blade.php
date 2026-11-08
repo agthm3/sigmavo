@@ -321,13 +321,14 @@
                         </div>
 
                         <div class="overflow-x-auto custom-scrollbar">
-                            <table class="w-full text-left border-collapse min-w-[1000px]">
+                            <table class="w-full text-left border-collapse min-w-[1200px]">
                                 <thead>
                                     <tr class="bg-gray-100/50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         <th class="p-4 w-12 text-center">No</th>
                                         <th class="p-4 w-32">Tanggal</th>
                                         <th class="p-4 min-w-[280px]">Uraian Kegiatan & CPMK Terkait</th>
                                         <th class="p-4 w-28 text-center">Foto</th>
+                                        <th class="p-4 min-w-[220px]">Instansi & Pembimbing</th>
                                         <th class="p-4 w-40">Status Verifikasi</th>
                                         <th class="p-4 w-48">Catatan Pembimbing</th>
                                         <th class="p-4 w-28 text-center">Aksi</th>
@@ -380,6 +381,77 @@
                                             @else
                                                 <span class="text-gray-400 text-xs italic">-</span>
                                             @endif
+                                        </td>
+
+                                        <!-- KOLOM BARU: PERUSAHAAN, DOSEN PENDAMPING & SPV BESERTA EMAIL -->
+                                        @php
+                                            $pend = $item->pendaftaran ?? $pendaftaran;
+                                            $namaPerusahaanLog = '-';
+                                            if ($pend) {
+                                                if ($pend->jalur_magang === 'mandiri' || !empty($pend->nama_instansi_mandiri)) {
+                                                    $namaPerusahaanLog = $pend->nama_instansi_mandiri ?: 'Pengajuan Mandiri';
+                                                } else {
+                                                    $namaPerusahaanLog = $pend->lowongan?->perusahaan?->nama_perusahaan ?? '-';
+                                                }
+                                            }
+
+                                            // Dosen
+                                            $dosenObj = $pend?->dosen;
+                                            $dosenNama = $dosenObj?->name ?? 'Belum Ditentukan';
+                                            $dosenEmail = $dosenObj?->email ?? null;
+
+                                            // SPV
+                                            $spvObj = $pend?->lowongan?->spv;
+                                            $spvNama = $spvObj?->name;
+                                            $spvEmail = $spvObj?->email;
+
+                                            if (!$spvNama && $pend?->catatan_seleksi) {
+                                                preg_match('/Supervisor:\s*(.*?)\s*\(/i', $pend->catatan_seleksi, $mLogSpvName);
+                                                preg_match('/\/\s*(.*?)\)/', $pend->catatan_seleksi, $mLogSpvEmail);
+                                                $spvNama = !empty($mLogSpvName[1]) ? trim($mLogSpvName[1]) : null;
+                                                $spvEmail = !empty($mLogSpvEmail[1]) ? trim($mLogSpvEmail[1]) : null;
+                                            }
+
+                                            if (!$spvEmail && $pend?->lowongan?->perusahaan?->email_hrd) {
+                                                $spvEmail = $pend->lowongan->perusahaan->email_hrd;
+                                            }
+
+                                            $spvNama = $spvNama ?: 'Supervisor Lapangan';
+                                        @endphp
+                                        <td class="p-4 text-xs space-y-2">
+                                            <!-- Nama Perusahaan -->
+                                            <div class="flex items-start gap-1.5">
+                                                <i class="fas fa-building text-vokasi-primary mt-0.5 shrink-0 text-[11px]"></i>
+                                                <div class="leading-tight">
+                                                    <span class="font-bold text-gray-800">{{ $namaPerusahaanLog }}</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Dosen Pendamping -->
+                                            <div class="bg-gray-50/80 p-1.5 rounded-lg border border-gray-100">
+                                                <div class="flex items-center gap-1 text-[10px] font-bold text-teal-800 uppercase">
+                                                    <i class="fas fa-chalkboard-user text-vokasi-primary"></i> Dosen:
+                                                </div>
+                                                <p class="font-semibold text-gray-800 text-[11px] truncate">{{ $dosenNama }}</p>
+                                                @if($dosenEmail)
+                                                    <p class="text-[10px] text-gray-500 font-mono truncate flex items-center gap-1">
+                                                        <i class="fas fa-envelope text-[9px] text-gray-400"></i> {{ $dosenEmail }}
+                                                    </p>
+                                                @endif
+                                            </div>
+
+                                            <!-- SPV -->
+                                            <div class="bg-gray-50/80 p-1.5 rounded-lg border border-gray-100">
+                                                <div class="flex items-center gap-1 text-[10px] font-bold text-blue-800 uppercase">
+                                                    <i class="fas fa-user-tie text-blue-600"></i> SPV:
+                                                </div>
+                                                <p class="font-semibold text-gray-800 text-[11px] truncate">{{ $spvNama }}</p>
+                                                @if($spvEmail)
+                                                    <p class="text-[10px] text-gray-500 font-mono truncate flex items-center gap-1">
+                                                        <i class="fas fa-envelope text-[9px] text-gray-400"></i> {{ $spvEmail }}
+                                                    </p>
+                                                @endif
+                                            </div>
                                         </td>
 
                                         <!-- KOLOM STATUS VERIFIKASI PARALEL (SPV & DOSEN) -->
