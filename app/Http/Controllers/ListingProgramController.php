@@ -189,7 +189,8 @@ class ListingProgramController extends Controller
      */
     private function handleSpvAccount($name, $email, $phone, $perusahaanId, &$passwordBaru)
     {
-        $existingUser = User::where('email', $email)->first();
+        $cleanedEmail = strtolower(trim($email));
+        $existingUser = User::whereRaw('LOWER(TRIM(email)) = ?', [$cleanedEmail])->first();
         $passwordBaru = null;
 
         if ($existingUser) {
@@ -211,7 +212,7 @@ class ListingProgramController extends Controller
 
             $newUser = User::create([
                 'name'     => $name,
-                'email'    => $email,
+                'email'    => $cleanedEmail,
                 'password' => Hash::make($passwordRaw),
                 'temp_password' => $passwordRaw,
                 'is_active' => true,
@@ -227,5 +228,49 @@ class ListingProgramController extends Controller
 
             return $newUser->id;
         }
+    }
+
+    /**
+     * Ambil data detail pelamar untuk modal pop up di listing program
+     */
+    public function getPelamar($id)
+    {
+        $lowongan = Lowongan::with(['perusahaan', 'prodi'])->findOrFail($id);
+
+        $pelamars = \App\Models\Pendaftaran::with([
+                'user.mahasiswaProfile.prodi',
+                'dosen'
+            ])
+            ->where('lowongan_id', $id)
+            ->latest()
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id'               => $p->id,
+                    'nama_mahasiswa'   => $p->user->name ?? '-',
+                    'email_mahasiswa'  => $p->user->email ?? '-',
+                    'nim'              => $p->user->mahasiswaProfile->nim ?? '-',
+                    'prodi'            => $p->user->mahasiswaProfile->prodi->nama_prodi ?? '-',
+                    'jalur_magang'     => $p->jalur_magang ?? 'reguler',
+                    'status_seleksi'   => $p->status_seleksi,
+                    'dosen_pendamping' => $p->dosen->name ?? 'Belum Ditentukan',
+                    'file_cv'          => $p->file_cv ? asset('storage/' . $p->file_cv) : null,
+                    'file_transkrip'   => $p->file_transkrip ? asset('storage/' . $p->file_transkrip) : null,
+                    'created_at'       => $p->created_at ? $p->created_at->format('d M Y H:i') : '-',
+                ];
+            });
+
+        return response()->json([
+            'status'   => 'success',
+            'lowongan' => [
+                'id'           => $lowongan->id,
+                'judul_posisi' => $lowongan->judul_posisi,
+                'perusahaan'   => $lowongan->perusahaan->nama_perusahaan ?? '-',
+                'kuota'        => $lowongan->kuota,
+                'total_pelamar'=> $pelamars->count(),
+                'diterima'     => $pelamars->where('status_seleksi', 'diterima')->count(),
+            ],
+            'data'     => $pelamars,
+        ]);
     }
 }

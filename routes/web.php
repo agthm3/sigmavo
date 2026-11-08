@@ -208,6 +208,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             
             // Program
             Route::get('/listing-program', [ListingProgramController::class, 'index'])->name('dashboard-daftar-lowongan-listing-program');
+            Route::get('/listing-program/{id}/pelamar', [ListingProgramController::class, 'getPelamar'])->name('dashboard-daftar-lowongan-listing-program-pelamar');
             Route::post('/listing-program', [ListingProgramController::class, 'store'])->name('dashboard-daftar-lowongan-listing-program-store');
             Route::put('/listing-program/{id}', [ListingProgramController::class, 'update'])->name('dashboard-daftar-lowongan-listing-program-update');
             Route::delete('/listing-program/{id}', [ListingProgramController::class, 'destroy'])->name('dashboard-daftar-lowongan-listing-program-destroy');

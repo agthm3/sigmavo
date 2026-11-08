@@ -2,7 +2,35 @@
 
 @section('content')
     <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col custom-scrollbar" 
-          x-data="{ openDetailModal: false, activeItem: null }">
+          x-data="{ 
+            openDetailModal: false, 
+            activeItem: null,
+            getSpvEmail() {
+                if (!this.activeItem) return '-';
+                if (this.activeItem.lowongan?.spv?.email) {
+                    return this.activeItem.lowongan.spv.email;
+                }
+                if (this.activeItem.catatan_seleksi) {
+                    const match = this.activeItem.catatan_seleksi.match(/\/\s*([^\s\)]+)/);
+                    if (match && match[1]) return match[1];
+                }
+                if (this.activeItem.lowongan?.perusahaan?.email_hrd) {
+                    return this.activeItem.lowongan.perusahaan.email_hrd;
+                }
+                return '-';
+            },
+            getSpvName() {
+                if (!this.activeItem) return '-';
+                if (this.activeItem.lowongan?.spv?.name) {
+                    return this.activeItem.lowongan.spv.name;
+                }
+                if (this.activeItem.catatan_seleksi) {
+                    const match = this.activeItem.catatan_seleksi.match(/Supervisor:\s*(.*?)\s*\(/i);
+                    if (match && match[1]) return match[1];
+                }
+                return 'Supervisor Lapangan';
+            }
+          }">
         
         <div class="flex-1 max-w-7xl mx-auto w-full">
             
@@ -163,13 +191,42 @@
                                   :class="activeItem?.status_seleksi === 'selesai' ? 'text-blue-600' : (activeItem?.status_seleksi === 'diterima' ? 'text-emerald-600' : 'text-gray-800')" 
                                   x-text="activeItem?.status_seleksi === 'selesai' ? 'SELESAI MAGANG / STASE' : activeItem?.status_seleksi"></span>
                         </div>
-                        <div>
+                        <div class="col-span-2">
                             <span class="text-gray-400 block uppercase font-bold text-[10px]">Nomor Surat Pengantar</span>
                             <span class="font-mono text-gray-800" x-text="activeItem?.nomor_surat || 'Belum Diterbitkan'"></span>
                         </div>
-                        <div>
-                            <span class="text-gray-400 block uppercase font-bold text-[10px]">Dosen Pendamping</span>
-                            <span class="font-bold text-gray-800" x-text="activeItem?.dosen?.name || 'Belum Ditetapkan'"></span>
+                    </div>
+
+                    <!-- INFORMASI AKUN DOSEN & SPV -->
+                    <div class="pt-2 border-t border-gray-100 space-y-3">
+                        <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider flex items-center">
+                            <i class="fas fa-users text-vokasi-primary mr-1.5"></i> Pembimbing & Supervisor
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Akun Dosen Pendamping -->
+                            <div class="p-3 bg-teal-50/60 border border-teal-200 rounded-xl">
+                                <span class="text-[10px] font-bold text-teal-800 uppercase block mb-1">
+                                    <i class="fas fa-chalkboard-user mr-1 text-vokasi-primary"></i> Dosen Pendamping
+                                </span>
+                                <p class="font-bold text-gray-800 text-xs" x-text="activeItem?.dosen?.name || 'Belum Ditetapkan'"></p>
+                                <p class="text-[11px] text-gray-600 font-mono mt-0.5 flex items-center gap-1">
+                                    <i class="fas fa-envelope text-[10px] text-teal-600"></i>
+                                    <span x-text="activeItem?.dosen?.email || '-'"></span>
+                                </p>
+                            </div>
+
+                            <!-- Akun Supervisor SPV -->
+                            <div class="p-3 bg-blue-50/60 border border-blue-200 rounded-xl">
+                                <span class="text-[10px] font-bold text-blue-800 uppercase block mb-1">
+                                    <i class="fas fa-user-tie mr-1 text-blue-600"></i> Supervisor Lapangan (SPV)
+                                </span>
+                                <p class="font-bold text-gray-800 text-xs" x-text="getSpvName()"></p>
+                                <p class="text-[11px] text-gray-600 font-mono mt-0.5 flex items-center gap-1">
+                                    <i class="fas fa-envelope text-[10px] text-blue-600"></i>
+                                    <span x-text="getSpvEmail()"></span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 

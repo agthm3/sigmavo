@@ -1,9 +1,32 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <!-- Tambahkan 'formStatus' di x-data untuk mendeteksi perubahan dropdown secara realtime -->
+    <!-- Tambahkan 'formStatus' dan 'selectedDosenId' di x-data untuk mendeteksi perubahan realtime -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50" 
-         x-data="{ openModal: false, activeData: null, activeUrl: '', formStatus: '' }">
+         x-data="{ 
+            openModal: false, 
+            activeData: null, 
+            activeUrl: '', 
+            formStatus: '',
+            selectedDosenId: '',
+            dosenSearch: '',
+            dosenDropdownOpen: false,
+            dosensList: {{ json_encode($dosens->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'email' => $d->email])) }},
+            get filteredDosens() {
+                if (!this.dosenSearch.trim()) return this.dosensList;
+                const q = this.dosenSearch.toLowerCase();
+                return this.dosensList.filter(d => d.name.toLowerCase().includes(q) || (d.email && d.email.toLowerCase().includes(q)));
+            },
+            get selectedDosenName() {
+                const found = this.dosensList.find(d => String(d.id) === String(this.selectedDosenId));
+                return found ? found.name : '-- Pilih Dosen Pendamping --';
+            },
+            selectDosen(id) {
+                this.selectedDosenId = id;
+                this.dosenDropdownOpen = false;
+                this.dosenSearch = '';
+            }
+         }">
 
         <!-- CONTENT -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
@@ -83,20 +106,130 @@
                         </div>
                         
                         <div class="flex flex-wrap items-center gap-2">
-                            <select name="lowongan_id" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-semibold">
-                                <option value="semua" {{ request('lowongan_id') == 'semua' ? 'selected' : '' }}>Semua Posisi Lowongan</option>
-                                @foreach($lowongans as $l)
-                                    <option value="{{ $l->id }}" {{ request('lowongan_id') == $l->id ? 'selected' : '' }}>{{ $l->judul_posisi }} ({{ $l->perusahaan->nama_perusahaan ?? '' }})</option>
-                                @endforeach
-                            </select>
+                            <!-- SEARCHABLE DROPDOWN FILTER POSISI LOWONGAN -->
+                            @php
+                                $currentLowonganId = request('lowongan_id', 'semua');
+                                $selectedLowonganObj = $lowongans->firstWhere('id', $currentLowonganId);
+                                $selectedLowonganLabel = $selectedLowonganObj 
+                                    ? ($selectedLowonganObj->judul_posisi . ' (' . ($selectedLowonganObj->perusahaan->nama_perusahaan ?? '') . ')') 
+                                    : 'Semua Posisi Lowongan';
+                            @endphp
+                            <div class="relative" 
+                                 x-data="{ 
+                                    open: false, 
+                                    search: '', 
+                                    selectedId: '{{ $currentLowonganId }}',
+                                    selectedLabel: '{{ addslashes($selectedLowonganLabel) }}',
+                                    items: [
+                                        { id: 'semua', label: 'Semua Posisi Lowongan' },
+                                        @foreach($lowongans as $l)
+                                        { 
+                                            id: '{{ $l->id }}', 
+                                            label: '{{ addslashes($l->judul_posisi) }} ({{ addslashes($l->perusahaan->nama_perusahaan ?? '') }})' 
+                                        },
+                                        @endforeach
+                                    ],
+                                    get filtered() {
+                                        if (!this.search.trim()) return this.items;
+                                        const q = this.search.toLowerCase();
+                                        return this.items.filter(i => i.label.toLowerCase().includes(q));
+                                    },
+                                    select(item) {
+                                        this.selectedId = item.id;
+                                        this.selectedLabel = item.label;
+                                        this.open = false;
+                                        this.search = '';
+                                        $nextTick(() => { $el.closest('form').submit(); });
+                                    }
+                                 }">
+                                <input type="hidden" name="lowongan_id" :value="selectedId">
+                                
+                                <button type="button" 
+                                        @click="open = !open" 
+                                        class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-2 focus:ring-vokasi-primary/20 focus:border-vokasi-primary outline-none px-3.5 py-2 shadow-sm font-semibold flex items-center justify-between gap-2 min-w-[200px] max-w-xs text-left">
+                                    <span class="truncate" x-text="selectedLabel"></span>
+                                    <i class="fas fa-chevron-down text-gray-400 text-[10px] shrink-0 transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                                </button>
 
-                            <select name="status" onchange="this.form.submit()" class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-vokasi-primary outline-none px-3 py-2 shadow-sm font-semibold">
-                                <option value="semua" {{ request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
-                                <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu Seleksi</option>
-                                <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Aktif Magang</option>
-                                <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai Magang</option>
-                                <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
-                            </select>
+                                <div x-show="open" 
+                                     @click.away="open = false" 
+                                     x-cloak 
+                                     class="absolute left-0 mt-1 w-72 sm:w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-2 text-xs">
+                                    <div class="relative mb-2">
+                                        <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
+                                        <input type="text" 
+                                               x-model="search" 
+                                               placeholder="Ketik untuk mencari lowongan..." 
+                                               class="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20">
+                                    </div>
+                                    <div class="max-h-56 overflow-y-auto custom-scrollbar divide-y divide-gray-50">
+                                        <template x-for="item in filtered" :key="item.id">
+                                            <div @click="select(item)" 
+                                                 class="px-2.5 py-2 hover:bg-teal-50 cursor-pointer rounded-lg flex items-center justify-between transition-colors"
+                                                 :class="selectedId === item.id ? 'bg-teal-50/70 text-vokasi-primary font-bold' : 'text-gray-700'">
+                                                <span class="truncate" x-text="item.label"></span>
+                                                <i class="fas fa-check text-xs text-vokasi-primary shrink-0 ml-1" x-show="selectedId === item.id"></i>
+                                            </div>
+                                        </template>
+                                        <div x-show="filtered.length === 0" class="p-3 text-center text-gray-400 text-xs italic">
+                                            Tidak ada lowongan ditemukan.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SEARCHABLE / NATIVE DROPDOWN FILTER STATUS -->
+                            @php
+                                $statusOptions = [
+                                    'semua' => 'Semua Status',
+                                    'menunggu' => 'Menunggu Seleksi',
+                                    'diterima' => 'Aktif Magang',
+                                    'selesai' => 'Selesai Magang',
+                                    'ditolak' => 'Ditolak'
+                                ];
+                                $currentStatus = request('status', 'semua');
+                                $selectedStatusLabel = $statusOptions[$currentStatus] ?? 'Semua Status';
+                            @endphp
+                            <div class="relative" 
+                                 x-data="{ 
+                                    open: false, 
+                                    selectedId: '{{ $currentStatus }}',
+                                    selectedLabel: '{{ $selectedStatusLabel }}',
+                                    items: [
+                                        @foreach($statusOptions as $sVal => $sLabel)
+                                        { id: '{{ $sVal }}', label: '{{ $sLabel }}' },
+                                        @endforeach
+                                    ],
+                                    select(item) {
+                                        this.selectedId = item.id;
+                                        this.selectedLabel = item.label;
+                                        this.open = false;
+                                        $nextTick(() => { $el.closest('form').submit(); });
+                                    }
+                                 }">
+                                <input type="hidden" name="status" :value="selectedId">
+                                
+                                <button type="button" 
+                                        @click="open = !open" 
+                                        class="bg-white border border-gray-300 text-gray-700 text-xs rounded-xl focus:ring-2 focus:ring-vokasi-primary/20 focus:border-vokasi-primary outline-none px-3.5 py-2 shadow-sm font-semibold flex items-center justify-between gap-2 min-w-[140px] text-left">
+                                    <span class="truncate" x-text="selectedLabel"></span>
+                                    <i class="fas fa-chevron-down text-gray-400 text-[10px] shrink-0 transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                                </button>
+
+                                <div x-show="open" 
+                                     @click.away="open = false" 
+                                     x-cloak 
+                                     class="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-1.5 text-xs">
+                                    <template x-for="item in items" :key="item.id">
+                                        <div @click="select(item)" 
+                                             class="px-2.5 py-2 hover:bg-teal-50 cursor-pointer rounded-lg flex items-center justify-between transition-colors"
+                                             :class="selectedId === item.id ? 'bg-teal-50/70 text-vokasi-primary font-bold' : 'text-gray-700'">
+                                            <span x-text="item.label"></span>
+                                            <i class="fas fa-check text-xs text-vokasi-primary shrink-0 ml-1" x-show="selectedId === item.id"></i>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </form>
 
@@ -177,7 +310,7 @@
                                     </td>
                                     <td class="p-4 text-center">
                                         <!-- Update state Alpine.js formStatus saat tombol diklik -->
-                                        <button type="button" @click="activeData = {{ json_encode($item) }}; formStatus = '{{ $item->status_seleksi }}'; activeUrl = '{{ route('dashboard-daftar-lowongan-seleksi-update', $item->id) }}'; openModal = true" 
+                                        <button type="button" @click="activeData = {{ json_encode($item) }}; formStatus = '{{ $item->status_seleksi }}'; selectedDosenId = '{{ $item->dosen_id ?? '' }}'; dosenSearch = ''; dosenDropdownOpen = false; activeUrl = '{{ route('dashboard-daftar-lowongan-seleksi-update', $item->id) }}'; openModal = true" 
                                                 class="bg-vokasi-primary hover:bg-vokasi-dark text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors flex items-center justify-center mx-auto">
                                             <i class="fas fa-file-signature mr-1.5"></i> Tinjau Berkas
                                         </button>
@@ -367,15 +500,51 @@
                                 </select>
                             </div>
 
-                            <!-- Assign Dosen Pendamping -->
-                            <div>
+                            <!-- Assign Dosen Pendamping (Searchable Dropdown) -->
+                            <div class="relative">
                                 <label class="block font-bold text-gray-700 uppercase mb-1">Assign Dosen Pendamping</label>
-                                <select name="dosen_id" :value="activeData?.dosen_id" class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary">
-                                    <option value="">-- Pilih Dosen Pendamping --</option>
-                                    @foreach($dosens as $d)
-                                        <option value="{{ $d->id }}">{{ $d->name }}</option>
-                                    @endforeach
-                                </select>
+                                <input type="hidden" name="dosen_id" :value="selectedDosenId">
+                                
+                                <button type="button" 
+                                        @click="dosenDropdownOpen = !dosenDropdownOpen" 
+                                        class="w-full px-3.5 py-2 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary flex items-center justify-between text-left">
+                                    <span class="truncate" x-text="selectedDosenName" :class="!selectedDosenId ? 'text-gray-400' : 'text-gray-800 font-semibold'"></span>
+                                    <i class="fas fa-chevron-down text-gray-400 text-[10px] shrink-0 ml-2"></i>
+                                </button>
+
+                                <div x-show="dosenDropdownOpen" 
+                                     @click.away="dosenDropdownOpen = false" 
+                                     x-cloak 
+                                     class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-2 text-xs">
+                                    <div class="relative mb-2">
+                                        <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
+                                        <input type="text" 
+                                               x-model="dosenSearch" 
+                                               placeholder="Ketik nama atau email dosen..." 
+                                               class="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary">
+                                    </div>
+                                    <div class="max-h-48 overflow-y-auto custom-scrollbar divide-y divide-gray-50">
+                                        <div @click="selectDosen('')" 
+                                             class="px-2.5 py-2 hover:bg-gray-100 cursor-pointer rounded-lg text-gray-500 italic flex items-center justify-between">
+                                            <span>-- Tidak Ada / Kosongkan --</span>
+                                            <i class="fas fa-check text-xs text-vokasi-primary" x-show="!selectedDosenId"></i>
+                                        </div>
+                                        <template x-for="d in filteredDosens" :key="d.id">
+                                            <div @click="selectDosen(d.id)" 
+                                                 class="px-2.5 py-2 hover:bg-teal-50 cursor-pointer rounded-lg flex items-center justify-between transition-colors"
+                                                 :class="String(selectedDosenId) === String(d.id) ? 'bg-teal-50/70 text-vokasi-primary font-bold' : 'text-gray-700'">
+                                                <div class="truncate mr-2">
+                                                    <p class="font-medium text-xs truncate" x-text="d.name"></p>
+                                                    <p class="text-[10px] text-gray-400 truncate" x-text="d.email || '-'"></p>
+                                                </div>
+                                                <i class="fas fa-check text-xs text-vokasi-primary shrink-0" x-show="String(selectedDosenId) === String(d.id)"></i>
+                                            </div>
+                                        </template>
+                                        <div x-show="filteredDosens.length === 0" class="p-3 text-center text-gray-400 text-xs italic">
+                                            Dosen tidak ditemukan.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Catatan Seleksi -->

@@ -2,7 +2,44 @@
 
 @section('content')
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50" 
-         x-data="{ openModal: false, isEdit: false, editData: {}, activeUrl: '' }">
+         x-data="{ 
+            openModal: false, 
+            isEdit: false, 
+            editData: {}, 
+            activeUrl: '',
+            openPelamarModal: false,
+            loadingPelamar: false,
+            pelamarData: null,
+            pelamarSearch: '',
+            async showPelamar(id) {
+                this.openPelamarModal = true;
+                this.loadingPelamar = true;
+                this.pelamarData = null;
+                this.pelamarSearch = '';
+                try {
+                    const res = await fetch('{{ url('/daftar-lowongan/listing-program') }}/' + id + '/pelamar');
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        this.pelamarData = json;
+                    }
+                } catch (e) {
+                    console.error('Gagal memuat pelamar:', e);
+                } finally {
+                    this.loadingPelamar = false;
+                }
+            },
+            get filteredPelamars() {
+                if (!this.pelamarData || !this.pelamarData.data) return [];
+                if (!this.pelamarSearch.trim()) return this.pelamarData.data;
+                const q = this.pelamarSearch.toLowerCase();
+                return this.pelamarData.data.filter(p => 
+                    (p.nama_mahasiswa && p.nama_mahasiswa.toLowerCase().includes(q)) ||
+                    (p.nim && p.nim.toLowerCase().includes(q)) ||
+                    (p.email_mahasiswa && p.email_mahasiswa.toLowerCase().includes(q)) ||
+                    (p.prodi && p.prodi.toLowerCase().includes(q))
+                );
+            }
+         }">
 
         <!-- CONTENT -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6 flex flex-col relative custom-scrollbar">
@@ -160,7 +197,9 @@
                                     $diterima = $item->total_diterima ?? 0;
                                     $pelamar = $item->total_pelamar ?? 0;
                                 @endphp
-                                <tr class="hover:bg-gray-50 transition-colors {{ $item->status == 'draft' ? 'bg-gray-50/50' : '' }}">
+                                <tr @click="showPelamar({{ $item->id }})" 
+                                    class="hover:bg-teal-50/40 cursor-pointer transition-colors {{ $item->status == 'draft' ? 'bg-gray-50/50' : '' }}" 
+                                    title="Klik untuk melihat detail pelamar">
                                     <td class="p-4 text-center text-gray-500 font-medium">{{ $lowongans->firstItem() + $index }}</td>
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
@@ -168,7 +207,7 @@
                                                 {{ $item->perusahaan->inisial ?? 'PT' }}
                                             </div>
                                             <div>
-                                                <p class="font-bold text-gray-800">{{ $item->judul_posisi }}</p>
+                                                <p class="font-bold text-gray-800 hover:text-vokasi-primary transition-colors">{{ $item->judul_posisi }}</p>
                                                 <p class="text-xs text-vokasi-primary font-medium">{{ $item->perusahaan->nama_perusahaan ?? '-' }}</p>
                                                 <p class="text-[10px] text-gray-400 mt-0.5"><i class="fas fa-bullseye text-gray-300"></i> {{ $item->prodi?->nama_prodi ?? 'Semua Prodi' }}</p>
                                             </div>
@@ -185,8 +224,8 @@
 
                                     <!-- JUMLAH PENDAFTAR -->
                                     <td class="p-4 text-center">
-                                        <span class="inline-flex items-center gap-1 font-bold text-gray-800 bg-gray-100 px-2.5 py-1 rounded-lg text-xs">
-                                            <i class="fas fa-users text-gray-500 text-[11px]"></i> {{ $pelamar }} Pelamar
+                                        <span class="inline-flex items-center gap-1 font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-lg text-xs hover:bg-teal-100 transition-colors">
+                                            <i class="fas fa-users text-vokasi-primary text-[11px]"></i> {{ $pelamar }} Pelamar
                                         </span>
                                     </td>
 
@@ -221,8 +260,16 @@
                                         @endif
                                     </td>
 
-                                    <td class="p-4 text-center">
+                                    <td class="p-4 text-center" @click.stop>
                                         <div class="flex items-center justify-center gap-1.5">
+                                            <!-- DETAIL BUTTON (POPUP PELAMAR) -->
+                                            <button type="button" 
+                                                    @click="showPelamar({{ $item->id }})" 
+                                                    class="bg-teal-50 hover:bg-teal-100 text-vokasi-primary text-xs font-bold py-1.5 px-2.5 rounded transition-colors border border-teal-200 flex items-center gap-1" 
+                                                    title="Lihat Detail Pelamar">
+                                                <i class="fas fa-users-viewfinder"></i> Detail
+                                            </button>
+
                                             <!-- TOGGLE PUBLISH -->
                                             <form action="{{ route('dashboard-daftar-lowongan-listing-program-toggle', $item->id) }}" method="POST" class="inline-block">
                                                 @csrf
@@ -426,6 +473,156 @@
 
                     </div>
                 </form>
+
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL POPUP: DETAIL MAHASISWA PELAMAR -->
+        <!-- ========================================== -->
+        <div x-show="openPelamarModal" 
+             x-cloak 
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            
+            <div @click.away="openPelamarModal = false" 
+                 class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-4xl overflow-hidden max-h-[92vh] flex flex-col">
+                
+                <!-- Modal Header -->
+                <div class="bg-vokasi-primary px-6 py-4 text-white flex justify-between items-center shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                            <i class="fas fa-users-viewfinder text-base"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-base leading-tight" x-text="pelamarData ? pelamarData.lowongan.judul_posisi : 'Memuat Data...'"></h3>
+                            <p class="text-xs text-white/80 mt-0.5" x-text="pelamarData ? (pelamarData.lowongan.perusahaan + ' • Kuota: ' + pelamarData.lowongan.diterima + '/' + pelamarData.lowongan.kuota) : ''"></p>
+                        </div>
+                    </div>
+                    <button type="button" @click="openPelamarModal = false" class="text-white/80 hover:text-white hover:bg-black/10 p-1.5 rounded-lg transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                    
+                    <!-- Search & Stat Bar -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-gray-100">
+                        <div class="relative w-full sm:w-72">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            <input type="text" 
+                                   x-model="pelamarSearch" 
+                                   placeholder="Cari nama, NIM, email, prodi..." 
+                                   class="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vokasi-primary/20">
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-600 font-semibold">
+                            <span class="px-2.5 py-1 bg-gray-100 rounded-lg">
+                                Total: <strong class="text-gray-900" x-text="pelamarData ? pelamarData.lowongan.total_pelamar : 0"></strong>
+                            </span>
+                            <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
+                                Diterima: <strong class="text-emerald-800" x-text="pelamarData ? pelamarData.lowongan.diterima : 0"></strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <template x-if="loadingPelamar">
+                        <div class="py-12 text-center text-gray-400 space-y-2">
+                            <i class="fas fa-circle-notch fa-spin text-3xl text-vokasi-primary"></i>
+                            <p class="text-xs font-semibold">Memuat daftar pelamar...</p>
+                        </div>
+                    </template>
+
+                    <!-- Table of Pelamar -->
+                    <template x-if="!loadingPelamar && pelamarData">
+                        <div class="overflow-x-auto custom-scrollbar rounded-xl border border-gray-200">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider text-[11px]">
+                                        <th class="p-3 w-10 text-center">No</th>
+                                        <th class="p-3">Mahasiswa Pelamar</th>
+                                        <th class="p-3">Program Studi</th>
+                                        <th class="p-3">Dosen Pendamping</th>
+                                        <th class="p-3 text-center">Status</th>
+                                        <th class="p-3 text-center">Berkas</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="(p, idx) in filteredPelamars" :key="p.id">
+                                        <tr class="hover:bg-gray-50/70 transition-colors">
+                                            <td class="p-3 text-center text-gray-400 font-medium" x-text="idx + 1"></td>
+                                            <td class="p-3">
+                                                <div class="flex items-center gap-2.5">
+                                                    <img :src="'https://ui-avatars.com/api/?name=' + encodeURIComponent(p.nama_mahasiswa) + '&background=f3f4f6&color=37A7AC'" class="w-8 h-8 rounded-full border border-gray-200 shrink-0">
+                                                    <div>
+                                                        <p class="font-bold text-gray-800" x-text="p.nama_mahasiswa"></p>
+                                                        <p class="text-[11px] text-gray-500 font-mono" x-text="'NIM: ' + p.nim"></p>
+                                                        <p class="text-[10px] text-gray-400" x-text="p.email_mahasiswa"></p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="p-3">
+                                                <span class="font-medium text-gray-700" x-text="p.prodi"></span>
+                                                <span class="block text-[10px] text-gray-400" x-text="'Daftar: ' + p.created_at"></span>
+                                            </td>
+                                            <td class="p-3">
+                                                <span class="font-medium text-gray-700" x-text="p.dosen_pendamping"></span>
+                                            </td>
+                                            <td class="p-3 text-center">
+                                                <span class="px-2.5 py-1 text-[10px] font-bold rounded-full inline-block"
+                                                      :class="{
+                                                        'bg-yellow-100 text-yellow-800 border border-yellow-200': p.status_seleksi === 'menunggu',
+                                                        'bg-emerald-100 text-emerald-800 border border-emerald-200': p.status_seleksi === 'diterima',
+                                                        'bg-blue-100 text-blue-800 border border-blue-200': p.status_seleksi === 'selesai',
+                                                        'bg-red-100 text-red-800 border border-red-200': p.status_seleksi === 'ditolak',
+                                                        'bg-purple-100 text-purple-800 border border-purple-200': p.status_seleksi === 'wawancara'
+                                                      }"
+                                                      x-text="p.status_seleksi ? p.status_seleksi.toUpperCase() : '-'">
+                                                </span>
+                                            </td>
+                                            <td class="p-3 text-center">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <template x-if="p.file_cv">
+                                                        <a :href="p.file_cv" target="_blank" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-[11px] font-bold transition flex items-center gap-1" title="Unduh CV">
+                                                            <i class="fas fa-file-pdf"></i> CV
+                                                        </a>
+                                                    </template>
+                                                    <template x-if="p.file_transkrip">
+                                                        <a :href="p.file_transkrip" target="_blank" class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-[11px] font-bold transition flex items-center gap-1" title="Unduh Transkrip">
+                                                            <i class="fas fa-file-lines"></i> Transkrip
+                                                        </a>
+                                                    </template>
+                                                    <template x-if="!p.file_cv && !p.file_transkrip">
+                                                        <span class="text-gray-300 italic text-[11px]">-</span>
+                                                    </template>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="filteredPelamars.length === 0">
+                                        <tr>
+                                            <td colspan="6" class="p-8 text-center text-gray-400">
+                                                <i class="fas fa-users-slash text-2xl mb-1 block"></i>
+                                                Belum ada mahasiswa yang melamar pada lowongan ini.
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center shrink-0">
+                    <p class="text-[11px] text-gray-500">
+                        <i class="fas fa-info-circle mr-1 text-vokasi-primary"></i> Untuk memutuskan status pelamar, silakan buka menu <strong>Seleksi Pelamar</strong>.
+                    </p>
+                    <button type="button" @click="openPelamarModal = false" class="px-5 py-2 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-100 font-bold text-xs transition-colors">
+                        Tutup
+                    </button>
+                </div>
 
             </div>
         </div>

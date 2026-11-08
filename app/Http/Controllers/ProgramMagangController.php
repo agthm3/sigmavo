@@ -15,7 +15,11 @@ class ProgramMagangController extends Controller
         $userId = Auth::id();
 
         // Ambil program magang aktif mahasiswa (status_seleksi = 'diterima')
-        $activeMagang = Pendaftaran::with(['lowongan.perusahaan', 'dosen.dosenProfile'])
+        $activeMagang = Pendaftaran::with([
+            'lowongan.perusahaan', 
+            'lowongan.spv.spvProfile', 
+            'dosen.dosenProfile'
+        ])
             ->where('user_id', $userId)
             ->where('status_seleksi', 'diterima')
             ->latest()

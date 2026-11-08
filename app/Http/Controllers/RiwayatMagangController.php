@@ -12,7 +12,7 @@ class RiwayatMagangController extends Controller
     {
         $userId = Auth::id();
 
-        $query = Pendaftaran::with(['lowongan.perusahaan', 'dosen'])
+        $query = Pendaftaran::with(['lowongan.perusahaan', 'lowongan.spv.spvProfile', 'dosen.dosenProfile'])
             ->where('user_id', $userId);
 
         // Filter Status Seleksi / Progres

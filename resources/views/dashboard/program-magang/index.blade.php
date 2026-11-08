@@ -129,10 +129,16 @@
                                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Dosen Pendamping (Fakultas)</span>
                                         @if($activeMagang->dosen)
                                             <div class="flex items-center">
-                                                <img src="https://ui-avatars.com/api/?name={{ urlencode($activeMagang->dosen->name) }}&background=f3f4f6&color=37A7AC" alt="Dosen" class="w-10 h-10 rounded-full mr-3 border border-gray-200">
-                                                <div>
-                                                    <p class="font-bold text-gray-800 text-sm">{{ $activeMagang->dosen->name }}</p>
-                                                    <p class="text-xs text-gray-500">NIP: {{ $activeMagang->dosen->dosenProfile->nip_nidn ?? '-' }}</p>
+                                                <img src="https://ui-avatars.com/api/?name={{ urlencode($activeMagang->dosen->name) }}&background=f3f4f6&color=37A7AC" alt="Dosen" class="w-10 h-10 rounded-full mr-3 border border-gray-200 shrink-0">
+                                                <div class="overflow-hidden">
+                                                    <p class="font-bold text-gray-800 text-sm truncate">{{ $activeMagang->dosen->name }}</p>
+                                                    <p class="text-xs text-gray-500 font-mono">NIP: {{ $activeMagang->dosen->dosenProfile->nip_nidn ?? '-' }}</p>
+                                                    @if($activeMagang->dosen->email)
+                                                        <p class="text-xs text-vokasi-primary font-mono mt-0.5 flex items-center gap-1.5 truncate">
+                                                            <i class="fas fa-envelope text-[11px]"></i>
+                                                            <a href="mailto:{{ $activeMagang->dosen->email }}" class="hover:underline">{{ $activeMagang->dosen->email }}</a>
+                                                        </p>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @else
@@ -143,13 +149,38 @@
                                     <hr class="border-gray-100">
 
                                     <!-- Supervisor Lapangan -->
+                                    @php
+                                        $spvObj = $activeMagang->lowongan?->spv;
+                                        $spvName = $spvObj?->name;
+                                        $spvEmail = $spvObj?->email;
+
+                                        // Fallback jika belum tertaut di lowongan tapi ada di catatan seleksi
+                                        if (!$spvName && $activeMagang->catatan_seleksi) {
+                                            preg_match('/Supervisor:\s*(.*?)\s*\(/i', $activeMagang->catatan_seleksi, $mName);
+                                            preg_match('/\/\s*(.*?)\)/', $activeMagang->catatan_seleksi, $mEmail);
+                                            $spvName = !empty($mName[1]) ? trim($mName[1]) : null;
+                                            $spvEmail = !empty($mEmail[1]) ? trim($mEmail[1]) : null;
+                                        }
+
+                                        if (!$spvEmail && $activeMagang->lowongan?->perusahaan?->email_hrd) {
+                                            $spvEmail = $activeMagang->lowongan->perusahaan->email_hrd;
+                                        }
+
+                                        $spvName = $spvName ?: 'Supervisor Lapangan';
+                                    @endphp
                                     <div>
                                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Supervisor Lapangan (Mitra)</span>
                                         <div class="flex items-center">
-                                            <img src="https://ui-avatars.com/api/?name=Supervisor+Lapangan&background=f3f4f6&color=6b7280" alt="Supervisor" class="w-10 h-10 rounded-full mr-3 border border-gray-200">
-                                            <div>
-                                                <p class="font-bold text-gray-800 text-sm">Supervisor Mitra</p>
-                                                <p class="text-xs text-gray-500">{{ $namaInstansi }}</p>
+                                            <img src="https://ui-avatars.com/api/?name={{ urlencode($spvName) }}&background=f3f4f6&color=6b7280" alt="Supervisor" class="w-10 h-10 rounded-full mr-3 border border-gray-200 shrink-0">
+                                            <div class="overflow-hidden">
+                                                <p class="font-bold text-gray-800 text-sm truncate">{{ $spvName }}</p>
+                                                <p class="text-xs text-gray-500 truncate">{{ $namaInstansi }}</p>
+                                                @if($spvEmail)
+                                                    <p class="text-xs text-blue-600 font-mono mt-0.5 flex items-center gap-1.5 truncate">
+                                                        <i class="fas fa-envelope text-[11px]"></i>
+                                                        <a href="mailto:{{ $spvEmail }}" class="hover:underline">{{ $spvEmail }}</a>
+                                                    </p>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
