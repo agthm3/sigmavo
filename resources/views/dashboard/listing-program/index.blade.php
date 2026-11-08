@@ -17,7 +17,16 @@
                 this.pelamarData = null;
                 this.pelamarSearch = '';
                 try {
-                    const res = await fetch('{{ url('/daftar-lowongan/listing-program') }}/' + id + '/pelamar');
+                    const endpoint = '{{ route("dashboard-daftar-lowongan-listing-program-pelamar", ":id") }}'.replace(':id', id);
+                    const res = await fetch(endpoint, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}: Gagal memuat data pelamar`);
+                    }
                     const json = await res.json();
                     if (json.status === 'success') {
                         this.pelamarData = json;
